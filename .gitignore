@@ -1,0 +1,73 @@
+# =============================================================================
+# VeloRoute — monorepo .gitignore
+# Structure: src/frontend (Next.js) · src/backend (.NET)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# OS / editor
+# -----------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.pem
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# -----------------------------------------------------------------------------
+# Next.js (src/frontend/)
+# -----------------------------------------------------------------------------
+src/frontend/.next/
+src/frontend/out/
+src/frontend/build/
+src/frontend/node_modules/
+src/frontend/.pnp
+src/frontend/.pnp.*
+src/frontend/.yarn/*
+!src/frontend/.yarn/patches
+!src/frontend/.yarn/plugins
+!src/frontend/.yarn/releases
+!src/frontend/.yarn/versions
+src/frontend/coverage/
+src/frontend/.vercel
+src/frontend/next-env.d.ts
+src/frontend/*.tsbuildinfo
+
+# -----------------------------------------------------------------------------
+# .NET / ASP.NET Core (src/backend/)
+# -----------------------------------------------------------------------------
+src/backend/bin/
+src/backend/obj/
+src/backend/*.user
+src/backend/.vs/
+src/backend/TestResults/
+src/backend/**/*.nupkg
+src/backend/**/*.snupkg
+src/backend/publish/
+src/backend/.config/dotnet-tools.json.lock
+
+# -----------------------------------------------------------------------------
+# Logs & debug
+# -----------------------------------------------------------------------------
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# -----------------------------------------------------------------------------
+# Environment / secrets (opt-in per project if needed)
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# -----------------------------------------------------------------------------
+# Bootstrapper artefacts (should never be committed)
+# -----------------------------------------------------------------------------
+bootstrap-scaffold/
+.bootstrap-scaffold/
+*.scaffold
