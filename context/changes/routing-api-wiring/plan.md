@@ -339,24 +339,24 @@ None. This is greenfield wiring on an otherwise empty backend.
 
 #### Automated
 
-- [x] 1.1 `dotnet build` compiles with zero errors and warnings from new files
-- [x] 1.2 `dotnet run` starts and `/health` returns `{"status":"ok"}`
+- [x] 1.1 `dotnet build` compiles with zero errors and warnings from new files — b79408e
+- [x] 1.2 `dotnet run` starts and `/health` returns `{"status":"ok"}` — b79408e
 
 #### Manual
 
-- [x] 1.3 `appsettings.json` has `ORS` section with `BaseUrl` and empty `ApiKey`
+- [x] 1.3 `appsettings.json` has `ORS` section with `BaseUrl` and empty `ApiKey` — b79408e
 
 ### Phase 2: Dev-only smoke-test endpoint
 
 #### Automated
 
-- [ ] 2.1 `dotnet build` compiles with zero errors
+- [x] 2.1 `dotnet build` compiles with zero errors
 
 #### Manual
 
-- [ ] 2.2 `curl http://localhost:5098/routes/preview` returns HTTP 200 with `RouteResult` JSON
-- [ ] 2.3 `segments` array contains non-`Unknown` `surface` and `roadClass` values for Vienna fixture route
-- [ ] 2.4 `/routes/preview` is inaccessible outside `Development` environment
+- [x] 2.2 `curl http://localhost:5098/routes/preview` returns HTTP 200 with `RouteResult` JSON
+- [x] 2.3 `segments` array contains non-`Unknown` `surface` and `roadClass` values for Vienna fixture route
+- [x] 2.4 `/routes/preview` is inaccessible outside `Development` environment
 
 ### Phase 3: Frontend fetch validation
 

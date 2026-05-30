@@ -1,16 +1,19 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 
 namespace bootstrap_scaffold.Routing;
 
 internal sealed class OpenRouteServiceClient : IOpenRouteServiceClient
 {
     private readonly HttpClient _httpClient;
+    private readonly ILogger<OpenRouteServiceClient> _logger;
 
-    public OpenRouteServiceClient(HttpClient httpClient)
+    public OpenRouteServiceClient(HttpClient httpClient, ILogger<OpenRouteServiceClient> logger)
     {
         _httpClient = httpClient;
+        _logger = logger;
     }
 
     public async Task<RoutingResult<RouteResult>> GetDirectionsAsync(
@@ -175,7 +178,7 @@ file sealed class OrsExtras
     [JsonPropertyName("surface")]
     public OrsExtraValues? Surface { get; init; }
 
-    [JsonPropertyName("waytypes")]
+    [JsonPropertyName("waytype")]
     public OrsExtraValues? Waytypes { get; init; }
 }
 

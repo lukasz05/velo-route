@@ -46,6 +46,16 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.UseHttpsRedirection();
+
+    app.MapGet("/routes/preview", async (IOpenRouteServiceClient client, CancellationToken ct) =>
+    {
+        var start = new RouteCoordinate(16.3725, 48.2085); // Vienna
+        var end   = new RouteCoordinate(16.3900, 48.2200);
+        var result = await client.GetDirectionsAsync(start, end, ct);
+        return result.IsSuccess
+            ? Results.Ok(result.Value)
+            : Results.Problem(result.Error!.Message, statusCode: 502);
+    });
 }
 
 app.UseCors();

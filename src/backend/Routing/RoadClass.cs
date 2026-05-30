@@ -1,5 +1,8 @@
+using System.Text.Json.Serialization;
+
 namespace bootstrap_scaffold.Routing;
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum RoadClass
 {
     Unknown = 0,
