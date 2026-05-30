@@ -667,16 +667,16 @@ member renames; the only consumer is `OpenRouteServiceClient.cs` itself.
 
 #### Automated
 
-- [x] 4.1 `npm run build` exits 0
-- [x] 4.2 `npm run lint` exits 0
+- [x] 4.1 `npm run build` exits 0 — 80b611e
+- [x] 4.2 `npm run lint` exits 0 — 80b611e
 
 #### Manual
 
-- [x] 4.3 Desktop layout: form left, map right; map fills right panel
-- [x] 4.4 Mobile layout: form stacked above map; map ≥50vh; all inputs tappable
-- [x] 4.5 Search bar autocomplete shows suggestions within ~1s; selecting places map pin
-- [x] 4.6 Full generation flow works: spinner → route on map → distance label displayed
-- [x] 4.7 Route polyline visually closed
-- [x] 4.8 Re-roll generates a different-shaped route
-- [x] 4.9 Backend stopped → "Something went wrong" error shown
-- [x] 4.10 Ocean coordinate → "No road route found" error shown
+- [x] 4.3 Desktop layout: form left, map right; map fills right panel — 80b611e
+- [x] 4.4 Mobile layout: form stacked above map; map ≥50vh; all inputs tappable — 80b611e
+- [x] 4.5 Search bar autocomplete shows suggestions within ~1s; selecting places map pin — 80b611e
+- [x] 4.6 Full generation flow works: spinner → route on map → distance label displayed — 80b611e
+- [x] 4.7 Route polyline visually closed — 80b611e
+- [x] 4.8 Re-roll generates a different-shaped route — 80b611e
+- [x] 4.9 Backend stopped → "Something went wrong" error shown — 80b611e
+- [x] 4.10 Ocean coordinate → "No road route found" error shown — 80b611e
