@@ -362,11 +362,11 @@ None. This is greenfield wiring on an otherwise empty backend.
 
 #### Automated
 
-- [x] 3.1 `npm run build` completes with zero TypeScript errors
-- [x] 3.2 `npm run lint` passes with no new errors
+- [x] 3.1 `npm run build` completes with zero TypeScript errors — 52f2dcb
+- [x] 3.2 `npm run lint` passes with no new errors — 52f2dcb
 
 #### Manual
 
-- [x] 3.3 `http://localhost:3000/dev` renders `RouteResult` JSON with `distanceMeters`, `geometry`, and `segments`
-- [x] 3.4 `http://localhost:3000` (homepage) is unchanged
-- [x] 3.5 `src/frontend/.env.local` exists with `VELO_API_URL` set
+- [x] 3.3 `http://localhost:3000/dev` renders `RouteResult` JSON with `distanceMeters`, `geometry`, and `segments` — 52f2dcb
+- [x] 3.4 `http://localhost:3000` (homepage) is unchanged — 52f2dcb
+- [x] 3.5 `src/frontend/.env.local` exists with `VELO_API_URL` set — 52f2dcb
