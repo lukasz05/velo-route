@@ -350,23 +350,23 @@ None. This is greenfield wiring on an otherwise empty backend.
 
 #### Automated
 
-- [x] 2.1 `dotnet build` compiles with zero errors
+- [x] 2.1 `dotnet build` compiles with zero errors — 5460d2b
 
 #### Manual
 
-- [x] 2.2 `curl http://localhost:5098/routes/preview` returns HTTP 200 with `RouteResult` JSON
-- [x] 2.3 `segments` array contains non-`Unknown` `surface` and `roadClass` values for Vienna fixture route
-- [x] 2.4 `/routes/preview` is inaccessible outside `Development` environment
+- [x] 2.2 `curl http://localhost:5098/routes/preview` returns HTTP 200 with `RouteResult` JSON — 5460d2b
+- [x] 2.3 `segments` array contains non-`Unknown` `surface` and `roadClass` values for Vienna fixture route — 5460d2b
+- [x] 2.4 `/routes/preview` is inaccessible outside `Development` environment — 5460d2b
 
 ### Phase 3: Frontend fetch validation
 
 #### Automated
 
-- [ ] 3.1 `npm run build` completes with zero TypeScript errors
-- [ ] 3.2 `npm run lint` passes with no new errors
+- [x] 3.1 `npm run build` completes with zero TypeScript errors
+- [x] 3.2 `npm run lint` passes with no new errors
 
 #### Manual
 
-- [ ] 3.3 `http://localhost:3000/dev` renders `RouteResult` JSON with `distanceMeters`, `geometry`, and `segments`
-- [ ] 3.4 `http://localhost:3000` (homepage) is unchanged
-- [ ] 3.5 `src/frontend/.env.local` exists with `VELO_API_URL` set
+- [x] 3.3 `http://localhost:3000/dev` renders `RouteResult` JSON with `distanceMeters`, `geometry`, and `segments`
+- [x] 3.4 `http://localhost:3000` (homepage) is unchanged
+- [x] 3.5 `src/frontend/.env.local` exists with `VELO_API_URL` set
