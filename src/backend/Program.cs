@@ -1,3 +1,4 @@
+using System.Net;
 using bootstrap_scaffold.Routing;
 using Microsoft.Extensions.Options;
 
@@ -33,6 +34,9 @@ builder.Services.AddHttpClient<IOpenRouteServiceClient, OpenRouteServiceClient>(
     .AddStandardResilienceHandler(options =>
     {
         options.Retry.MaxRetryAttempts = 2;
+        options.Retry.ShouldHandle = args => ValueTask.FromResult(
+            args.Outcome.Result?.StatusCode is HttpStatusCode.RequestTimeout
+                or >= HttpStatusCode.InternalServerError);
         options.CircuitBreaker.FailureRatio = 0.5;
         options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(10);
         options.CircuitBreaker.MinimumThroughput = 3;

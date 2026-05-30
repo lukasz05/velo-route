@@ -322,6 +322,15 @@ This foundation slice does not handle user-initiated requests — it is a wiring
 
 None. This is greenfield wiring on an otherwise empty backend.
 
+## Forced Adaptations (unplanned, recorded post-implementation)
+
+These changes were not in the original plan but were required adaptations discovered during implementation:
+
+- **`src/frontend/src/app/layout.tsx`** — Google Fonts (`next/font/google`) is blocked by corporate SSL certificate at build time. Swapped to the `geist` npm package (`geist/font/sans`, `geist/font/mono`) which bundles fonts locally.
+- **`src/frontend/package.json` / `package-lock.json`** — Added `geist@^1.7.1` to support the font swap above.
+- **`src/frontend/eslint.config.mjs`** — Scaffold used legacy CJS-style `eslint-config-next` in an ESM flat config context, causing lint to fail. Rewrote using `FlatCompat` from `@eslint/eslintrc` to bridge the legacy config; added `.next/**` and `next-env.d.ts` to ignores.
+- **`src/frontend/tsconfig.json`** — `jsx` mode updated from `react-jsx` to `preserve` by Next.js build tooling automatically.
+
 ## References
 
 - Roadmap item: `context/foundation/roadmap.md` (F-01)

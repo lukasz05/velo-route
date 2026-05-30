@@ -70,13 +70,16 @@ internal sealed class OpenRouteServiceClient : IOpenRouteServiceClient
         }
         catch (OperationCanceledException)
         {
+            if (cancellationToken.IsCancellationRequested)
+                throw;
             return RoutingResult<RouteResult>.Failure(
                 new RoutingError("CANCELLED", "Request was cancelled or timed out"));
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Unexpected error calling ORS");
             return RoutingResult<RouteResult>.Failure(
-                new RoutingError("PROVIDER_ERROR", ex.Message));
+                new RoutingError("PROVIDER_ERROR", "Routing provider unavailable"));
         }
 
         // Local function — can reference file-scoped OrsFeature without exposing it as a member signature
