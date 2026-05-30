@@ -1,0 +1,16 @@
+namespace bootstrap_scaffold.Routing;
+
+public sealed record RouteResult(
+    RouteGeometry Geometry,
+    double DistanceMeters,
+    IReadOnlyList<RouteWaySegment> Segments);
+
+public sealed record RouteGeometry(IReadOnlyList<RouteCoordinate> Coordinates);
+
+public sealed record RouteCoordinate(double Longitude, double Latitude);
+
+public sealed record RouteWaySegment(
+    int FromIndex,
+    int ToIndex,
+    SurfaceType Surface,
+    RoadClass RoadClass);

@@ -1,3 +1,6 @@
+using bootstrap_scaffold.Routing;
+using Microsoft.Extensions.Options;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
@@ -13,6 +16,29 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+
+builder.Services.Configure<OpenRouteServiceOptions>(
+    builder.Configuration.GetSection("ORS"));
+
+builder.Services.AddHttpClient<IOpenRouteServiceClient, OpenRouteServiceClient>()
+    .ConfigureHttpClient((sp, client) =>
+    {
+        var opts = sp.GetRequiredService<IOptions<OpenRouteServiceOptions>>().Value;
+        client.BaseAddress = new Uri(opts.BaseUrl);
+        if (!string.IsNullOrEmpty(opts.ApiKey))
+        {
+            client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", opts.ApiKey);
+        }
+    })
+    .AddStandardResilienceHandler(options =>
+    {
+        options.Retry.MaxRetryAttempts = 2;
+        options.CircuitBreaker.FailureRatio = 0.5;
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(10);
+        options.CircuitBreaker.MinimumThroughput = 3;
+        options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
+    });
 
 var app = builder.Build();
 
