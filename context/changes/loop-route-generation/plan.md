@@ -630,12 +630,12 @@ member renames; the only consumer is `OpenRouteServiceClient.cs` itself.
 
 #### Automated
 
-- [ ] 1.1 `dotnet build` exits 0 with no warnings
-- [ ] 1.2 `dotnet run` starts; `GET /health` returns 200
+- [x] 1.1 `dotnet build` exits 0 with no warnings
+- [x] 1.2 `dotnet run` starts; `GET /health` returns 200
 
 #### Manual
 
-- [ ] 1.3 `GET /routes/preview` returns correct surface labels (e.g. `"Asphalt"` for Vienna roads)
+- [x] 1.3 `GET /routes/preview` returns correct surface labels (e.g. `"Asphalt"` for Vienna roads)
 
 ### Phase 2: Backend — Loop Route Generation Service + Endpoint
 

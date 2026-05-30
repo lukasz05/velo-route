@@ -1,7 +1,7 @@
 ---
 change_id: loop-route-generation
 title: Loop route generation and interactive map display
-status: planned
+status: implementing
 created: 2026-05-30
 updated: 2026-05-30
 archived_at: null

@@ -20,18 +20,33 @@ internal sealed class OpenRouteServiceClient : IOpenRouteServiceClient
         RouteCoordinate start,
         RouteCoordinate end,
         CancellationToken cancellationToken = default)
+        => await GetDirectionsAsync([start, end], options: null, cancellationToken);
+
+    public async Task<RoutingResult<RouteResult>> GetDirectionsAsync(
+        IReadOnlyList<RouteCoordinate> waypoints,
+        OrsDirectionOptions? options = null,
+        CancellationToken cancellationToken = default)
     {
         try
         {
+            OrsOptions? orsOptions = null;
+            if (options is not null)
+            {
+                OrsProfileParams? profileParams = null;
+                if (options.SteepnessDifficulty.HasValue)
+                {
+                    profileParams = new OrsProfileParams(
+                        new OrsWeightings(options.SteepnessDifficulty.Value));
+                }
+                orsOptions = new OrsOptions(options.AvoidFeatures, profileParams);
+            }
+
             var requestBody = new OrsDirectionsRequest
             {
-                Coordinates =
-                [
-                    [start.Longitude, start.Latitude],
-                    [end.Longitude, end.Latitude]
-                ],
+                Coordinates = waypoints.Select(w => new[] { w.Longitude, w.Latitude }).ToArray(),
                 ExtraInfo = ["surface", "waytype"],
-                Instructions = false
+                Instructions = false,
+                Options = orsOptions
             };
 
             using var response = await _httpClient.PostAsJsonAsync(
@@ -137,6 +152,43 @@ file sealed class OrsDirectionsRequest
 
     [JsonPropertyName("instructions")]
     public bool Instructions { get; init; }
+
+    [JsonPropertyName("options")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrsOptions? Options { get; init; }
+}
+
+file sealed class OrsOptions
+{
+    public OrsOptions(IReadOnlyList<string>? avoidFeatures, OrsProfileParams? profileParams)
+    {
+        AvoidFeatures = avoidFeatures;
+        ProfileParams = profileParams;
+    }
+
+    [JsonPropertyName("avoid_features")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? AvoidFeatures { get; }
+
+    [JsonPropertyName("profile_params")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrsProfileParams? ProfileParams { get; }
+}
+
+file sealed class OrsProfileParams
+{
+    public OrsProfileParams(OrsWeightings weightings) => Weightings = weightings;
+
+    [JsonPropertyName("weightings")]
+    public OrsWeightings Weightings { get; }
+}
+
+file sealed class OrsWeightings
+{
+    public OrsWeightings(int steepnessDifficulty) => SteepnessDifficulty = steepnessDifficulty;
+
+    [JsonPropertyName("steepness_difficulty")]
+    public int SteepnessDifficulty { get; }
 }
 
 // ORS response DTOs — file-scoped; not visible outside this file
