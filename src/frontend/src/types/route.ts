@@ -19,3 +19,23 @@ export interface RouteResult {
   distanceMeters: number;
   segments: RouteWaySegment[];
 }
+
+export interface GeocodingFeature {
+  geometry: { coordinates: [number, number] };
+  properties: { label: string };
+}
+
+export interface LoopRouteRequest {
+  startLon: number;
+  startLat: number;
+  minKm: number;
+  maxKm: number;
+  seed?: number;
+}
+
+export class RouteGenerationError extends Error {
+  constructor(public readonly code: string, message: string) {
+    super(message);
+    this.name = 'RouteGenerationError';
+  }
+}

@@ -641,27 +641,27 @@ member renames; the only consumer is `OpenRouteServiceClient.cs` itself.
 
 #### Automated
 
-- [x] 2.1 `dotnet build` exits 0
-- [x] 2.2 `GET /health` returns 200 after `dotnet run`
-- [x] 2.3 `POST /routes/loop` with Vienna body returns 200 with RouteResult JSON
-- [x] 2.4 `POST /routes/loop` with invalid body (`MinKm:300, MaxKm:10`) returns 400
+- [x] 2.1 `dotnet build` exits 0 — 24fe250
+- [x] 2.2 `GET /health` returns 200 after `dotnet run` — 24fe250
+- [x] 2.3 `POST /routes/loop` with Vienna body returns 200 with RouteResult JSON — 24fe250
+- [x] 2.4 `POST /routes/loop` with invalid body (`MinKm:300, MaxKm:10`) returns 400 — 24fe250
 
 #### Manual
 
-- [x] 2.5 Swagger UI shows `POST /routes/loop`
-- [x] 2.6 Generated distance is within [40, 60] km for the Vienna test
-- [x] 2.7 Route geometry plausibly forms a loop (first ≈ last coordinate)
+- [x] 2.5 Swagger UI shows `POST /routes/loop` — 24fe250
+- [x] 2.6 Generated distance is within [40, 60] km for the Vienna test — 24fe250
+- [x] 2.7 Route geometry plausibly forms a loop (first ≈ last coordinate) — 24fe250
 
 ### Phase 3: Frontend API Layer
 
 #### Automated
 
-- [ ] 3.1 `npm run build` exits 0
-- [ ] 3.2 `npm run lint` exits 0
+- [x] 3.1 `npm run build` exits 0
+- [x] 3.2 `npm run lint` exits 0
 
 #### Manual
 
-- [ ] 3.3 `GET /api/geocode?q=Vienna` returns ≥1 GeoJSON feature
+- [x] 3.3 `GET /api/geocode?q=Vienna` returns ≥1 GeoJSON feature
 
 ### Phase 4: Frontend UI
 
