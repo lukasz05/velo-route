@@ -630,27 +630,27 @@ member renames; the only consumer is `OpenRouteServiceClient.cs` itself.
 
 #### Automated
 
-- [x] 1.1 `dotnet build` exits 0 with no warnings
-- [x] 1.2 `dotnet run` starts; `GET /health` returns 200
+- [x] 1.1 `dotnet build` exits 0 with no warnings — 5091af8
+- [x] 1.2 `dotnet run` starts; `GET /health` returns 200 — 5091af8
 
 #### Manual
 
-- [x] 1.3 `GET /routes/preview` returns correct surface labels (e.g. `"Asphalt"` for Vienna roads)
+- [x] 1.3 `GET /routes/preview` returns correct surface labels (e.g. `"Asphalt"` for Vienna roads) — 5091af8
 
 ### Phase 2: Backend — Loop Route Generation Service + Endpoint
 
 #### Automated
 
-- [ ] 2.1 `dotnet build` exits 0
-- [ ] 2.2 `GET /health` returns 200 after `dotnet run`
-- [ ] 2.3 `POST /routes/loop` with Vienna body returns 200 with RouteResult JSON
-- [ ] 2.4 `POST /routes/loop` with invalid body (`MinKm:300, MaxKm:10`) returns 400
+- [x] 2.1 `dotnet build` exits 0
+- [x] 2.2 `GET /health` returns 200 after `dotnet run`
+- [x] 2.3 `POST /routes/loop` with Vienna body returns 200 with RouteResult JSON
+- [x] 2.4 `POST /routes/loop` with invalid body (`MinKm:300, MaxKm:10`) returns 400
 
 #### Manual
 
-- [ ] 2.5 Swagger UI shows `POST /routes/loop`
-- [ ] 2.6 Generated distance is within [40, 60] km for the Vienna test
-- [ ] 2.7 Route geometry plausibly forms a loop (first ≈ last coordinate)
+- [x] 2.5 Swagger UI shows `POST /routes/loop`
+- [x] 2.6 Generated distance is within [40, 60] km for the Vienna test
+- [x] 2.7 Route geometry plausibly forms a loop (first ≈ last coordinate)
 
 ### Phase 3: Frontend API Layer
 

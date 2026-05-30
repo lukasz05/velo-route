@@ -44,51 +44,64 @@ builder.Services.AddHttpClient<IOpenRouteServiceClient, OpenRouteServiceClient>(
         options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
     });
 
+builder.Services.AddScoped<LoopRouteGenerator>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/openapi/v1.json", "VeloRoute API v1"));
     app.UseHttpsRedirection();
-
-    app.MapGet("/routes/preview", async (IOpenRouteServiceClient client, CancellationToken ct) =>
-    {
-        var start = new RouteCoordinate(16.3725, 48.2085); // Vienna
-        var end   = new RouteCoordinate(16.3900, 48.2200);
-        var result = await client.GetDirectionsAsync(start, end, ct);
-        return result.IsSuccess
-            ? Results.Ok(result.Value)
-            : Results.Problem(result.Error!.Message, statusCode: 502);
-    });
 }
 
 app.UseCors();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
    .WithName("HealthCheck");
 
-app.MapGet("/weatherforecast", () =>
+app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen, CancellationToken requestCt) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    if (req.MinKm < 5 || req.MaxKm > 300 || req.MinKm >= req.MaxKm)
+        return Results.BadRequest(new { error = "Invalid distance range", code = "INVALID_INPUT" });
+
+    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(4.5));
+    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(requestCt, timeoutCts.Token);
+
+    try
+    {
+        var start = new RouteCoordinate(req.StartLon, req.StartLat);
+        var result = await gen.GenerateAsync(start, req.MinKm, req.MaxKm, req.Seed, linkedCts.Token);
+
+        if (!result.IsSuccess)
+        {
+            var (status, code) = result.Error!.Code switch
+            {
+                "2009" or "2010" => (422, "NO_ROUTE"),
+                "2004"           => (429, "RATE_LIMITED"),
+                "NO_VALID_RESULT" => (422, "NO_VALID_RESULT"),
+                _                => (502, "PROVIDER_ERROR")
+            };
+            return Results.Json(new { error = result.Error.Message, code }, statusCode: status);
+        }
+
+        return Results.Ok(result.Value);
+    }
+    catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+    {
+        return Results.Json(new { error = "Route generation timed out", code = "TIMEOUT" }, statusCode: 504);
+    }
+});
 
 app.Run();
+
+record LoopRouteRequest(
+    double StartLon, double StartLat,
+    double MinKm,    double MaxKm,
+    int?   Seed);
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
+
