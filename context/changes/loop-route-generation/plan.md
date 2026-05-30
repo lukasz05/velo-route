@@ -656,27 +656,27 @@ member renames; the only consumer is `OpenRouteServiceClient.cs` itself.
 
 #### Automated
 
-- [x] 3.1 `npm run build` exits 0
-- [x] 3.2 `npm run lint` exits 0
+- [x] 3.1 `npm run build` exits 0 — 0dd2c7e
+- [x] 3.2 `npm run lint` exits 0 — 0dd2c7e
 
 #### Manual
 
-- [x] 3.3 `GET /api/geocode?q=Vienna` returns ≥1 GeoJSON feature
+- [x] 3.3 `GET /api/geocode?q=Vienna` returns ≥1 GeoJSON feature — 0dd2c7e
 
 ### Phase 4: Frontend UI
 
 #### Automated
 
-- [ ] 4.1 `npm run build` exits 0
-- [ ] 4.2 `npm run lint` exits 0
+- [x] 4.1 `npm run build` exits 0
+- [x] 4.2 `npm run lint` exits 0
 
 #### Manual
 
-- [ ] 4.3 Desktop layout: form left, map right; map fills right panel
-- [ ] 4.4 Mobile layout: form stacked above map; map ≥50vh; all inputs tappable
-- [ ] 4.5 Search bar autocomplete shows suggestions within ~1s; selecting places map pin
-- [ ] 4.6 Full generation flow works: spinner → route on map → distance label displayed
-- [ ] 4.7 Route polyline visually closed
-- [ ] 4.8 Re-roll generates a different-shaped route
-- [ ] 4.9 Backend stopped → "Something went wrong" error shown
-- [ ] 4.10 Ocean coordinate → "No road route found" error shown
+- [x] 4.3 Desktop layout: form left, map right; map fills right panel
+- [x] 4.4 Mobile layout: form stacked above map; map ≥50vh; all inputs tappable
+- [x] 4.5 Search bar autocomplete shows suggestions within ~1s; selecting places map pin
+- [x] 4.6 Full generation flow works: spinner → route on map → distance label displayed
+- [x] 4.7 Route polyline visually closed
+- [x] 4.8 Re-roll generates a different-shaped route
+- [x] 4.9 Backend stopped → "Something went wrong" error shown
+- [x] 4.10 Ocean coordinate → "No road route found" error shown

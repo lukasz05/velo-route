@@ -32,6 +32,7 @@ Road cyclists often lack a ready-made route when they want to ride. Planning one
 | F-01 | `routing-api-wiring` | (foundation) road-network data API wired; .NET HTTP client callable; data contract defined | — | FR-003, Business Logic | done |
 | S-01 | `loop-route-generation` | enter start point + distance range, trigger generation, view loop route on interactive map with total length shown | F-01 | US-01, FR-001, FR-002, FR-003, FR-004, FR-005, NFR (privacy, 5s) | proposed |
 | S-02 | `gpx-export` | download the route as a GPX file importable to Strava, Garmin, and Komoot without modification | S-01 | US-01, FR-006 | proposed |
+| S-03 | `loop-algorithm-tuning` | (quality) generated routes feel like real cycling loops — minimal overlap, good shape, distance lands close to the requested midpoint | S-01 | Business Logic (≤10% repetition, paved preference) | proposed |
 
 ## Baseline
 
@@ -76,7 +77,21 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** The routing algorithm is the highest-effort, highest-uncertainty item in this roadmap. The user has identified algorithm complexity as the top blocker (`top_blocker: skills`). If the first approach produces poor routes (wrong length, too much repetition, avoids paved roads), iteration cost is the primary schedule threat against a 3-week, after-hours-only timeline.
 - **Status:** proposed
 
-### S-02: GPX export
+### S-03: Loop algorithm tuning
+
+- **Outcome:** generated routes feel like routes a road cyclist would actually choose — minimal self-overlap, recognisably loop-shaped, with total distance landing close to the requested midpoint. Includes measurable quality criteria so regressions are detectable.
+- **Change ID:** `loop-algorithm-tuning`
+- **PRD refs:** Business Logic (≤10% repetition rule, paved surface preference)
+- **Prerequisites:** S-01
+- **Parallel with:** S-02
+- **Blockers:** —
+- **Unknowns:**
+  - What waypoint placement geometry (radius formula, bearing count, waypoint count) produces the best loop shapes across varied European cities? — Owner: TBD. Block: no (resolvable through research + empirical testing during S-03 planning).
+  - What automated quality metrics are feasible without a test runner (e.g. overlap ratio thresholds, compactness score, distance accuracy)? — Owner: TBD. Block: no.
+- **Risk:** ORS snaps waypoints to the road network, so ideal geometric placement does not guarantee ideal route shape. Algorithm improvements may yield diminishing returns for certain geographies (dense urban grids vs. rural areas). Define a "good enough" acceptance threshold before starting to avoid open-ended tuning.
+- **Status:** proposed
+
+
 
 - **Outcome:** user can download a GPX file for the generated route proposal; the exported file is importable to Strava, Garmin, and Komoot without modification.
 - **Change ID:** `gpx-export`
@@ -96,6 +111,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | F-01 | `routing-api-wiring` | Wire road-network data API (provider selection + .NET HTTP client + data contract) | yes | Run `/10x-plan routing-api-wiring` | **done** |
 | S-01 | `loop-route-generation` | Loop route generation and interactive map display (FR-001–FR-005) | no | Depends on F-01 |
 | S-02 | `gpx-export` | GPX export (FR-006) | no | Depends on S-01 |
+| S-03 | `loop-algorithm-tuning` | Loop route quality tuning — waypoint geometry, quality metrics, regression criteria | no | Depends on S-01; can run in parallel with S-02 |
 
 ## Open Roadmap Questions
 

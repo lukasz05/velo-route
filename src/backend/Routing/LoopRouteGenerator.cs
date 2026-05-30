@@ -37,7 +37,7 @@ internal sealed class LoopRouteGenerator
         var tasks = bearings.Select(bearing =>
         {
             var wp1 = WaypointCalculator.DestinationPoint(start, bearing, radius);
-            var wp2 = WaypointCalculator.DestinationPoint(start, (bearing + 180) % 360, radius);
+            var wp2 = WaypointCalculator.DestinationPoint(start, (bearing + 120) % 360, radius);
             IReadOnlyList<RouteCoordinate> waypoints = [start, wp1, wp2, start];
             return _client.GetDirectionsAsync(waypoints, DefaultOptions, cancellationToken);
         }).ToList();
