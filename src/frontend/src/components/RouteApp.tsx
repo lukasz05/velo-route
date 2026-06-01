@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import RouteForm from './RouteForm';
 import RouteInfoPanel from './RouteInfoPanel';
 import ErrorMessage from './ErrorMessage';
@@ -23,8 +23,13 @@ export default function RouteApp() {
   const [routeResult, setRouteResult] = useState<RouteResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<RouteGenerationError | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   async function handleGenerate(params: GenerateParams) {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setIsLoading(true);
     setError(null);
     try {
@@ -32,6 +37,7 @@ export default function RouteApp() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params),
+        signal: controller.signal,
       });
       if (!res.ok) {
         const body = await res.json() as { error?: string; code?: string };
@@ -40,6 +46,7 @@ export default function RouteApp() {
       const result = await res.json() as RouteResult;
       setRouteResult(result);
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       if (err instanceof RouteGenerationError) {
         setError(err);
       } else {

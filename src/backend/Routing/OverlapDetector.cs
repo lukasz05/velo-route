@@ -38,6 +38,7 @@ internal static class OverlapDetector
         if (totalLength <= 0) return 0.0;
 
         double overlappingLength = 0;
+        var countedIndices = new HashSet<int>();
 
         for (int i = 0; i < segments.Count; i++)
         {
@@ -49,6 +50,7 @@ internal static class OverlapDetector
             foreach (int j in nearbyIndices)
             {
                 if (j <= i + 5) continue; // skip adjacent segments
+                if (!countedIndices.Add(j)) continue; // each segment counted at most once
 
                 var other = segments[j];
                 var otherGeom = gf.CreateLineString([other.P0, other.P1]);
@@ -63,7 +65,9 @@ internal static class OverlapDetector
                 double mag = seg.Length * other.Length;
 
                 if (mag > 0 && Math.Abs(dot / mag) > 0.7) // angle < ~45°
-                    overlappingLength += Math.Min(seg.Length, other.Length);
+                    overlappingLength += other.Length;
+                else
+                    countedIndices.Remove(j); // not actually overlapping, free for later re-check
             }
         }
 

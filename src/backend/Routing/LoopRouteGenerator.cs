@@ -75,20 +75,22 @@ internal sealed class LoopRouteGenerator
         if (primary is not null)
             return RoutingResult<RouteResult>.Success(primary.route);
 
-        // Fallback: relax overlap check, pick closest to target distance
+        // Fallback: relax overlap threshold to 40%, still enforce distance range
         var fallback = candidates
-            .OrderBy(c => Math.Abs(c.distance - targetMidMeters))
+            .Where(c => c.distance >= minMeters && c.distance <= maxMeters)
+            .OrderBy(c => c.overlapRatio)
+            .ThenBy(c => Math.Abs(c.distance - targetMidMeters))
             .FirstOrDefault();
 
         if (fallback is not null)
         {
             if (fallback.overlapRatio > 0.10)
-                _logger.LogWarning("Returning route with overlap ratio {Ratio:P0} (above 10% threshold)", fallback.overlapRatio);
+                _logger.LogWarning("Returning route with overlap ratio {Ratio:P0} (above 10% primary threshold)", fallback.overlapRatio);
 
             return RoutingResult<RouteResult>.Success(fallback.route);
         }
 
-        // All calls failed — return the first error
+        // All calls failed or no candidate within distance range — return the first error
         var firstError = results.FirstOrDefault(r => !r.IsSuccess);
         return firstError ?? RoutingResult<RouteResult>.Failure(
             new RoutingError("NO_VALID_RESULT", "No valid loop route could be generated"));

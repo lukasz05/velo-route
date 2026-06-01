@@ -12,8 +12,11 @@ export async function GET(request: Request) {
   }
 
   try {
-    const orsUrl = `https://api.openrouteservice.org/geocode/autocomplete?text=${encodeURIComponent(q)}&api_key=${apiKey}&size=5`;
-    const res = await fetch(orsUrl, { cache: 'no-store' });
+    const orsUrl = `https://api.openrouteservice.org/geocode/autocomplete?text=${encodeURIComponent(q)}&size=5`;
+    const res = await fetch(orsUrl, {
+      cache: 'no-store',
+      headers: { Authorization: apiKey },
+    });
     if (!res.ok) {
       console.error(`[geocode] ORS returned ${res.status} for q="${q}"`);
       return Response.json({ features: [] });

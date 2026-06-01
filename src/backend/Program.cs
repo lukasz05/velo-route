@@ -65,6 +65,9 @@ app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen,
     if (req.MinKm < 5 || req.MaxKm > 300 || req.MinKm >= req.MaxKm)
         return Results.BadRequest(new { error = "Invalid distance range", code = "INVALID_INPUT" });
 
+    if (req.StartLat < -90 || req.StartLat > 90 || req.StartLon < -180 || req.StartLon > 180)
+        return Results.BadRequest(new { error = "Invalid coordinates", code = "INVALID_INPUT" });
+
     using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(4.5));
     using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(requestCt, timeoutCts.Token);
 
