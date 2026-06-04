@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace bootstrap_scaffold.Routing;
+namespace VeloRoute.Routing;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum SurfaceType

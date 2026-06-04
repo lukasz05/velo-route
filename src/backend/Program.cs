@@ -1,5 +1,5 @@
 using System.Net;
-using bootstrap_scaffold.Routing;
+using VeloRoute.Routing;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -102,9 +102,4 @@ record LoopRouteRequest(
     double StartLon, double StartLat,
     double MinKm,    double MaxKm,
     int?   Seed);
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
 

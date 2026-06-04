@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace bootstrap_scaffold.Routing;
+namespace VeloRoute.Routing;
 
 internal sealed class LoopRouteGenerator
 {

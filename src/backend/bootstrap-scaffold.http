@@ -1,6 +1,0 @@
-@bootstrap_scaffold_HostAddress = http://localhost:5098
-
-GET {{bootstrap_scaffold_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

@@ -1,6 +1,14 @@
 {
-  "name": "bootstrap-scaffold",
+  "name": "velo-route",
   "version": "0.1.0",
+  "description": "Free road-cycling loop-route planner — enter a start point and km range, get a loop route on an interactive map with GPX export",
+  "author": "VeloRoute Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lukasz05/velo-route"
+  },
+  "homepage": "https://github.com/lukasz05/velo-route#readme",
   "private": true,
   "scripts": {
     "dev": "next dev",
