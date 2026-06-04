@@ -263,27 +263,27 @@ Add a `README.md` at the repo root giving an overview of the monorepo, and an MI
 
 #### Automated
 
-- [x] 1.1 `dotnet build` passes in `src/backend/` with renamed project
-- [x] 1.2 No `bootstrap_scaffold` or `bootstrap-scaffold` strings remain in `src/backend/` tracked files
+- [x] 1.1 `dotnet build` passes in `src/backend/` with renamed project — 56c7c19
+- [x] 1.2 No `bootstrap_scaffold` or `bootstrap-scaffold` strings remain in `src/backend/` tracked files — 56c7c19
 
 #### Manual
 
-- [x] 1.3 `dotnet run` starts and `GET /health` returns `{"status":"ok"}`
-- [x] 1.4 Swagger UI loads at `http://localhost:5098/swagger` and shows "VeloRoute API v1"
-- [x] 1.5 `bootstrap-scaffold.csproj` and `bootstrap-scaffold.http` no longer exist in `src/backend/`
+- [x] 1.3 `dotnet run` starts and `GET /health` returns `{"status":"ok"}` — 56c7c19
+- [x] 1.4 Swagger UI loads at `http://localhost:5098/swagger` and shows "VeloRoute API v1" — 56c7c19
+- [x] 1.5 `bootstrap-scaffold.csproj` and `bootstrap-scaffold.http` no longer exist in `src/backend/` — 56c7c19
 
 ### Phase 2: Frontend Metadata
 
 #### Automated
 
-- [ ] 2.1 `npm run build` passes in `src/frontend/`
-- [ ] 2.2 `npm run lint` passes in `src/frontend/`
-- [ ] 2.3 No `bootstrap-scaffold` or `Create Next App` strings remain in `src/frontend/` tracked files
+- [x] 2.1 `npm run build` passes in `src/frontend/`
+- [x] 2.2 `npm run lint` passes in `src/frontend/`
+- [x] 2.3 No `bootstrap-scaffold` or `Create Next App` strings remain in `src/frontend/` tracked files
 
 #### Manual
 
-- [ ] 2.4 Browser tab shows "VeloRoute" when running `npm run dev`
-- [ ] 2.5 `package.json` `"name"` field is `"velo-route"`
+- [x] 2.4 Browser tab shows "VeloRoute" when running `npm run dev`
+- [x] 2.5 `package.json` `"name"` field is `"velo-route"`
 
 ### Phase 3: Repo Root Files
 
