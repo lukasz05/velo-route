@@ -10,10 +10,12 @@ function formatTimestamp(d: Date): string {
 
 export default function RouteInfoPanel({ route }: { route: RouteResult }) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const km = (route.distanceMeters / 1000).toFixed(1);
 
   async function handleDownload() {
     setIsDownloading(true);
+    setDownloadError(null);
     try {
       const res = await fetch('/api/routes/gpx', {
         method: 'POST',
@@ -28,9 +30,14 @@ export default function RouteInfoPanel({ route }: { route: RouteResult }) {
       a.href = url;
       a.download = `veloroute-${formatTimestamp(new Date())}.gpx`;
       document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      try {
+        a.click();
+      } finally {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch {
+      setDownloadError('GPX export failed. Please try again.');
     } finally {
       setIsDownloading(false);
     }
@@ -47,6 +54,9 @@ export default function RouteInfoPanel({ route }: { route: RouteResult }) {
       >
         {isDownloading ? 'Downloading\u2026' : 'Download GPX'}
       </button>
+      {downloadError && (
+        <p className="mt-2 text-sm text-red-600">{downloadError}</p>
+      )}
     </div>
   );
 }
