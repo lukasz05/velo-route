@@ -294,23 +294,23 @@ negligible — no streaming or chunking needed.
 
 #### Automated
 
-- [x] 1.1 dotnet build passes
+- [x] 1.1 dotnet build passes — b109958
 
 #### Manual
 
-- [x] 1.2 curl to POST /routes/gpx returns valid GPX XML
-- [x] 1.3 GPX output validates at j-berkemeier.de/ShowGPX.html
+- [x] 1.2 curl to POST /routes/gpx returns valid GPX XML — b109958
+- [x] 1.3 GPX output validates at j-berkemeier.de/ShowGPX.html — b109958
 
 ### Phase 2: Next.js API Proxy Route
 
 #### Automated
 
-- [ ] 2.1 npm run build passes
-- [ ] 2.2 npm run lint passes
+- [x] 2.1 npm run build passes
+- [x] 2.2 npm run lint passes
 
 #### Manual
 
-- [ ] 2.3 curl to POST /api/routes/gpx returns same GPX as backend
+- [x] 2.3 curl to POST /api/routes/gpx returns same GPX as backend
 
 ### Phase 3: Frontend Download Button
 
