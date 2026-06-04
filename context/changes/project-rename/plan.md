@@ -276,22 +276,22 @@ Add a `README.md` at the repo root giving an overview of the monorepo, and an MI
 
 #### Automated
 
-- [x] 2.1 `npm run build` passes in `src/frontend/`
-- [x] 2.2 `npm run lint` passes in `src/frontend/`
-- [x] 2.3 No `bootstrap-scaffold` or `Create Next App` strings remain in `src/frontend/` tracked files
+- [x] 2.1 `npm run build` passes in `src/frontend/` — 27b5cf3
+- [x] 2.2 `npm run lint` passes in `src/frontend/` — 27b5cf3
+- [x] 2.3 No `bootstrap-scaffold` or `Create Next App` strings remain in `src/frontend/` tracked files — 27b5cf3
 
 #### Manual
 
-- [x] 2.4 Browser tab shows "VeloRoute" when running `npm run dev`
-- [x] 2.5 `package.json` `"name"` field is `"velo-route"`
+- [x] 2.4 Browser tab shows "VeloRoute" when running `npm run dev` — 27b5cf3
+- [x] 2.5 `package.json` `"name"` field is `"velo-route"` — 27b5cf3
 
 ### Phase 3: Repo Root Files
 
 #### Automated
 
-- [ ] 3.1 `README.md` and `LICENSE` exist at repo root
-- [ ] 3.2 `LICENSE` contains "MIT License" and "VeloRoute Contributors"
+- [x] 3.1 `README.md` and `LICENSE` exist at repo root
+- [x] 3.2 `LICENSE` contains "MIT License" and "VeloRoute Contributors"
 
 #### Manual
 
-- [ ] 3.3 Root `README.md` renders correctly on GitHub
+- [x] 3.3 Root `README.md` renders correctly on GitHub
