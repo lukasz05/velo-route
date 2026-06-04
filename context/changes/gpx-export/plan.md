@@ -316,12 +316,12 @@ negligible — no streaming or chunking needed.
 
 #### Automated
 
-- [x] 3.1 npm run build passes
-- [x] 3.2 npm run lint passes
+- [x] 3.1 npm run build passes — ce293f1
+- [x] 3.2 npm run lint passes — ce293f1
 
 #### Manual
 
-- [x] 3.3 Download button triggers veloroute-{timestamp}.gpx download with loading state
-- [x] 3.4 Downloaded file imports cleanly to Strava as a cycling route
-- [x] 3.5 No JS errors on repeated clicks
-- [x] 3.6 Button fully visible and tappable on 375px viewport
+- [x] 3.3 Download button triggers veloroute-{timestamp}.gpx download with loading state — ce293f1
+- [x] 3.4 Downloaded file imports cleanly to Strava as a cycling route — ce293f1
+- [x] 3.5 No JS errors on repeated clicks — ce293f1
+- [x] 3.6 Button fully visible and tappable on 375px viewport — ce293f1
