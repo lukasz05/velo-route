@@ -96,6 +96,15 @@ app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen,
     }
 });
 
+app.MapPost("/routes/gpx", (GpxRequest req) =>
+{
+    if (req.Coordinates is null || req.Coordinates.Count == 0)
+        return Results.BadRequest(new { error = "Coordinates must not be empty", code = "INVALID_INPUT" });
+
+    var gpx = GpxSerializer.Serialize(req.Coordinates);
+    return Results.Text(gpx, "application/gpx+xml");
+});
+
 app.Run();
 
 record LoopRouteRequest(
@@ -103,3 +112,4 @@ record LoopRouteRequest(
     double MinKm,    double MaxKm,
     int?   Seed);
 
+record GpxRequest(IReadOnlyList<RouteCoordinate> Coordinates);
