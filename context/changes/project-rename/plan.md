@@ -289,9 +289,9 @@ Add a `README.md` at the repo root giving an overview of the monorepo, and an MI
 
 #### Automated
 
-- [x] 3.1 `README.md` and `LICENSE` exist at repo root
-- [x] 3.2 `LICENSE` contains "MIT License" and "VeloRoute Contributors"
+- [x] 3.1 `README.md` and `LICENSE` exist at repo root — c464aba
+- [x] 3.2 `LICENSE` contains "MIT License" and "VeloRoute Contributors" — c464aba
 
 #### Manual
 
-- [x] 3.3 Root `README.md` renders correctly on GitHub
+- [x] 3.3 Root `README.md` renders correctly on GitHub — c464aba
