@@ -30,7 +30,8 @@ Road cyclists often lack a ready-made route when they want to ride. Planning one
 | ID | Change ID | Outcome (user can …) | Prerequisites | PRD refs | Status |
 |---|---|---|---|---|---|
 | F-01 | `routing-api-wiring` | (foundation) road-network data API wired; .NET HTTP client callable; data contract defined | — | FR-003, Business Logic | done |
-| S-01 | `loop-route-generation` | enter start point + distance range, trigger generation, view loop route on interactive map with total length shown | F-01 | US-01, FR-001, FR-002, FR-003, FR-004, FR-005, NFR (privacy, 5s) | proposed |
+| S-01 | `loop-route-generation` | enter start point + distance range, trigger generation, view loop route on interactive map with total length shown | F-01 | US-01, FR-001, FR-002, FR-003, FR-004, FR-005, NFR (privacy, 5s) | done |
+| H-01 | `project-rename` | (housekeeping) scaffold placeholder names replaced with VeloRoute in both projects; app metadata correct | — | — | proposed |
 | S-02 | `gpx-export` | download the route as a GPX file importable to Strava, Garmin, and Komoot without modification | S-01 | US-01, FR-006 | proposed |
 | S-03 | `loop-algorithm-tuning` | (quality) generated routes feel like real cycling loops — minimal overlap, good shape, distance lands close to the requested midpoint | S-01 | Business Logic (≤10% repetition, paved preference) | proposed |
 
@@ -61,6 +62,29 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** OpenRouteService free tier imposes rate limits and may have data gaps for some regions. If the free tier is insufficient, an OSM Overpass API integration requires a different pattern (raw graph data rather than a routing service). Discovering this late forces a re-implementation of F-01 mid-sprint.
 - **Status:** done
 
+## Housekeeping
+
+### H-01: Project rename, READMEs, and license
+
+- **Outcome:** all scaffold-generated placeholder names replaced with VeloRoute; both projects have real READMEs; repo has a LICENSE; app metadata is correct and no `bootstrap-scaffold` or `bootstrap_scaffold` identifiers remain in source.
+- **Change ID:** `project-rename`
+- **PRD refs:** —
+- **Prerequisites:** — (can run any time, parallel with any slice)
+- **Blockers:** —
+- **Scope:**
+  - **`README.md` (repo root, new)** — project overview, monorepo layout, dev commands for both projects, required env vars, link to PRD
+  - **`LICENSE` (repo root, new)** — MIT (confirm before implementing if a different license is preferred)
+  - **`src/frontend/package.json`** — `name` → `velo-route`; add `description`, `author`, `license`, `repository`, `homepage` fields
+  - **`src/frontend/src/app/layout.tsx`** — `metadata.title` → `"VeloRoute"`; `metadata.description` → real description
+  - **`src/frontend/README.md`** — replace generic create-next-app content with VeloRoute frontend dev guide (how to run, env vars, `local-ca.pem` note)
+  - **`src/backend/README.md` (new)** — backend dev guide: how to run, user secrets setup, Swagger URL, project structure
+  - **`src/backend/bootstrap-scaffold.csproj`** — rename to `velo-route.csproj`; `<RootNamespace>` → `VeloRoute`; add `<AssemblyName>`, `<Version>`, `<Description>`, `<Authors>` properties
+  - **`src/backend/Program.cs`** — `using bootstrap_scaffold.Routing` → `using VeloRoute.Routing`; remove dead `WeatherForecast` record
+  - **`src/backend/Routing/*.cs`** (10 files) — `namespace bootstrap_scaffold.Routing` → `namespace VeloRoute.Routing`
+  - **`src/backend/bootstrap-scaffold.http`** — rename to `velo-route.http`; update `@bootstrap_scaffold_HostAddress` variable; remove stale `/weatherforecast/` request
+- **Risk:** renaming the C# namespace touches every source file; solution references need updating too. Low risk overall — pure rename, no logic change.
+- **Status:** proposed
+
 ## Slices
 
 ### S-01: Loop route generation and display
@@ -75,9 +99,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - What graph-traversal and loop-constraint approach will reliably produce usable road-bike loop routes within the stated distance range, respecting the ≤ 10% repetition rule (PRD Business Logic), on the first build? — Owner: TBD. Block: no (proceed by spiking; output quality is the uncertainty, not whether to attempt it).
   - Which geocoding service powers the start-point search bar (FR-001), and does it require a separate API key or quota management? — Owner: TBD. Block: no (several free options exist; resolvable at planning time).
 - **Risk:** The routing algorithm is the highest-effort, highest-uncertainty item in this roadmap. The user has identified algorithm complexity as the top blocker (`top_blocker: skills`). If the first approach produces poor routes (wrong length, too much repetition, avoids paved roads), iteration cost is the primary schedule threat against a 3-week, after-hours-only timeline.
-- **Status:** proposed
-
-### S-03: Loop algorithm tuning
+- **Status:** done (impl_reviewed — commit 82767d8)
 
 - **Outcome:** generated routes feel like routes a road cyclist would actually choose — minimal self-overlap, recognisably loop-shaped, with total distance landing close to the requested midpoint. Includes measurable quality criteria so regressions are detectable.
 - **Change ID:** `loop-algorithm-tuning`
@@ -91,7 +113,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** ORS snaps waypoints to the road network, so ideal geometric placement does not guarantee ideal route shape. Algorithm improvements may yield diminishing returns for certain geographies (dense urban grids vs. rural areas). Define a "good enough" acceptance threshold before starting to avoid open-ended tuning.
 - **Status:** proposed
 
-
+### S-02: GPX export
 
 - **Outcome:** user can download a GPX file for the generated route proposal; the exported file is importable to Strava, Garmin, and Komoot without modification.
 - **Change ID:** `gpx-export`
@@ -130,3 +152,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ## Done
 
 - **F-01 `routing-api-wiring`** — ORS HTTP client, data contracts (`SurfaceType`, `RoadClass`, `RouteResult`), and config wired in `.NET` backend. Verified 2026-05-30.
+- **S-01 `loop-route-generation`** — start point search, km range input, loop generation (3-bearing triangular algorithm), interactive map, distance display. All 4 phases implemented, impl-review triaged. Commit 82767d8.
