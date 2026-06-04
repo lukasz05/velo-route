@@ -305,23 +305,23 @@ negligible — no streaming or chunking needed.
 
 #### Automated
 
-- [x] 2.1 npm run build passes
-- [x] 2.2 npm run lint passes
+- [x] 2.1 npm run build passes — f1171aa
+- [x] 2.2 npm run lint passes — f1171aa
 
 #### Manual
 
-- [x] 2.3 curl to POST /api/routes/gpx returns same GPX as backend
+- [x] 2.3 curl to POST /api/routes/gpx returns same GPX as backend — f1171aa
 
 ### Phase 3: Frontend Download Button
 
 #### Automated
 
-- [ ] 3.1 npm run build passes
-- [ ] 3.2 npm run lint passes
+- [x] 3.1 npm run build passes
+- [x] 3.2 npm run lint passes
 
 #### Manual
 
-- [ ] 3.3 Download button triggers veloroute-{timestamp}.gpx download with loading state
-- [ ] 3.4 Downloaded file imports cleanly to Strava as a cycling route
-- [ ] 3.5 No JS errors on repeated clicks
-- [ ] 3.6 Button fully visible and tappable on 375px viewport
+- [x] 3.3 Download button triggers veloroute-{timestamp}.gpx download with loading state
+- [x] 3.4 Downloaded file imports cleanly to Strava as a cycling route
+- [x] 3.5 No JS errors on repeated clicks
+- [x] 3.6 Button fully visible and tappable on 375px viewport
