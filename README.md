@@ -6,7 +6,7 @@ Free road-cycling loop-route planner. Enter a start point and a distance range (
 
 | Path | Description |
 |---|---|
-| `src/frontend/` | Next.js 16 (React 19, TypeScript, Tailwind v4) — the web UI |
+| `src/frontend/` | Next.js 15 (React 19, TypeScript, Tailwind v4) — the web UI |
 | `src/backend/` | ASP.NET Core (.NET 10) Minimal API — loop route generation via OpenRouteService |
 
 ## Dev commands

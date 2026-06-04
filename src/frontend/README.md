@@ -1,6 +1,6 @@
 # VeloRoute — Frontend
 
-Next.js 16 (React 19, TypeScript, Tailwind v4) frontend for VeloRoute — a free road-cycling loop-route planner.
+Next.js 15 (React 19, TypeScript, Tailwind v4) frontend for VeloRoute — a free road-cycling loop-route planner.
 
 ## Running locally
 
