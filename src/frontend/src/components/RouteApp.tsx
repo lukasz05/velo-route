@@ -75,7 +75,7 @@ export default function RouteApp() {
           hasResult={routeResult !== null}
         />
         <ErrorMessage error={error} />
-        {routeResult && <RouteInfoPanel distanceMeters={routeResult.distanceMeters} />}
+        {routeResult && <RouteInfoPanel route={routeResult} />}
       </div>
 
       {/* Right panel — map */}
