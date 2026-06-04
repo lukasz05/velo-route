@@ -1,4 +1,4 @@
-namespace bootstrap_scaffold.Routing;
+namespace VeloRoute.Routing;
 
 public interface IOpenRouteServiceClient
 {

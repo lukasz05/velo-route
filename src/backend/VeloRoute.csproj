@@ -4,7 +4,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>bootstrap_scaffold</RootNamespace>
+    <RootNamespace>VeloRoute</RootNamespace>
+    <AssemblyName>VeloRoute</AssemblyName>
+    <Version>0.1.0</Version>
+    <Description>VeloRoute backend API — loop route generation for road cyclists</Description>
+    <Authors>VeloRoute Contributors</Authors>
     <UserSecretsId>f863c334-6659-46a8-951a-a6d5119abe3d</UserSecretsId>
   </PropertyGroup>
 

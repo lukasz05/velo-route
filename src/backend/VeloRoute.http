@@ -1,0 +1,6 @@
+@velo_route_HostAddress = http://localhost:5098
+
+GET {{velo_route_HostAddress}}/health
+Accept: application/json
+
+###

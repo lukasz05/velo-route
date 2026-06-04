@@ -2,7 +2,7 @@ using NetTopologySuite;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.Index.Strtree;
 
-namespace bootstrap_scaffold.Routing;
+namespace VeloRoute.Routing;
 
 internal static class OverlapDetector
 {

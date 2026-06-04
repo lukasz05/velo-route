@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 
-namespace bootstrap_scaffold.Routing;
+namespace VeloRoute.Routing;
 
 internal sealed class OpenRouteServiceClient : IOpenRouteServiceClient
 {
