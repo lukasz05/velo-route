@@ -320,21 +320,21 @@ Fixes the latent `"G"` format defect in `GpxSerializer` by changing to `"R"` (ro
 
 #### Automated
 
-- [x] 2.1 `dotnet build VeloRoute.sln` exits 0
-- [x] 2.2 `dotnet test VeloRoute.sln` exits 0; all 33 OrsMapper test cases pass
+- [x] 2.1 `dotnet build VeloRoute.sln` exits 0 — d5a14f8
+- [x] 2.2 `dotnet test VeloRoute.sln` exits 0; all 33 OrsMapper test cases pass — d5a14f8
 
 #### Manual
 
-- [x] 2.3 `OrsMapperTests.cs` [InlineData] comments name ORS codes independently of the production enum (no `(SurfaceType)3` style expected values)
+- [x] 2.3 `OrsMapperTests.cs` [InlineData] comments name ORS codes independently of the production enum (no `(SurfaceType)3` style expected values) — d5a14f8
 
 ### Phase 3: GPX format specifier fix and Risk #3 unit tests
 
 #### Automated
 
-- [ ] 3.1 `dotnet build VeloRoute.sln` exits 0
-- [ ] 3.2 `dotnet test VeloRoute.sln` exits 0; all 38 tests pass (33 + 5)
+- [x] 3.1 `dotnet build VeloRoute.sln` exits 0
+- [x] 3.2 `dotnet test VeloRoute.sln` exits 0; all 38 tests pass (33 + 5)
 
 #### Manual
 
-- [ ] 3.3 `GpxSerializer.cs` lines 13–14 use `"R"` not `"G"`
-- [ ] 3.4 Locale-injection tests save and restore `CurrentCulture` in a `finally` block
+- [x] 3.3 `GpxSerializer.cs` lines 13–14 use `"R"` not `"G"`
+- [x] 3.4 Locale-injection tests save and restore `CurrentCulture` in a `finally` block
