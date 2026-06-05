@@ -13,5 +13,7 @@ public enum RoadClass
     Track = 5,
     Cycleway = 6,
     FootPath = 7,
-    Steps = 8
+    Steps = 8,
+    Ferry = 9,
+    Construction = 10
 }

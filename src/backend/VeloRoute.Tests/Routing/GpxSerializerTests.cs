@@ -12,6 +12,8 @@ public class GpxSerializerTests
         new RouteCoordinate(16.38000, 48.21000),
     ];
 
+    private static readonly XNamespace GpxNs = "http://www.topografix.com/GPX/1/1";
+
     [Fact]
     public void Serialize_WithPolishCulture_CoordinatesUseDecimalPoint()
     {
@@ -24,8 +26,8 @@ public class GpxSerializerTests
 
             var result = GpxSerializer.Serialize(SampleCoordinates);
 
-            Assert.Contains("48.20849", result);
-            Assert.DoesNotContain("48,20849", result);
+            var lat = XDocument.Parse(result).Descendants(GpxNs + "trkpt").First().Attribute("lat")?.Value;
+            Assert.Equal("48.20849", lat);
         }
         finally
         {
@@ -46,8 +48,8 @@ public class GpxSerializerTests
 
             var result = GpxSerializer.Serialize(SampleCoordinates);
 
-            Assert.Contains("48.20849", result);
-            Assert.DoesNotContain("48,20849", result);
+            var lat = XDocument.Parse(result).Descendants(GpxNs + "trkpt").First().Attribute("lat")?.Value;
+            Assert.Equal("48.20849", lat);
         }
         finally
         {

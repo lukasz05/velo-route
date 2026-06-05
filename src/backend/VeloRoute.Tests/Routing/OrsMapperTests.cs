@@ -52,6 +52,8 @@ public class OrsMapperTests
     [InlineData(6, RoadClass.Cycleway)]   // 6=Cycleway
     [InlineData(7, RoadClass.FootPath)]   // 7=Footpath
     [InlineData(8, RoadClass.Steps)]      // 8=Steps
+    [InlineData(9, RoadClass.Ferry)]      // 9=Ferry
+    [InlineData(10, RoadClass.Construction)] // 10=Construction
     public void MapRoadClassCode_KnownCodes_ReturnCorrectRoadClass(int code, RoadClass expected)
     {
         Assert.Equal(expected, OrsMapper.MapRoadClassCode(code));
@@ -81,6 +83,28 @@ public class OrsMapperTests
         var gap = segments.First(s => s.FromIndex == 2 && s.ToIndex == 4);
         Assert.Equal(SurfaceType.Unknown, gap.Surface);   // gap — no surface span covers mid=3
         Assert.Equal(RoadClass.Cycleway, gap.RoadClass);  // waytype covers full range
+    }
+
+    [Fact]
+    public void BuildSegments_ContiguousSpans_ReturnsCorrectSegments()
+    {
+        // Two back-to-back surface spans; single waytype span covering both
+        int[][] surfaceSpans = [[0, 10, 3], [10, 20, 10]];  // code 3=Asphalt, 10=Gravel
+        int[][] waytypeSpans = [[0, 20, 6]];                 // code 6=Cycleway
+
+        var segments = OrsMapper.BuildSegments(surfaceSpans, waytypeSpans);
+
+        Assert.Equal(2, segments.Count);
+
+        Assert.Equal(0,                  segments[0].FromIndex);
+        Assert.Equal(10,                 segments[0].ToIndex);
+        Assert.Equal(SurfaceType.Asphalt, segments[0].Surface);
+        Assert.Equal(RoadClass.Cycleway,  segments[0].RoadClass);
+
+        Assert.Equal(10,                segments[1].FromIndex);
+        Assert.Equal(20,                segments[1].ToIndex);
+        Assert.Equal(SurfaceType.Gravel, segments[1].Surface);
+        Assert.Equal(RoadClass.Cycleway, segments[1].RoadClass);
     }
 
     [Fact]

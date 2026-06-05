@@ -1,7 +1,7 @@
 ---
 change_id: testing-backend-bootstrap
 title: Backend test bootstrap — critical ORS mapping and GPX locale coverage (Phase 1)
-status: implemented
+status: impl_reviewed
 created: 2026-06-05
 updated: 2026-06-05
 archived_at: null
