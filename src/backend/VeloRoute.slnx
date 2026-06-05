@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="VeloRoute/VeloRoute.csproj" />
+  <Project Path="VeloRoute.Tests/VeloRoute.Tests.csproj" />
+</Solution>

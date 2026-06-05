@@ -37,17 +37,19 @@ src/frontend/*.tsbuildinfo
 
 # -----------------------------------------------------------------------------
 # .NET / ASP.NET Core (src/backend/)
+# Projects: src/backend/VeloRoute/ · src/backend/VeloRoute.Tests/
+# Solution:  src/backend/VeloRoute.slnx
 # -----------------------------------------------------------------------------
-src/backend/bin/
-src/backend/obj/
-src/backend/*.user
+src/backend/**/bin/
+src/backend/**/obj/
+src/backend/**/*.user
 src/backend/.vs/
-src/backend/TestResults/
+src/backend/**/TestResults/
 src/backend/**/*.nupkg
 src/backend/**/*.snupkg
-src/backend/publish/
+src/backend/**/publish/
 src/backend/.config/dotnet-tools.json.lock
-src/backend/.azure/
+src/backend/**/.azure/
 
 # -----------------------------------------------------------------------------
 # Logs & debug
