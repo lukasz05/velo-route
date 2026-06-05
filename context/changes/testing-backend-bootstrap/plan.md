@@ -331,10 +331,10 @@ Fixes the latent `"G"` format defect in `GpxSerializer` by changing to `"R"` (ro
 
 #### Automated
 
-- [x] 3.1 `dotnet build VeloRoute.sln` exits 0
-- [x] 3.2 `dotnet test VeloRoute.sln` exits 0; all 38 tests pass (33 + 5)
+- [x] 3.1 `dotnet build VeloRoute.sln` exits 0 — b772826
+- [x] 3.2 `dotnet test VeloRoute.sln` exits 0; all 38 tests pass (33 + 5) — b772826
 
 #### Manual
 
-- [x] 3.3 `GpxSerializer.cs` lines 13–14 use `"R"` not `"G"`
-- [x] 3.4 Locale-injection tests save and restore `CurrentCulture` in a `finally` block
+- [x] 3.3 `GpxSerializer.cs` lines 13–14 use `"R"` not `"G"` — b772826
+- [x] 3.4 Locale-injection tests save and restore `CurrentCulture` in a `finally` block — b772826
