@@ -308,13 +308,13 @@ Fixes the latent `"G"` format defect in `GpxSerializer` by changing to `"R"` (ro
 
 #### Automated
 
-- [x] 1.1 `dotnet build VeloRoute.sln` exits 0 with no errors or warnings
-- [x] 1.2 `dotnet test VeloRoute.sln` exits 0; output shows 0 tests, 0 failures
+- [x] 1.1 `dotnet build VeloRoute.sln` exits 0 with no errors or warnings — b7b74f2
+- [x] 1.2 `dotnet test VeloRoute.sln` exits 0; output shows 0 tests, 0 failures — b7b74f2
 
 #### Manual
 
-- [ ] 1.3 `VeloRoute.sln` exists at repo root and lists both projects
-- [ ] 1.4 `src/backend.tests/` contains `VeloRoute.Tests.csproj` and no `UnitTest1.cs`
+- [x] 1.3 `VeloRoute.sln` exists at repo root and lists both projects — b7b74f2
+- [x] 1.4 `src/backend.tests/` contains `VeloRoute.Tests.csproj` and no `UnitTest1.cs` — b7b74f2
 
 ### Phase 2: OrsMapper extraction and Risk #1 unit tests
 
