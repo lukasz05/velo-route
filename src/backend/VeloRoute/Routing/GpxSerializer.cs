@@ -10,8 +10,8 @@ internal static class GpxSerializer
             "\n",
             coordinates.Select(c =>
             {
-                var lat = c.Latitude.ToString("G", CultureInfo.InvariantCulture);
-                var lon = c.Longitude.ToString("G", CultureInfo.InvariantCulture);
+                var lat = c.Latitude.ToString("R", CultureInfo.InvariantCulture);
+                var lon = c.Longitude.ToString("R", CultureInfo.InvariantCulture);
                 return $"""      <trkpt lat="{lat}" lon="{lon}"></trkpt>""";
             }));
 

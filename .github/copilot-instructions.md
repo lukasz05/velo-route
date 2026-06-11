@@ -66,6 +66,10 @@ The two projects are independently runnable. In production, the Next.js frontend
 - **Backend** (`src/backend/`): .NET 10 minimal API style (`Program.cs`, no controllers folder). OpenAPI/Swagger is registered via `builder.Services.AddOpenApi()` and mapped at `/openapi/v1.json` in development.
 - **Data flow**: frontend → HTTP → backend → external routing API (OpenRouteService or similar, not yet integrated). Location inputs are not persisted server-side.
 
+## Workflow conventions
+
+- **Branch per change**: before running `/10x-implement` for any change, create a branch named after the change-id (`git checkout -b <change-id>`). Do this automatically without being asked.
+
 ## What v1 does and does not include
 
 **In scope**: start-point search, km range input, single loop-route proposal, interactive map display, GPX export, mobile-responsive UI.
