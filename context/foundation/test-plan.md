@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-05 (Phase 1 → change opened)
+> Last updated: 2026-06-15 (Phase 1 → shipped; §4 stack versions pinned; §6.1 cookbook filled)
 
 ---
 
@@ -72,7 +72,7 @@ orchestrator updates Status as artifacts appear on disk.
 
 | # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
 |---|-----------|-----------------|---------------|------------|--------|---------------|
-| 1 | Backend test bootstrap + critical coverage | Bootstrap xUnit; defend Risk #1 + #3 at unit level — the cheapest layer that catches the bugs already known to have shipped | #1, #3 | unit (xUnit) | change opened | context/changes/testing-backend-bootstrap |
+| 1 | Backend test bootstrap + critical coverage | Bootstrap xUnit; defend Risk #1 + #3 at unit level — the cheapest layer that catches the bugs already known to have shipped | #1, #3 | unit (xUnit) | shipped | context/changes/testing-backend-bootstrap |
 | 2 | Route generation integration | Integration tests prove distance / overlap constraints hold and the deadline fires correctly under slow ORS conditions | #2, #5 | integration (ORS HTTP mock) | not started | — |
 | 3 | Security + privacy guards | Integration tests assert that error responses contain no API key and that logs contain no input coordinates | #4, #6 | integration | not started | — |
 | 4 | Quality-gates wiring | CI runs `dotnet test` on every PR; lint + typecheck already present; lock the floor | cross-cutting | CI gate (GitHub Actions) | not started | — |
@@ -86,8 +86,8 @@ either project yet — Phase 1 bootstraps the backend runner.
 
 | Layer | Tool | Version | Notes |
 |-------|------|---------|-------|
-| unit + integration (.NET) | xUnit | TBD — see §3 Phase 1 | Standard .NET community test runner; `dotnet new xunit` template; install alongside `Microsoft.AspNetCore.Mvc.Testing` for integration |
-| HTTP mocking (.NET) | none yet — see §3 Phase 1 | — | Phase 1 plan should evaluate WireMock.Net or a custom `IOpenRouteServiceClient` fake at the interface boundary |
+| unit + integration (.NET) | xUnit | 2.9.3 | Bootstrapped in Phase 1; `dotnet test` from `src/backend/`; alongside `Microsoft.AspNetCore.Mvc.Testing` for future integration phases |
+| HTTP mocking (.NET) | none yet — see §3 Phase 2 | — | Phase 2 plan should evaluate WireMock.Net or a custom `IOpenRouteServiceClient` fake at the interface boundary |
 | frontend unit + integration | none yet | — | All primary risks are backend; frontend test runner bootstrapped in a future phase or `--refresh` |
 | e2e | none yet | — | Not required until frontend risks rise to top-3 |
 
@@ -120,7 +120,31 @@ the relevant rollout phase ships; before that, it reads "TBD — see §3 Phase N
 
 ### 6.1 Adding a .NET unit test
 
-TBD — see §3 Phase 1 (ORS mapping / GPX serialiser pattern).
+Test project: `src/backend/VeloRoute.Tests/`. Mirror the production namespace under `Routing/`.
+
+**ORS enum mapping (Risk #1 pattern)** — `Routing/OrsMapperTests.cs`
+
+Use `[Theory] + [InlineData]` to enumerate every known ORS numeric code against its expected domain enum value. One data row per code. The oracle must come from ORS API docs, not from reading the production mapping — copying the production value defeats the test (oracle problem).
+
+```csharp
+[Theory]
+[InlineData(3, SurfaceType.Asphalt)]   // ORS doc: code 3 = Asphalt
+public void MapSurfaceCode_KnownCodes_ReturnCorrectSurfaceType(int code, SurfaceType expected)
+    => Assert.Equal(expected, OrsMapper.MapSurfaceCode(code));
+```
+
+**Locale-sensitive serialisation (Risk #3 pattern)** — `Routing/GpxSerializerTests.cs`
+
+Temporarily override `Thread.CurrentThread.CurrentCulture` to a comma-decimal locale (e.g. `pl-PL`), call the serialiser, parse the XML output, and assert coordinate attributes use `'.'` as the decimal separator. Always restore culture in `finally`.
+
+```csharp
+Thread.CurrentThread.CurrentCulture = new CultureInfo("pl-PL");
+try {
+    var xml = GpxSerializer.Serialize(coords);
+    var lat = XDocument.Parse(xml).Descendants(GpxNs + "trkpt").First().Attribute("lat")?.Value;
+    Assert.Equal("48.20849", lat);
+} finally { Thread.CurrentThread.CurrentCulture = originalCulture; }
+```
 
 ### 6.2 Adding a .NET integration test with a mocked ORS client
 
@@ -149,7 +173,7 @@ Exclusions agreed during the rollout (Phase 2 interview, Q5).
 ## 8. Freshness Ledger
 
 - Strategy (§1–§5) last reviewed: 2026-06-05
-- Stack versions last verified: 2026-06-05
+- Stack versions last verified: 2026-06-15 (xUnit 2.9.3, runner 3.1.4)
 - AI-native tool references last verified: 2026-06-05 (no AI-native layer included; no `checked:` dates to expire)
 
 Refresh (`/10x-test-plan --refresh`) when:
