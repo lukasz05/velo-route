@@ -320,20 +320,20 @@ Per test-plan §7 and §2 anti-patterns:
 
 #### Automated
 
-- [x] 2.1 `dotnet build src/backend/` passes with no errors
+- [x] 2.1 `dotnet build src/backend/` passes with no errors — db19d8c
 
 ### Phase 3: Integration Tests
 
 #### Automated
 
-- [ ] 3.1 `dotnet test src/backend/` passes; ≥ 5 new tests in `LoopRouteIntegrationTests`, all passing
-- [ ] 3.2 All 5 new tests complete in < 3 s total
-- [ ] 3.3 All existing 43 tests still pass
+- [x] 3.1 `dotnet test src/backend/` passes; ≥ 5 new tests in `LoopRouteIntegrationTests`, all passing
+- [x] 3.2 All 5 new tests complete in < 3 s total
+- [x] 3.3 All existing 43 tests still pass
 
 #### Manual
 
-- [ ] 3.4 Each test listed as `Passed` in `dotnet test --logger "console;verbosity=normal"` output
-- [ ] 3.5 Timeout test duration in output is < 400 ms
+- [x] 3.4 Each test listed as `Passed` in `dotnet test --logger "console;verbosity=normal"` output
+- [x] 3.5 Timeout test duration in output is < 400 ms
 
 ### Phase 4: Docs
 
