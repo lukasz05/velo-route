@@ -60,7 +60,7 @@ app.UseCors();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
    .WithName("HealthCheck");
 
-app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen, CancellationToken requestCt) =>
+app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen, IOptions<OpenRouteServiceOptions> orsOpts, CancellationToken requestCt) =>
 {
     if (req.MinKm < 5 || req.MaxKm > 300 || req.MinKm >= req.MaxKm)
         return Results.BadRequest(new { error = "Invalid distance range", code = "INVALID_INPUT" });
@@ -68,7 +68,7 @@ app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen,
     if (req.StartLat < -90 || req.StartLat > 90 || req.StartLon < -180 || req.StartLon > 180)
         return Results.BadRequest(new { error = "Invalid coordinates", code = "INVALID_INPUT" });
 
-    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(4.5));
+    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(orsOpts.Value.TimeoutSeconds));
     using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(requestCt, timeoutCts.Token);
 
     try
@@ -119,3 +119,5 @@ record LoopRouteRequest(
     int?   Seed);
 
 record GpxRequest(IReadOnlyList<RouteCoordinate> Coordinates);
+
+public partial class Program { }
