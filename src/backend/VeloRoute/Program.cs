@@ -38,7 +38,7 @@ builder.Services.AddHttpClient<IOpenRouteServiceClient, OpenRouteServiceClient>(
             args.Outcome.Result?.StatusCode is HttpStatusCode.RequestTimeout
                 or >= HttpStatusCode.InternalServerError);
         options.CircuitBreaker.FailureRatio = 0.5;
-        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(10);
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
         options.CircuitBreaker.MinimumThroughput = 3;
         options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
     });
