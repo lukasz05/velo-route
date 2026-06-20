@@ -1,5 +1,7 @@
 using System.Net;
 using System.Text;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Testing;
 using VeloRoute.Routing;
 
 namespace VeloRoute.Tests.Routing;
@@ -32,7 +34,10 @@ public sealed class SecurityPrivacyIntegrationTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
-        var logText = string.Join("\n", factory.LogSink!.Messages);
+        var collector = factory.Services.GetRequiredService<FakeLogCollector>();
+        var snapshot = collector.GetSnapshot();
+        Assert.NotEmpty(snapshot);
+        var logText = string.Join("\n", snapshot.Select(e => e.Message));
         Assert.DoesNotContain("16.37", logText);
         Assert.DoesNotContain("48.20", logText);
     }
@@ -51,6 +56,7 @@ public sealed class SecurityPrivacyIntegrationTests
             "/routes/loop",
             new StringContent(RequestBody, Encoding.UTF8, "application/json"));
 
+        Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
         Assert.DoesNotContain(TestApiKeySentinel, body);
     }

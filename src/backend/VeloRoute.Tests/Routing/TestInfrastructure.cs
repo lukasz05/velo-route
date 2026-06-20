@@ -4,25 +4,10 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 using VeloRoute.Routing;
 
 namespace VeloRoute.Tests.Routing;
-
-internal sealed class TestLogSink : ILoggerProvider, ILogger
-{
-    private readonly List<string> _messages = [];
-
-    public IReadOnlyList<string> Messages => _messages;
-
-    public ILogger CreateLogger(string categoryName) => this;
-    public void Dispose() { }
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-    public bool IsEnabled(LogLevel logLevel) => true;
-
-    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state,
-        Exception? exception, Func<TState, Exception?, string> formatter)
-        => _messages.Add(formatter(state, exception));
-}
 
 internal sealed class FakeOpenRouteServiceClient : IOpenRouteServiceClient
 {
@@ -66,7 +51,6 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
     }
 
     public FakeOpenRouteServiceClient FakeClient { get; } = new();
-    public TestLogSink? LogSink { get; private set; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -90,9 +74,6 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
             builder.ConfigureAppConfiguration(config => config.AddInMemoryCollection(inMemory));
 
         if (_useFakeLogging)
-        {
-            LogSink = new TestLogSink();
-            builder.ConfigureLogging(l => l.AddProvider(LogSink));
-        }
+            builder.ConfigureLogging(l => l.AddFakeLogging());
     }
 }
