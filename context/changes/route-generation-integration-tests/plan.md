@@ -339,5 +339,5 @@ Per test-plan §7 and §2 anti-patterns:
 
 #### Manual
 
-- [x] 4.1 §6.2 in `test-plan.md` contains working example (not `TBD`)
-- [x] 4.2 Phase 2 row in §3 table shows `shipped`
+- [x] 4.1 §6.2 in `test-plan.md` contains working example (not `TBD`) — 6fe4bfb
+- [x] 4.2 Phase 2 row in §3 table shows `shipped` — 6fe4bfb
