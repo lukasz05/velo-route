@@ -38,7 +38,7 @@ builder.Services.AddHttpClient<IOpenRouteServiceClient, OpenRouteServiceClient>(
             args.Outcome.Result?.StatusCode is HttpStatusCode.RequestTimeout
                 or >= HttpStatusCode.InternalServerError);
         options.CircuitBreaker.FailureRatio = 0.5;
-        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(10);
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
         options.CircuitBreaker.MinimumThroughput = 3;
         options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
     });
@@ -84,7 +84,7 @@ app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen,
                 "NO_VALID_RESULT" => (422, "NO_VALID_RESULT"),
                 _                => (502, "PROVIDER_ERROR")
             };
-            return Results.Json(new { error = result.Error.Message, code }, statusCode: status);
+            return Results.Json(new { error = "Route generation failed", code }, statusCode: status);
         }
 
         return Results.Ok(result.Value);
