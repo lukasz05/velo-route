@@ -309,18 +309,18 @@ Per test-plan §7 and §2 anti-patterns:
 
 #### Automated
 
-- [x] 1.1 `dotnet build src/backend/` passes with no errors or warnings
-- [x] 1.2 Existing 43 tests still pass: `dotnet test src/backend/`
+- [x] 1.1 `dotnet build src/backend/` passes with no errors or warnings — b97d4c2
+- [x] 1.2 Existing 43 tests still pass: `dotnet test src/backend/` — b97d4c2
 
 #### Manual
 
-- [x] 1.3 `appsettings.json` has `"TimeoutSeconds": 4.5` inside `"ORS"` block
+- [x] 1.3 `appsettings.json` has `"TimeoutSeconds": 4.5` inside `"ORS"` block — b97d4c2
 
 ### Phase 2: Test Infrastructure
 
 #### Automated
 
-- [ ] 2.1 `dotnet build src/backend/` passes with no errors
+- [x] 2.1 `dotnet build src/backend/` passes with no errors
 
 ### Phase 3: Integration Tests
 
