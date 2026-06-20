@@ -298,10 +298,10 @@ that the test has real teeth.
 
 #### Automated
 
-- [x] 2.1 All tests pass including new ones: `dotnet test src/backend/VeloRoute.sln`
-- [x] 2.2 Build clean, no warnings: `dotnet build src/backend/VeloRoute.sln`
+- [x] 2.1 All tests pass including new ones: `dotnet test src/backend/VeloRoute.sln` — 8b1e4b0
+- [x] 2.2 Build clean, no warnings: `dotnet build src/backend/VeloRoute.sln` — 8b1e4b0
 
 #### Manual
 
-- [x] 2.3 Both new test method names appear as `passed` in `--verbosity normal` output
-- [x] 2.4 Temporary coordinate log line causes Risk #4 test to fail; reverting restores green
+- [x] 2.3 Both new test method names appear as `passed` in `--verbosity normal` output — 8b1e4b0
+- [x] 2.4 Temporary coordinate log line causes Risk #4 test to fail; reverting restores green — 8b1e4b0
