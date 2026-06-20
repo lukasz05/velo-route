@@ -287,21 +287,21 @@ that the test has real teeth.
 
 #### Automated
 
-- [x] 1.1 Build succeeds: `dotnet build src/backend/VeloRoute.sln`
-- [x] 1.2 All existing tests still pass: `dotnet test src/backend/VeloRoute.sln`
+- [x] 1.1 Build succeeds: `dotnet build src/backend/VeloRoute.sln` — 8cfe51c
+- [x] 1.2 All existing tests still pass: `dotnet test src/backend/VeloRoute.sln` — 8cfe51c
 
 #### Manual
 
-- [x] 1.3 No duplicate type definition warnings in build output
+- [x] 1.3 No duplicate type definition warnings in build output — 8cfe51c
 
 ### Phase 2: Security and Privacy Integration Tests
 
 #### Automated
 
-- [ ] 2.1 All tests pass including new ones: `dotnet test src/backend/VeloRoute.sln`
-- [ ] 2.2 Build clean, no warnings: `dotnet build src/backend/VeloRoute.sln`
+- [x] 2.1 All tests pass including new ones: `dotnet test src/backend/VeloRoute.sln`
+- [x] 2.2 Build clean, no warnings: `dotnet build src/backend/VeloRoute.sln`
 
 #### Manual
 
-- [ ] 2.3 Both new test method names appear as `passed` in `--verbosity normal` output
-- [ ] 2.4 Temporary coordinate log line causes Risk #4 test to fail; reverting restores green
+- [x] 2.3 Both new test method names appear as `passed` in `--verbosity normal` output
+- [x] 2.4 Temporary coordinate log line causes Risk #4 test to fail; reverting restores green

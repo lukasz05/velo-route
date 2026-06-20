@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-20 (Phase 2 → shipped; §6.2 cookbook filled)
+> Last updated: 2026-06-20 (Phase 3 → shipped; §6.3 cookbook filled)
 
 ---
 
@@ -74,7 +74,7 @@ orchestrator updates Status as artifacts appear on disk.
 |---|-----------|-----------------|---------------|------------|--------|---------------|
 | 1 | Backend test bootstrap + critical coverage | Bootstrap xUnit; defend Risk #1 + #3 at unit level — the cheapest layer that catches the bugs already known to have shipped | #1, #3 | unit (xUnit) | shipped | context/changes/testing-backend-bootstrap |
 | 2 | Route generation integration | Integration tests prove distance / overlap constraints hold and the deadline fires correctly under slow ORS conditions | #2, #5 | integration (ORS HTTP mock) | shipped | context/changes/route-generation-integration-tests |
-| 3 | Security + privacy guards | Integration tests assert that error responses contain no API key and that logs contain no input coordinates | #4, #6 | integration | not started | — |
+| 3 | Security + privacy guards | Integration tests assert that error responses contain no API key and that logs contain no input coordinates | #4, #6 | integration | shipped | context/changes/security-privacy-guards |
 | 4 | Quality-gates wiring | CI runs `dotnet test` on every PR; lint + typecheck already present; lock the floor | cross-cutting | CI gate (GitHub Actions) | not started | — |
 
 ---
@@ -215,7 +215,47 @@ Set `timeoutSeconds: "0.1"` (100 ms) and `FakeClient.Delay` to something longer 
 
 ### 6.3 Adding a security / privacy integration test
 
-TBD — see §3 Phase 3 (error-body inspection / log-capture pattern).
+Use `VeloRouteWebApplicationFactory` from `TestInfrastructure.cs`. Two patterns:
+
+**Log-capture (Risk #4 — coordinate leakage)**
+
+```csharp
+await using var factory = new VeloRouteWebApplicationFactory(useFakeLogging: true);
+// ... enqueue a RoutingResult.Success and POST /routes/loop ...
+var collector = factory.Services.GetRequiredService<FakeLogCollector>();
+var logText = string.Join("\n", collector.GetSnapshot().Select(e => e.Message));
+Assert.DoesNotContain("16.37", logText);   // assert value absent, not log level
+Assert.DoesNotContain("48.20", logText);
+```
+
+`useFakeLogging: true` registers `FakeLogCollector` via `AddFakeLogging()`. Retrieve after the
+request completes; `.GetSnapshot()` returns all captured entries. Join `.Message` strings and
+assert coordinate values are absent.
+
+Anti-pattern to avoid: asserting that a log level is configured to suppress a category. That
+tests configuration, not behaviour — if a future refactor emits coords at a different level or
+via a different logger, the guard silently passes. Assert the coordinate values don't appear in
+output instead.
+
+**Key-leakage (Risk #6 — API key in error body)**
+
+```csharp
+private const string TestApiKeySentinel = "TEST-SENTINEL-KEY-F04-99999";
+
+await using var factory = new VeloRouteWebApplicationFactory(apiKey: TestApiKeySentinel);
+factory.FakeClient.Results.Enqueue(
+    RoutingResult<RouteResult>.Failure(
+        new RoutingError("PROVIDER_ERROR",
+            $"ORS rejected request. Key: {TestApiKeySentinel}")));
+// ... POST /routes/loop ...
+var body = await response.Content.ReadAsStringAsync();
+Assert.DoesNotContain(TestApiKeySentinel, body);
+```
+
+`apiKey: sentinel` injects the sentinel via `ORS:ApiKey` config. Enqueue a `RoutingResult.Failure`
+whose error message contains the sentinel — simulates an ORS error body that echoes the key
+back. The assertion verifies that `Program.cs` error mapping strips the ORS message before it
+reaches the HTTP response.
 
 ### 6.4 Per-rollout-phase notes
 
