@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-15 (Phase 1 → shipped; §4 stack versions pinned; §6.1 cookbook filled)
+> Last updated: 2026-06-20 (Phase 2 → shipped; §6.2 cookbook filled)
 
 ---
 
@@ -73,7 +73,7 @@ orchestrator updates Status as artifacts appear on disk.
 | # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
 |---|-----------|-----------------|---------------|------------|--------|---------------|
 | 1 | Backend test bootstrap + critical coverage | Bootstrap xUnit; defend Risk #1 + #3 at unit level — the cheapest layer that catches the bugs already known to have shipped | #1, #3 | unit (xUnit) | shipped | context/changes/testing-backend-bootstrap |
-| 2 | Route generation integration | Integration tests prove distance / overlap constraints hold and the deadline fires correctly under slow ORS conditions | #2, #5 | integration (ORS HTTP mock) | not started | — |
+| 2 | Route generation integration | Integration tests prove distance / overlap constraints hold and the deadline fires correctly under slow ORS conditions | #2, #5 | integration (ORS HTTP mock) | shipped | context/changes/route-generation-integration-tests |
 | 3 | Security + privacy guards | Integration tests assert that error responses contain no API key and that logs contain no input coordinates | #4, #6 | integration | not started | — |
 | 4 | Quality-gates wiring | CI runs `dotnet test` on every PR; lint + typecheck already present; lock the floor | cross-cutting | CI gate (GitHub Actions) | not started | — |
 
@@ -148,7 +148,70 @@ try {
 
 ### 6.2 Adding a .NET integration test with a mocked ORS client
 
-TBD — see §3 Phase 2 (LoopRouteGenerator constraint / deadline pattern).
+Test file: `src/backend/VeloRoute.Tests/Routing/LoopRouteIntegrationTests.cs`
+
+The integration test harness has two `file`-scoped helpers defined at the top of the test file:
+
+- **`FakeOpenRouteServiceClient`** — implements `IOpenRouteServiceClient`; holds a `Queue<RoutingResult<RouteResult>>` (`Results`) and an optional `Delay`; `GetDirectionsAsync` dequeues one result per call and awaits the delay (respecting the `CancellationToken`) before returning.
+- **`VeloRouteWebApplicationFactory`** — extends `WebApplicationFactory<Program>`; removes the HttpClient-backed `IOpenRouteServiceClient` registration and replaces it with a `FakeOpenRouteServiceClient` singleton; optionally injects `ORS:TimeoutSeconds` via `AddInMemoryCollection` when a short deadline is needed.
+
+**Constraint test (Risk #2 pattern)**
+
+```csharp
+[Fact]
+public async Task PostRoutesLoop_WhenAllCallsReturnValidRoute_Returns200()
+{
+    await using var factory = new VeloRouteWebApplicationFactory();
+    var coords = new RouteCoordinate[]
+    {
+        new(16.37, 48.20), new(16.38, 48.21),
+        new(16.39, 48.20), new(16.37, 48.20),
+    };
+    for (int i = 0; i < 3; i++)
+        factory.FakeClient.Results.Enqueue(
+            RoutingResult<RouteResult>.Success(
+                new RouteResult(new RouteGeometry(coords), 20_000, [])));
+
+    var client = factory.CreateClient();
+    var response = await client.PostAsync(
+        "/routes/loop",
+        new StringContent(
+            """{"startLon":16.37,"startLat":48.20,"minKm":15,"maxKm":25,"seed":null}""",
+            System.Text.Encoding.UTF8, "application/json"));
+
+    Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    Assert.Contains("distanceMeters", await response.Content.ReadAsStringAsync());
+}
+```
+
+Queue 3 results (one per generator retry slot). Distance must be in [minKm, maxKm] metres. Geometry must not be an out-and-back shape (see overlap note below).
+
+**Overlap geometry note** — `OverlapDetector` skips segment pairs within 5 index positions (`j <= i + 5`). A synthetic out-and-back route needs ≥ 13 coordinates (7 outbound + 6 return) so that return segments are ≥ 6 positions apart from their antiparallel outbound counterparts and the detector registers the overlap. A 4-coordinate simple polygon has no antiparallel segments and always scores 0% overlap.
+
+**Deadline test (Risk #5 pattern)**
+
+```csharp
+[Fact]
+public async Task PostRoutesLoop_WhenOrsSlowAndDeadlineFires_Returns504WithinBudget()
+{
+    await using var factory = new VeloRouteWebApplicationFactory(timeoutSeconds: "0.1");
+    factory.FakeClient.Delay = TimeSpan.FromMilliseconds(500);
+    for (int i = 0; i < 3; i++)
+        factory.FakeClient.Results.Enqueue(
+            RoutingResult<RouteResult>.Failure(new RoutingError("UNREACHABLE", "should not dequeue")));
+
+    var client = factory.CreateClient();
+    var sw = Stopwatch.StartNew();
+    var response = await client.PostAsync("/routes/loop", /* same body */);
+    sw.Stop();
+
+    Assert.Equal(HttpStatusCode.GatewayTimeout, response.StatusCode);
+    Assert.Contains("TIMEOUT", await response.Content.ReadAsStringAsync());
+    Assert.True(sw.ElapsedMilliseconds < 400);
+}
+```
+
+Set `timeoutSeconds: "0.1"` (100 ms) and `FakeClient.Delay` to something longer (500 ms). The `CancellationToken` propagated through `GetDirectionsAsync` fires first, cutting the delay short. Assert wall time < 400 ms to leave a 300 ms margin.
 
 ### 6.3 Adding a security / privacy integration test
 

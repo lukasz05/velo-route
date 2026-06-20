@@ -326,18 +326,18 @@ Per test-plan §7 and §2 anti-patterns:
 
 #### Automated
 
-- [x] 3.1 `dotnet test src/backend/` passes; ≥ 5 new tests in `LoopRouteIntegrationTests`, all passing
-- [x] 3.2 All 5 new tests complete in < 3 s total
-- [x] 3.3 All existing 43 tests still pass
+- [x] 3.1 `dotnet test src/backend/` passes; ≥ 5 new tests in `LoopRouteIntegrationTests`, all passing — ff298c0
+- [x] 3.2 All 5 new tests complete in < 3 s total — ff298c0
+- [x] 3.3 All existing 43 tests still pass — ff298c0
 
 #### Manual
 
-- [x] 3.4 Each test listed as `Passed` in `dotnet test --logger "console;verbosity=normal"` output
-- [x] 3.5 Timeout test duration in output is < 400 ms
+- [x] 3.4 Each test listed as `Passed` in `dotnet test --logger "console;verbosity=normal"` output — ff298c0
+- [x] 3.5 Timeout test duration in output is < 400 ms — ff298c0
 
 ### Phase 4: Docs
 
 #### Manual
 
-- [ ] 4.1 §6.2 in `test-plan.md` contains working example (not `TBD`)
-- [ ] 4.2 Phase 2 row in §3 table shows `shipped`
+- [x] 4.1 §6.2 in `test-plan.md` contains working example (not `TBD`)
+- [x] 4.2 Phase 2 row in §3 table shows `shipped`
