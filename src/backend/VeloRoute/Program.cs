@@ -41,7 +41,6 @@ builder.Services.AddHttpClient<IOpenRouteServiceClient, OpenRouteServiceClient>(
         options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(10);
         options.CircuitBreaker.MinimumThroughput = 3;
         options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
-        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
     });
 
 builder.Services.AddScoped<LoopRouteGenerator>();

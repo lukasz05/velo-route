@@ -1,9 +1,10 @@
 ---
 id: route-generation-integration-tests
 title: Route generation integration tests
-status: implemented
+status: impl_reviewed
 created: 2026-06-20
 updated: 2026-06-20
+reviewed: 2026-06-20
 roadmap_ref: F-03
 ---
 
