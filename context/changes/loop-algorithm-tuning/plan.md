@@ -432,25 +432,25 @@ API response; no existing client code reads a field by that name.
 
 #### Automated
 
-- [x] 1.1 `dotnet build` — no errors or warnings
-- [x] 1.2 `dotnet test` — all existing tests pass
-- [x] 1.3 `npm run build` — no TypeScript errors
+- [x] 1.1 `dotnet build` — no errors or warnings — 09a5800
+- [x] 1.2 `dotnet test` — all existing tests pass — 09a5800
+- [x] 1.3 `npm run build` — no TypeScript errors — 09a5800
 
 #### Manual
 
-- [x] 1.4 POST /routes/loop response includes `"pavedRatio"` field
-- [x] 1.5 RouteInfoPanel shows "X% paved" beneath distance
-- [x] 1.6 Empty segments → UI shows "Unknown"
+- [x] 1.4 POST /routes/loop response includes `"pavedRatio"` field — 09a5800
+- [x] 1.5 RouteInfoPanel shows "X% paved" beneath distance — 09a5800
+- [x] 1.6 Empty segments → UI shows "Unknown" — 09a5800
 
 ### Phase 2: Paved Ratio in Route Selection
 
 #### Automated
 
-- [ ] 2.1 `dotnet test` — all tests pass
+- [x] 2.1 `dotnet test` — all tests pass
 
 #### Manual
 
-- [ ] 2.2 More-paved candidate selected when two valid routes available
+- [x] 2.2 More-paved candidate selected when two valid routes available
 
 ### Phase 3: Geometry Tuning
 
