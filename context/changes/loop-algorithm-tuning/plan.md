@@ -534,12 +534,12 @@ API response; no existing client code reads a field by that name.
 
 #### Automated
 
-- [x] 4.1 `dotnet build` — no errors or warnings (SmoothnessCalculator + RouteResult)
-- [x] 4.2 `npm run build` — no TypeScript errors (smoothnessScore type)
-- [x] 4.3 `dotnet test --filter "FullyQualifiedName~RouteQualityTests"` — 6 tests pass
-- [x] 4.4 `dotnet test` — `OrsLiveSmokeTests` skipped, all others pass
+- [x] 4.1 `dotnet build` — no errors or warnings (SmoothnessCalculator + RouteResult) — 23910f0
+- [x] 4.2 `npm run build` — no TypeScript errors (smoothnessScore type) — 23910f0
+- [x] 4.3 `dotnet test --filter "FullyQualifiedName~RouteQualityTests"` — 6 tests pass — 23910f0
+- [x] 4.4 `dotnet test` — `OrsLiveSmokeTests` skipped, all others pass — 23910f0
 
 #### Manual
 
-- [x] 4.5 Live ORS smoke tests pass for all 3 Polish cities
-- [x] 4.6 `calibration.md` updated with final thresholds and city results
+- [x] 4.5 Live ORS smoke tests pass for all 3 Polish cities — 23910f0
+- [x] 4.6 `calibration.md` updated with final thresholds and city results — 23910f0
