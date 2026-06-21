@@ -4,6 +4,10 @@ namespace VeloRoute.Routing;
 
 internal sealed class LoopRouteGenerator
 {
+    private const double RadiusFactor = 0.45;
+    private const int BearingCount = 3;
+    private const double PrimaryOverlapThreshold = 0.10;
+
     private static readonly OrsDirectionOptions DefaultOptions = new(
         AvoidFeatures: ["steps", "ferries"],
         SteepnessDifficulty: 1);
@@ -24,37 +28,36 @@ internal sealed class LoopRouteGenerator
         CancellationToken cancellationToken)
     {
         double targetMidMeters = (minKm + maxKm) / 2.0 * 1000.0;
-        double radius = targetMidMeters / 2.0 * 0.45;
+        double radius = targetMidMeters / 2.0 * RadiusFactor;
         double baseBearing = seed.HasValue ? seed.Value % 360 : 0;
 
-        // Three bearing sets offset by 60°/180°/300° from base for triangular coverage
-        double[] bearings = [
-            (baseBearing + 60) % 360,
-            (baseBearing + 180) % 360,
-            (baseBearing + 300) % 360
-        ];
+        var results = await FetchCandidatesAsync(start, radius, baseBearing, cancellationToken);
+        return SelectBestRoute(results, minKm * 1000, maxKm * 1000, targetMidMeters);
+    }
 
-        var tasks = bearings.Select(bearing =>
-        {
-            var wp1 = WaypointCalculator.DestinationPoint(start, bearing, radius);
-            var wp2 = WaypointCalculator.DestinationPoint(start, (bearing + 120) % 360, radius);
-            IReadOnlyList<RouteCoordinate> waypoints = [start, wp1, wp2, start];
-            return _client.GetDirectionsAsync(waypoints, DefaultOptions, cancellationToken);
-        }).ToList();
+    private Task<RoutingResult<RouteResult>[]> FetchCandidatesAsync(
+        RouteCoordinate start, double radius, double baseBearing, CancellationToken cancellationToken)
+    {
+        double angularSpacing = 360.0 / BearingCount;
+        double phaseOffset = angularSpacing / 2;
 
-        RoutingResult<RouteResult>[] results;
-        try
-        {
-            results = await Task.WhenAll(tasks);
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
+        var tasks = Enumerable.Range(0, BearingCount)
+            .Select(i =>
+            {
+                double bearing = (baseBearing + phaseOffset + angularSpacing * i) % 360;
+                var wp1 = WaypointCalculator.DestinationPoint(start, bearing, radius);
+                var wp2 = WaypointCalculator.DestinationPoint(start, (bearing + angularSpacing) % 360, radius);
+                IReadOnlyList<RouteCoordinate> waypoints = [start, wp1, wp2, start];
+                return _client.GetDirectionsAsync(waypoints, DefaultOptions, cancellationToken);
+            })
+            .ToList();
 
-        double minMeters = minKm * 1000;
-        double maxMeters = maxKm * 1000;
+        return Task.WhenAll(tasks);
+    }
 
+    private RoutingResult<RouteResult> SelectBestRoute(
+        RoutingResult<RouteResult>[] results, double minMeters, double maxMeters, double targetMidMeters)
+    {
         var candidates = results
             .Where(r => r.IsSuccess)
             .Select(r => r.Value!)
@@ -67,9 +70,8 @@ internal sealed class LoopRouteGenerator
             })
             .ToList();
 
-        // Primary selection: within distance range AND overlap ≤ 10%, prefer most-paved
         var primary = candidates
-            .Where(c => c.distance >= minMeters && c.distance <= maxMeters && c.overlapRatio <= 0.10)
+            .Where(c => c.distance >= minMeters && c.distance <= maxMeters && c.overlapRatio <= PrimaryOverlapThreshold)
             .OrderByDescending(c => c.pavedRatio)
             .ThenBy(c => Math.Abs(c.distance - targetMidMeters))
             .FirstOrDefault();
@@ -77,7 +79,6 @@ internal sealed class LoopRouteGenerator
         if (primary is not null)
             return RoutingResult<RouteResult>.Success(primary.route);
 
-        // Fallback: relax overlap threshold to 40%, still enforce distance range
         var fallback = candidates
             .Where(c => c.distance >= minMeters && c.distance <= maxMeters)
             .OrderBy(c => c.overlapRatio)
@@ -86,13 +87,12 @@ internal sealed class LoopRouteGenerator
 
         if (fallback is not null)
         {
-            if (fallback.overlapRatio > 0.10)
+            if (fallback.overlapRatio > PrimaryOverlapThreshold)
                 _logger.LogWarning("Returning route with overlap ratio {Ratio:P0} (above 10% primary threshold)", fallback.overlapRatio);
 
             return RoutingResult<RouteResult>.Success(fallback.route);
         }
 
-        // All calls failed or no candidate within distance range — return the first error
         var firstError = results.FirstOrDefault(r => !r.IsSuccess);
         return firstError ?? RoutingResult<RouteResult>.Failure(
             new RoutingError("NO_VALID_RESULT", "No valid loop route could be generated"));

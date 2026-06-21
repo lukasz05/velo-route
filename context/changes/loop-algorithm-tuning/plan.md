@@ -286,17 +286,75 @@ aspect ratio ≤ 3.0. Update the constants and document the winning configuratio
 
 ---
 
-## Phase 4: Quality Acceptance Tests
+## Phase 4: Quality Acceptance Tests + Smoothness Metric
 
 ### Overview
 
-Add a `RouteQualityTests` class asserting all four thresholds against controlled
-fake-ORS scenarios. Add live ORS smoke tests (skipped in CI) for the three Polish
-test cities.
+Implement smoothness scoring (bearing-change rate from coordinate sequence), wire
+it into route selection, and lock all quality thresholds — including smoothness —
+in automated regression tests. Add live ORS smoke tests (skipped in CI) for the
+three Polish test cities.
 
 ### Changes Required
 
-#### 1. RouteQualityTests
+#### 1. SmoothnessCalculator
+
+**File**: `src/backend/VeloRoute/Routing/SmoothnessCalculator.cs`
+
+**Intent**: Measure route smoothness as the fraction of coordinate triplets that
+do NOT exhibit a sharp direction change. Mirrors the `PavedRatioCalculator` pattern.
+
+**Contract**: `internal static double Compute(RouteResult route)` → value in [0.0, 1.0].
+Returns 1.0 if fewer than 3 coordinates (nothing to measure).
+
+Algorithm:
+- For each consecutive triplet `(A, B, C)` in `route.Geometry.Coordinates`:
+  - Compute `bearing_AB = atan2(B.Lon − A.Lon, B.Lat − A.Lat)` (degree-space, same approximation as `OverlapDetector`)
+  - Compute `bearing_BC = atan2(C.Lon − B.Lon, C.Lat − B.Lat)`
+  - `delta = |NormalizeAngle(bearing_BC − bearing_AB)|` where `NormalizeAngle` maps to [−180, 180]
+  - Count as `sharpTurn` if `delta > 90°`
+- Return `1.0 − sharpTurns / (coords.Count − 2)`
+
+Private helpers: `Bearing(RouteCoordinate a, RouteCoordinate b)` and `NormalizeAngle(double deg)`.
+
+#### 2. SmoothnessScore on RouteResult
+
+**File**: `src/backend/VeloRoute/Routing/RouteResult.cs`
+
+**Intent**: Expose smoothness as a serialised property, same pattern as `PavedRatio`.
+
+**Contract**: Add computed property:
+`public double SmoothnessScore => SmoothnessCalculator.Compute(this);`
+
+No constructor-signature change.
+
+#### 3. Update route selection
+
+**File**: `src/backend/VeloRoute/Routing/LoopRouteGenerator.cs`
+
+**Intent**: Among equally-paved candidates, prefer the smoother route.
+
+**Contract**: In `SelectBestRoute`, add `smoothnessScore = route.SmoothnessScore` to the
+anonymous candidate projection. Update the primary ordering:
+
+```csharp
+.OrderByDescending(c => c.pavedRatio)
+.ThenByDescending(c => c.smoothnessScore)
+.ThenBy(c => Math.Abs(c.distance - targetMidMeters))
+```
+
+The fallback path is unchanged (overlap-first ordering).
+
+#### 4. TypeScript type update
+
+**File**: `src/frontend/src/types/route.ts`
+
+**Intent**: Reflect the new API field in the frontend type contract.
+
+**Contract**: Add `smoothnessScore: number` to the `RouteResult` interface (after `pavedRatio`).
+UI display is deferred; this update is for type safety only.
+
+#### 5. RouteQualityTests
 
 **File**: `src/backend/VeloRoute.Tests/Routing/RouteQualityTests.cs`
 
@@ -334,6 +392,12 @@ Required test scenarios:
   three in-range candidates with paved ratios 0.10, 0.25, 0.40. Assert returned
   route has pavedRatio ≈ 0.40 (least unpaved wins).
 
+- **`SelectsSmoothestAmongEquallyPavedCandidates`**: Enqueue two in-range
+  candidates with identical paved segments (same pavedRatio) but different
+  coordinate sequences — one smooth (straight-line coords, 0 sharp turns), one
+  wiggly (back-and-forth zigzag coords, many sharp turns). Assert response route
+  has the higher `smoothnessScore`.
+
 Add a private `MakeRouteWithSegments(double distanceMeters,
 IReadOnlyList<RouteCoordinate> coords, IReadOnlyList<RouteWaySegment> segments)`
 helper to the test class, mirroring the existing `MakeRoute` helper in
@@ -370,9 +434,11 @@ Each test asserts: HTTP 200, `pavedRatio ≥ 0.90` (slightly relaxed for real OR
 
 #### Automated Verification
 
-- `dotnet test src/backend/VeloRoute.sln` — all `RouteQualityTests` pass;
+- `dotnet build src/backend/VeloRoute.slnx` — no errors or warnings
+- `dotnet test src/backend/VeloRoute.slnx` — all `RouteQualityTests` pass;
   `OrsLiveSmokeTests` skipped (not run in CI)
-- `dotnet test --filter "FullyQualifiedName~RouteQualityTests"` — 5 tests pass
+- `dotnet test --filter "FullyQualifiedName~RouteQualityTests"` — 6 tests pass
+- `npm run build --prefix src/frontend` — no TypeScript errors
 
 #### Manual Verification
 
@@ -446,32 +512,34 @@ API response; no existing client code reads a field by that name.
 
 #### Automated
 
-- [x] 2.1 `dotnet test` — all tests pass
+- [x] 2.1 `dotnet test` — all tests pass — 022d6ee
 
 #### Manual
 
-- [x] 2.2 More-paved candidate selected when two valid routes available
+- [x] 2.2 More-paved candidate selected when two valid routes available — 022d6ee
 
 ### Phase 3: Geometry Tuning
 
 #### Automated
 
-- [ ] 3.1 `dotnet build` — compiles cleanly with named constants
-- [ ] 3.2 `dotnet test` — all tests pass
+- [x] 3.1 `dotnet build` — compiles cleanly with named constants
+- [x] 3.2 `dotnet test` — all tests pass
 
 #### Manual
 
 - [ ] 3.3 Calibration table written to `calibration.md`
 - [ ] 3.4 Optimal `RadiusFactor` and `BearingCount` committed
 
-### Phase 4: Quality Acceptance Tests
+### Phase 4: Quality Acceptance Tests + Smoothness Metric
 
 #### Automated
 
-- [ ] 4.1 `dotnet test --filter "FullyQualifiedName~RouteQualityTests"` — 5 tests pass
-- [ ] 4.2 `dotnet test` — `OrsLiveSmokeTests` skipped, all others pass
+- [ ] 4.1 `dotnet build` — no errors or warnings (SmoothnessCalculator + RouteResult)
+- [ ] 4.2 `npm run build` — no TypeScript errors (smoothnessScore type)
+- [ ] 4.3 `dotnet test --filter "FullyQualifiedName~RouteQualityTests"` — 6 tests pass
+- [ ] 4.4 `dotnet test` — `OrsLiveSmokeTests` skipped, all others pass
 
 #### Manual
 
-- [ ] 4.3 Live ORS smoke tests pass for all 3 Polish cities
-- [ ] 4.4 `calibration.md` updated with final thresholds and city results
+- [ ] 4.5 Live ORS smoke tests pass for all 3 Polish cities
+- [ ] 4.6 `calibration.md` updated with final thresholds and city results
