@@ -6,6 +6,7 @@ public sealed record RouteResult(
     IReadOnlyList<RouteWaySegment> Segments)
 {
     public double PavedRatio => PavedRatioCalculator.Compute(this);
+    public double SmoothnessScore => SmoothnessCalculator.Compute(this);
 }
 
 public sealed record RouteGeometry(IReadOnlyList<RouteCoordinate> Coordinates);

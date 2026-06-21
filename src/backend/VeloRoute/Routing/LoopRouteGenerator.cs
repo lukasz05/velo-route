@@ -66,13 +66,15 @@ internal sealed class LoopRouteGenerator
                 route,
                 distance = route.DistanceMeters,
                 overlapRatio = OverlapDetector.ComputeOverlapRatio(route.Geometry.Coordinates),
-                pavedRatio = route.PavedRatio
+                pavedRatio = route.PavedRatio,
+                smoothnessScore = route.SmoothnessScore
             })
             .ToList();
 
         var primary = candidates
             .Where(c => c.distance >= minMeters && c.distance <= maxMeters && c.overlapRatio <= PrimaryOverlapThreshold)
             .OrderByDescending(c => c.pavedRatio)
+            .ThenByDescending(c => c.smoothnessScore)
             .ThenBy(c => Math.Abs(c.distance - targetMidMeters))
             .FirstOrDefault();
 

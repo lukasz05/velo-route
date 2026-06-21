@@ -19,6 +19,7 @@ export interface RouteResult {
   distanceMeters: number;
   segments: RouteWaySegment[];
   pavedRatio: number;
+  smoothnessScore: number;
 }
 
 export interface GeocodingFeature {
