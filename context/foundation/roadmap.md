@@ -3,7 +3,7 @@ project: "VeloRoute"
 version: 2
 status: draft
 created: 2026-05-27
-updated: 2026-06-15
+updated: 2026-06-30
 prd_version: 1
 main_goal: speed
 top_blocker: none
@@ -36,7 +36,7 @@ Road cyclists often lack a ready-made route when they want to ride. Planning one
 | F-05 | `backend-deploy` | (foundation) .NET backend deployed and publicly reachable on Azure; GitHub Actions CI/CD live; `dotnet test` gate on every PR | — | Success Criteria (5 s), NFR (cross-browser, mobile) | ready |
 | S-01 | `loop-route-generation` | enter start point + distance range, trigger generation, view loop route on interactive map with total length shown | F-01 | US-01, FR-001, FR-002, FR-003, FR-004, FR-005, NFR (privacy, 5 s) | done |
 | S-02 | `gpx-export` | download route as a GPX file importable to Strava, Garmin, and Komoot without modification | S-01 | US-01, FR-006 | done |
-| S-03 | `loop-algorithm-tuning` | generate routes that feel like real cycling loops — minimal self-overlap, recognisably loop-shaped, total distance close to the requested midpoint | S-01 | Business Logic (≤10% repetition, paved preference) | ready |
+| S-03 | `loop-algorithm-tuning` | generate routes that feel like real cycling loops — minimal self-overlap, recognisably loop-shaped, total distance close to the requested midpoint | S-01 | Business Logic (≤10% repetition, paved preference) | done |
 
 ## Streams
 
@@ -171,7 +171,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - What waypoint placement geometry (radius formula, bearing count, waypoint count) produces the best loop shapes across varied geographies (dense urban, rural, coastal)? — Owner: TBD. Block: no (current approach documented in `context/foundation/loop-route-algorithm.md`; research + empirical testing is the path to improvement).
   - What "good enough" acceptance threshold (overlap %, distance accuracy %, compactness score) defines S-03 as done? — Owner: user. Block: no (must define before starting to avoid open-ended tuning; given `main_goal: speed`, this is the primary scope-creep risk).
 - **Risk:** ORS snaps waypoints to the road network, so ideal geometric placement does not guarantee ideal route shape; improvements may yield diminishing returns in certain geographies. Defining a concrete acceptance threshold before implementation starts is the single most important risk mitigant for this slice.
-- **Status:** ready
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -184,7 +184,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | F-05 | `backend-deploy` | Backend deployment to Azure App Service + GitHub Actions CI/CD + `dotnet test` gate | yes | Run `/10x-plan backend-deploy` |
 | S-01 | `loop-route-generation` | Loop route generation and interactive map display (FR-001–FR-005) | — | **done** |
 | S-02 | `gpx-export` | GPX export — download route as GPX (FR-006) | — | **done** |
-| S-03 | `loop-algorithm-tuning` | Loop route quality tuning — waypoint geometry, acceptance threshold, regression criteria | yes | Run `/10x-plan loop-algorithm-tuning` |
+| S-03 | `loop-algorithm-tuning` | Loop route quality tuning — waypoint geometry, acceptance threshold, regression criteria | — | **done** |
 
 ## Open Roadmap Questions
 
@@ -208,3 +208,4 @@ None. All PRD Open Questions resolved during implementation. Remaining unknowns 
 - **F-02 `testing-backend-bootstrap`** — xUnit project bootstrapped; `VeloRoute.sln` created; `OrsMapper` extracted; 43 tests (ORS mapping + GPX serialiser). PR #4 impl-reviewed (commit a2767a4).
 - **F-03 `route-generation-integration-tests`** — integration tests verify `LoopRouteGenerator` distance bounds and ≤10% overlap constraint; ORS timeout deadline tested. PR merged (commit ed88527).
 - **F-04 `security-privacy-guards`** — integration tests confirm no input coordinates in backend logs and no API key leakage in ORS error responses. Merged 2026-06-20.
+- **S-03 `loop-algorithm-tuning`** — paved ratio computed from ORS segment data; paved preference as primary candidate selection key; smoothness score (bearing-change rate) as tiebreaker; 6 fake-ORS quality regression tests + 3 live ORS smoke tests (CI-skipped). PR #7 merged 2026-06-30.
