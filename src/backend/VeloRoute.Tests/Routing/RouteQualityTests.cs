@@ -35,18 +35,6 @@ public sealed class RouteQualityTests
         IReadOnlyList<RouteWaySegment> segments) =>
         new(new RouteGeometry(coords), distanceMeters, segments);
 
-    private static double BboxAspectRatio(IReadOnlyList<RouteCoordinate> coords)
-    {
-        double minLon = coords.Min(c => c.Longitude);
-        double maxLon = coords.Max(c => c.Longitude);
-        double minLat = coords.Min(c => c.Latitude);
-        double maxLat = coords.Max(c => c.Latitude);
-        double lonSpan = maxLon - minLon;
-        double latSpan = maxLat - minLat;
-        if (Math.Min(lonSpan, latSpan) <= 0) return double.MaxValue;
-        return Math.Max(lonSpan, latSpan) / Math.Min(lonSpan, latSpan);
-    }
-
     private static StringContent JsonBody(string json) =>
         new(json, System.Text.Encoding.UTF8, "application/json");
 
@@ -88,7 +76,9 @@ public sealed class RouteQualityTests
         await using var factory = new VeloRouteWebApplicationFactory();
         var coords = DiamondLoop();
 
-        // 3 segments Asphalt (0→3) + 1 Unpaved (3→4) → PavedRatio = 0.30/0.40 = 0.75
+        // Asphalt covers N-S(0.10°) + E-W(0.10°) + N-S(0.10°); Unpaved covers E-W(0.10°).
+        // With latitude correction at 52°N, E-W segments shrink by cos(52°) ≈ 0.609.
+        // Paved ≈ 0.1 + 0.0609 + 0.1 = 0.2609; Unpaved ≈ 0.0610 → PavedRatio ≈ 0.81
         var route = MakeRouteWithSegments(25_000, coords,
         [
             new RouteWaySegment(0, 3, SurfaceType.Asphalt, RoadClass.Road),
@@ -102,8 +92,8 @@ public sealed class RouteQualityTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         double pavedRatio = doc.RootElement.GetProperty("pavedRatio").GetDouble();
-        Assert.True(Math.Abs(pavedRatio - 0.75) <= 0.01,
-            $"Expected pavedRatio ≈ 0.75, got {pavedRatio:F4}");
+        Assert.True(Math.Abs(pavedRatio - 0.81) <= 0.01,
+            $"Expected pavedRatio ≈ 0.81, got {pavedRatio:F4}");
     }
 
     [Fact]
@@ -147,7 +137,7 @@ public sealed class RouteQualityTests
                 e.GetProperty("latitude").GetDouble()))
             .ToList();
 
-        double aspectRatio = BboxAspectRatio(responseCoords);
+        double aspectRatio = RouteTestHelpers.BboxAspectRatio(responseCoords);
         Assert.True(aspectRatio <= 3.0,
             $"Bbox aspect ratio {aspectRatio:F2} exceeds limit of 3.0");
     }

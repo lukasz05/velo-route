@@ -49,7 +49,7 @@ export default function RouteInfoPanel({ route }: { route: RouteResult }) {
       <p className="text-2xl font-semibold text-zinc-900">{km} km</p>
       <p className="mt-2 text-sm text-zinc-500">Surface quality</p>
       <p className="text-sm font-medium text-zinc-900">
-        {route.pavedRatio === 0 ? 'Unknown' : `${Math.round(route.pavedRatio * 100)}% paved`}
+        {route.segments.length === 0 ? 'Unknown' : `${Math.round(route.pavedRatio * 100)}% paved`}
       </p>
       <button
         onClick={handleDownload}

@@ -25,7 +25,8 @@ internal static class PavedRatioCalculator
             double segLen = 0.0;
             for (int i = seg.FromIndex; i < seg.ToIndex && i + 1 < coords.Count; i++)
             {
-                double dx = coords[i + 1].Longitude - coords[i].Longitude;
+                double latAvg = (coords[i].Latitude + coords[i + 1].Latitude) / 2.0 * (Math.PI / 180.0);
+                double dx = (coords[i + 1].Longitude - coords[i].Longitude) * Math.Cos(latAvg);
                 double dy = coords[i + 1].Latitude - coords[i].Latitude;
                 segLen += Math.Sqrt(dx * dx + dy * dy);
             }

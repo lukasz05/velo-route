@@ -9,6 +9,21 @@ using VeloRoute.Routing;
 
 namespace VeloRoute.Tests.Routing;
 
+internal static class RouteTestHelpers
+{
+    public static double BboxAspectRatio(IReadOnlyList<RouteCoordinate> coords)
+    {
+        double minLon = coords.Min(c => c.Longitude);
+        double maxLon = coords.Max(c => c.Longitude);
+        double minLat = coords.Min(c => c.Latitude);
+        double maxLat = coords.Max(c => c.Latitude);
+        double lonSpan = maxLon - minLon;
+        double latSpan = maxLat - minLat;
+        if (Math.Min(lonSpan, latSpan) <= 0) return double.MaxValue;
+        return Math.Max(lonSpan, latSpan) / Math.Min(lonSpan, latSpan);
+    }
+}
+
 internal sealed class FakeOpenRouteServiceClient : IOpenRouteServiceClient
 {
     public ConcurrentQueue<RoutingResult<RouteResult>> Results { get; } = new();

@@ -27,7 +27,10 @@ public sealed class OrsLiveSmokeTests
 
     private static async Task AssertQualityThresholds(HttpResponseMessage response, int minKm = 20, int maxKm = 30)
     {
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.StatusCode == HttpStatusCode.OK,
+            response.StatusCode == HttpStatusCode.Unauthorized
+                ? "Got 401 Unauthorized — ORS:ApiKey not configured. Set ORS__ApiKey env var or: dotnet user-secrets set \"ORS:ApiKey\" \"<key>\""
+                : $"Expected 200 OK but got {(int)response.StatusCode} {response.StatusCode}");
 
         using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         var root = doc.RootElement;
@@ -47,7 +50,7 @@ public sealed class OrsLiveSmokeTests
             .ToList();
 
         double overlapRatio = OverlapDetector.ComputeOverlapRatio(coords);
-        double aspectRatio = BboxAspectRatio(coords);
+        double aspectRatio = RouteTestHelpers.BboxAspectRatio(coords);
         double distanceAccuracy = Math.Abs(distanceMeters - targetMid) / targetMid;
 
         Assert.True(pavedRatio >= MinPavedRatio,
@@ -58,18 +61,6 @@ public sealed class OrsLiveSmokeTests
             $"bbox aspect ratio {aspectRatio:F2} exceeds limit {MaxBboxAspectRatio}");
         Assert.True(distanceAccuracy <= MaxDistanceAccuracy,
             $"distance accuracy {distanceAccuracy:P1} exceeds threshold {MaxDistanceAccuracy:P0} (distance={distanceMeters})");
-    }
-
-    private static double BboxAspectRatio(IReadOnlyList<RouteCoordinate> coords)
-    {
-        double minLon = coords.Min(c => c.Longitude);
-        double maxLon = coords.Max(c => c.Longitude);
-        double minLat = coords.Min(c => c.Latitude);
-        double maxLat = coords.Max(c => c.Latitude);
-        double lonSpan = maxLon - minLon;
-        double latSpan = maxLat - minLat;
-        if (Math.Min(lonSpan, latSpan) <= 0) return double.MaxValue;
-        return Math.Max(lonSpan, latSpan) / Math.Min(lonSpan, latSpan);
     }
 
     [Fact(Skip = "Live ORS — run manually with ORS:ApiKey set")]

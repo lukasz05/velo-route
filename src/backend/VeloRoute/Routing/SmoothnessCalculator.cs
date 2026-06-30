@@ -21,7 +21,12 @@ internal static class SmoothnessCalculator
     }
 
     private static double Bearing(RouteCoordinate a, RouteCoordinate b)
-        => Math.Atan2(b.Longitude - a.Longitude, b.Latitude - a.Latitude) * (180.0 / Math.PI);
+    {
+        double latAvg = (a.Latitude + b.Latitude) / 2.0 * (Math.PI / 180.0);
+        double dx = (b.Longitude - a.Longitude) * Math.Cos(latAvg);
+        double dy = b.Latitude - a.Latitude;
+        return Math.Atan2(dx, dy) * (180.0 / Math.PI);
+    }
 
     private static double NormalizeAngle(double deg)
     {
