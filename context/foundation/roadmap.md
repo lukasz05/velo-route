@@ -32,7 +32,7 @@ Road cyclists often lack a ready-made route when they want to ride. Planning one
 | F-01 | `routing-api-wiring` | (foundation) ORS HTTP client wired; road-network data contract defined | — | FR-003, Business Logic | done |
 | F-02 | `testing-backend-bootstrap` | (foundation) xUnit project bootstrapped; 43 tests cover ORS mapping and GPX serialiser correctness | — | Business Logic, FR-006 | done |
 | F-03 | `route-generation-integration-tests` | (foundation) integration tests verify distance/overlap constraints and ORS timeout behaviour | F-02 | Business Logic (≤10% repetition, distance bounds), Success Criteria (5 s) | done |
-| F-04 | `security-privacy-guards` | (foundation) integration tests confirm no input coordinates in logs and no API key in error responses | — | NFR (location inputs leave no trace) | ready |
+| F-04 | `security-privacy-guards` | (foundation) integration tests confirm no input coordinates in logs and no API key in error responses | — | NFR (location inputs leave no trace) | done |
 | F-05 | `backend-deploy` | (foundation) .NET backend deployed and publicly reachable on Azure; GitHub Actions CI/CD live; `dotnet test` gate on every PR | — | Success Criteria (5 s), NFR (cross-browser, mobile) | ready |
 | S-01 | `loop-route-generation` | enter start point + distance range, trigger generation, view loop route on interactive map with total length shown | F-01 | US-01, FR-001, FR-002, FR-003, FR-004, FR-005, NFR (privacy, 5 s) | done |
 | S-02 | `gpx-export` | download route as a GPX file importable to Strava, Garmin, and Komoot without modification | S-01 | US-01, FR-006 | done |
@@ -116,7 +116,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Does the .NET HTTP client emit request bodies (and therefore ORS coordinates) at Debug log level by default in the development profile? — Owner: TBD. Block: no (resolvable by inspection of `appsettings.Development.json` during planning).
 - **Risk:** Logging configuration can change silently across .NET minor versions; the test must capture `ILogger` output during a live request and assert no coordinate values appear, not merely assert that a log level is set.
-- **Status:** ready
+- **Status:** done
 
 ### F-05: Backend deployment and CI gate
 
@@ -180,7 +180,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | F-01 | `routing-api-wiring` | Wire road-network data API (ORS HTTP client + data contract + resilience) | — | **done** |
 | F-02 | `testing-backend-bootstrap` | Backend test bootstrap — ORS mapping and GPX locale coverage (Phase 1 of test-plan.md) | — | **done** (impl_reviewed) |
 | F-03 | `route-generation-integration-tests` | Route generation integration tests — distance/overlap constraints + ORS timeout (Phase 2) | — | **done** |
-| F-04 | `security-privacy-guards` | Security and privacy guards — coordinate logging + API key leakage (Phase 3) | yes | Run `/10x-plan security-privacy-guards` |
+| F-04 | `security-privacy-guards` | Security and privacy guards — coordinate logging + API key leakage (Phase 3) | — | **done** |
 | F-05 | `backend-deploy` | Backend deployment to Azure App Service + GitHub Actions CI/CD + `dotnet test` gate | yes | Run `/10x-plan backend-deploy` |
 | S-01 | `loop-route-generation` | Loop route generation and interactive map display (FR-001–FR-005) | — | **done** |
 | S-02 | `gpx-export` | GPX export — download route as GPX (FR-006) | — | **done** |
@@ -207,3 +207,4 @@ None. All PRD Open Questions resolved during implementation. Remaining unknowns 
 - **S-02 `gpx-export`** — GPX 1.1 download via `POST /routes/gpx`; `<trk>/<trkseg>/<trkpt>` structure; InvariantCulture decimal formatting. PR #3 merged (commit 5934d0b).
 - **F-02 `testing-backend-bootstrap`** — xUnit project bootstrapped; `VeloRoute.sln` created; `OrsMapper` extracted; 43 tests (ORS mapping + GPX serialiser). PR #4 impl-reviewed (commit a2767a4).
 - **F-03 `route-generation-integration-tests`** — integration tests verify `LoopRouteGenerator` distance bounds and ≤10% overlap constraint; ORS timeout deadline tested. PR merged (commit ed88527).
+- **F-04 `security-privacy-guards`** — integration tests confirm no input coordinates in backend logs and no API key leakage in ORS error responses. Merged 2026-06-20.

@@ -1,7 +1,7 @@
 ---
 id: security-privacy-guards
 title: Security and privacy guards
-status: impl_reviewed
+status: done
 created: 2026-06-20
 updated: 2026-06-20
 roadmap_ref: F-04
