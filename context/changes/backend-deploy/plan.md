@@ -258,12 +258,12 @@ No code changes — this phase is observation only.
 
 #### Automated
 
-- [x] 2.1 `dotnet test` passes locally (56 pass, 3 skip)
-- [x] 2.2 Workflow YAML is valid
+- [x] 2.1 `dotnet test` passes locally (56 pass, 3 skip) — 6cf9e29
+- [x] 2.2 Workflow YAML is valid — 6cf9e29
 
 #### Manual
 
-- [ ] 2.3 Workflow file pushed to `main` and visible in GitHub Actions tab
+- [x] 2.3 Workflow file pushed to `main` and visible in GitHub Actions tab
 
 ### Phase 3: CORS Verification
 
