@@ -251,15 +251,15 @@ No code changes — this phase is observation only.
 
 #### Manual
 
-- [x] 1.1 Publish profile downloaded from App Service `velo-route-api`
-- [x] 1.2 `AZURE_WEBAPP_PUBLISH_PROFILE` secret set in GitHub Actions secrets
+- [x] 1.1 Publish profile downloaded from App Service `velo-route-api` — c06a3c4
+- [x] 1.2 `AZURE_WEBAPP_PUBLISH_PROFILE` secret set in GitHub Actions secrets — c06a3c4
 
 ### Phase 2: GitHub Actions Workflow
 
 #### Automated
 
-- [ ] 2.1 `dotnet test` passes locally (56 pass, 3 skip)
-- [ ] 2.2 Workflow YAML is valid
+- [x] 2.1 `dotnet test` passes locally (56 pass, 3 skip)
+- [x] 2.2 Workflow YAML is valid
 
 #### Manual
 
