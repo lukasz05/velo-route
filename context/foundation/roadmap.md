@@ -33,7 +33,7 @@ Road cyclists often lack a ready-made route when they want to ride. Planning one
 | F-02 | `testing-backend-bootstrap` | (foundation) xUnit project bootstrapped; 43 tests cover ORS mapping and GPX serialiser correctness | — | Business Logic, FR-006 | done |
 | F-03 | `route-generation-integration-tests` | (foundation) integration tests verify distance/overlap constraints and ORS timeout behaviour | F-02 | Business Logic (≤10% repetition, distance bounds), Success Criteria (5 s) | done |
 | F-04 | `security-privacy-guards` | (foundation) integration tests confirm no input coordinates in logs and no API key in error responses | — | NFR (location inputs leave no trace) | done |
-| F-05 | `backend-deploy` | (foundation) .NET backend deployed and publicly reachable on Azure; GitHub Actions CI/CD live; `dotnet test` gate on every PR | — | Success Criteria (5 s), NFR (cross-browser, mobile) | ready |
+| F-05 | `backend-deploy` | (foundation) .NET backend deployed and publicly reachable on Azure; GitHub Actions CI/CD live; `dotnet test` gate on every PR | — | Success Criteria (5 s), NFR (cross-browser, mobile) | done |
 | S-01 | `loop-route-generation` | enter start point + distance range, trigger generation, view loop route on interactive map with total length shown | F-01 | US-01, FR-001, FR-002, FR-003, FR-004, FR-005, NFR (privacy, 5 s) | done |
 | S-02 | `gpx-export` | download route as a GPX file importable to Strava, Garmin, and Komoot without modification | S-01 | US-01, FR-006 | done |
 | S-03 | `loop-algorithm-tuning` | generate routes that feel like real cycling loops — minimal self-overlap, recognisably loop-shaped, total distance close to the requested midpoint | S-01 | Business Logic (≤10% repetition, paved preference) | done |
@@ -181,7 +181,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | F-02 | `testing-backend-bootstrap` | Backend test bootstrap — ORS mapping and GPX locale coverage (Phase 1 of test-plan.md) | — | **done** (impl_reviewed) |
 | F-03 | `route-generation-integration-tests` | Route generation integration tests — distance/overlap constraints + ORS timeout (Phase 2) | — | **done** |
 | F-04 | `security-privacy-guards` | Security and privacy guards — coordinate logging + API key leakage (Phase 3) | — | **done** |
-| F-05 | `backend-deploy` | Backend deployment to Azure App Service + GitHub Actions CI/CD + `dotnet test` gate | yes | Run `/10x-plan backend-deploy` |
+| F-05 | `backend-deploy` | Backend deployment to Azure App Service + GitHub Actions CI/CD + `dotnet test` gate | — | **done** |
 | S-01 | `loop-route-generation` | Loop route generation and interactive map display (FR-001–FR-005) | — | **done** |
 | S-02 | `gpx-export` | GPX export — download route as GPX (FR-006) | — | **done** |
 | S-03 | `loop-algorithm-tuning` | Loop route quality tuning — waypoint geometry, acceptance threshold, regression criteria | — | **done** |
