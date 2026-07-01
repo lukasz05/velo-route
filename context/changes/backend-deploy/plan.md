@@ -280,12 +280,12 @@ No code changes — this phase is observation only.
 
 #### Automated
 
-- [ ] 4.1 First CI run shows 56 pass, 3 skip in Actions log
-- [ ] 4.2 Deploy job completes green
+- [x] 4.1 First CI run shows 56 pass, 3 skip in Actions log
+- [x] 4.2 Deploy job completes green
 
 #### Manual
 
-- [ ] 4.3 Test PR triggers required `test` status check
-- [ ] 4.4 Post-merge deploy completes; `/health` returns 200
-- [ ] 4.5 Live app: route generation works, no CORS errors
-- [ ] 4.6 GPX export works from the live app
+- [x] 4.3 Test PR triggers required `test` status check
+- [x] 4.4 Post-merge deploy completes; `/health` returns 200
+- [x] 4.5 Live app: route generation works, no CORS errors
+- [x] 4.6 GPX export works from the live app
