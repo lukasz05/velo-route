@@ -269,12 +269,12 @@ No code changes — this phase is observation only.
 
 #### Automated
 
-- [ ] 3.1 `ALLOWED_ORIGINS` App Service setting contains SWA URL
-- [ ] 3.2 `/health` returns `{"status":"ok"}`
+- [x] 3.1 `ALLOWED_ORIGINS` App Service setting contains SWA URL
+- [x] 3.2 `/health` returns `{"status":"ok"}`
 
 #### Manual
 
-- [ ] 3.3 No CORS errors in browser DevTools on SWA → backend calls
+- [x] 3.3 No CORS errors in browser DevTools on SWA → backend calls
 
 ### Phase 4: End-to-End Smoke Test
 
