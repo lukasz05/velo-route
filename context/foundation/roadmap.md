@@ -6,7 +6,7 @@ created: 2026-07-04
 updated: 2026-07-04
 prd_version: 2
 main_goal: quality
-top_blocker: decisions
+top_blocker: none
 ---
 
 # Roadmap: VeloRoute v2
@@ -29,10 +29,10 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 
 | ID | Change ID | Outcome (user can …) | Prerequisites | PRD refs | Status |
 |---|---|---|---|---|---|
-| F-01 | `auth-provider-scaffold` | (foundation) magic link provider wired; session/token handling + auth middleware in .NET backend; anonymous route endpoints stay unprotected | — | FR-001, FR-002, FR-003, FR-012, FR-013, Access Control | blocked |
-| F-02 | `data-layer-schema` | (foundation) Postgres DB deployed; users + routes schema + migrations; DB client wired to backend | — | FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, NFR (account deletion) | blocked |
+| F-01 | `auth-provider-scaffold` | (foundation) Microsoft Entra External ID wired; OIDC/MSAL in Next.js; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected | — | FR-001, FR-002, FR-003, FR-012, FR-013, Access Control | ready |
+| F-02 | `data-layer-schema` | (foundation) Azure Database for PostgreSQL Flexible Server deployed; users + routes schema + migrations; DB client wired to backend | — | FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, NFR (account deletion) | ready |
 | S-07 | `routing-quality-osm` | generate routes that prefer OSM scenic/low-traffic roads and pass near cyclist POIs (cafes, water, rest stops) — best-effort; distance constraint always wins | — | FR-010, FR-011, FR-012, FR-013 | ready |
-| S-01 | `magic-link-auth` | sign up by entering an email (receive magic link), log in via magic link (clear expiry error + one-click re-send), and log out | F-01, F-02 | FR-001, FR-002, FR-003, US-01 | blocked |
+| S-01 | `magic-link-auth` | sign up by entering an email (receive 6-digit OTP), log in via OTP with a clear expiry error message and one-click re-send option, and log out | F-01, F-02 | FR-001, FR-002, FR-003, US-01 | blocked |
 | S-02 | `save-route` | save a generated route to their personal library (one-click; auto-name date + distance; optional user-editable name and tags) | S-01 | FR-004, FR-005, US-01 | blocked |
 | S-06 | `account-deletion` | permanently delete their account and all associated data (email + saved routes) self-serve from account settings | S-01, F-02 | FR-003, NFR (account deletion) | blocked |
 | S-03 | `route-library` | view My Routes as a flat list sorted by date, open a saved route on an interactive map, and download its GPX | S-02 | FR-007, FR-008, US-01 | blocked |
@@ -66,17 +66,16 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### F-01: Auth provider scaffold
 
-- **Outcome:** (foundation) magic link provider integrated; token issuance and session verification wired in .NET backend; route-level auth middleware configured so that `POST /routes/loop` and `POST /routes/gpx` remain accessible to unauthenticated users and new library endpoints require a valid session.
+- **Outcome:** (foundation) Microsoft Entra External ID tenant configured for external (customer) identities with email OTP as the sign-in method; MSAL.js (`@azure/msal-browser`) integrated in Next.js App Router; .NET backend validates Entra-issued JWTs via the JWKS endpoint; route-level auth middleware configured so that `POST /routes/loop` and `POST /routes/gpx` remain accessible to unauthenticated users and new library endpoints require a valid session.
 - **Change ID:** `auth-provider-scaffold`
 - **PRD refs:** FR-001, FR-002, FR-003, FR-012, FR-013, Access Control section ("unauthenticated users retain full access to route generation and GPX export")
-- **Unlocks:** S-01 (magic link auth UI requires token issuance and session verification to be in place)
+- **Unlocks:** S-01 (email OTP auth UI requires token issuance and session verification to be in place)
 - **Prerequisites:** —
 - **Parallel with:** F-02 (data layer schema has no dependency on auth provider choice)
 - **Blockers:** —
-- **Unknowns:**
-  - Which magic link provider? Options include Supabase Auth, NextAuth.js + email provider, Resend + custom JWT, Azure AD B2C, Lucia. Choice affects both the .NET backend (token verification) and the Next.js frontend (SDK integration). — Owner: user. Block: yes.
-- **Risk:** Auth provider choice locks in the token format and session model for all downstream slices. Changing providers after S-01 is implemented requires re-plumbing both projects. Decide before planning, not mid-build.
-- **Status:** blocked
+- **Unknowns:** ~~Which magic link provider?~~ — **Resolved 2026-07-04:** Microsoft Entra External ID + email OTP (6-digit code). Azure-only; avoids Azure AD B2C custom-policy complexity.
+- **Risk:** MSAL.js + Next.js App Router (React Server Components) has rough edges — token storage and session refresh must be handled client-side; server components cannot access MSAL token cache directly. Plan the auth boundary carefully before implementation.
+- **Status:** ready
 
 ### F-02: Data layer schema
 
@@ -87,10 +86,9 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Prerequisites:** —
 - **Parallel with:** F-01
 - **Blockers:** —
-- **Unknowns:**
-  - Which DB host? Options include Postgres on Azure Database for PostgreSQL Flexible Server, Supabase (managed Postgres + auth SDK), Azure SQL, or SQLite for local-only development first. Choice affects hosting cost, CI/CD DB provisioning, and whether Supabase doubles as the auth provider (collapsing F-01 + F-02). — Owner: user. Block: yes.
-- **Risk:** If Supabase is chosen, F-01 and F-02 collapse into a single setup — the auth schema (users table, tokens) is managed by Supabase Auth. Choosing Azure DB for PostgreSQL means implementing token verification and user management independently. Resolving both unknowns (auth provider + DB host) together is the highest-leverage planning decision in this roadmap.
-- **Status:** blocked
+- **Unknowns:** ~~Which DB host?~~ — **Resolved 2026-07-04:** Azure Database for PostgreSQL Flexible Server. Stays Azure-only; JSONB for route geometry; EF Core migrations.
+- **Risk:** Route geometry payloads can be large for long routes. Decide the geometry column type (JSONB array vs PostGIS geometry vs encoded polyline) before writing migrations — changing it later requires a data migration. JSONB is the recommended default unless PostGIS spatial queries are needed (they are not in v2 scope).
+- **Status:** ready
 
 ## Slices
 
@@ -108,17 +106,17 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** OSM scenic tag density varies widely by region — improvement may be imperceptible in areas with sparse tagging. Algorithm must fall back gracefully so route quality never regresses below v1. Acceptable-quality definition should be agreed before starting to avoid open-ended tuning (same risk that required explicit acceptance thresholds in the v1 S-03 loop-algorithm-tuning slice).
 - **Status:** ready
 
-### S-01: Magic link auth
+### S-01: Email OTP auth
 
-- **Outcome:** user can sign up by entering their email address and receiving a magic link; log in to an existing account via magic link with a clear expiry error message and one-click re-send option; and log out.
+- **Outcome:** user can sign up by entering their email address and receiving a 6-digit one-time code; log in to an existing account by entering the code with a clear expiry error message and one-click re-send option; and log out.
 - **Change ID:** `magic-link-auth`
 - **PRD refs:** FR-001, FR-002, FR-003, US-01
 - **Prerequisites:** F-01, F-02
 - **Parallel with:** —
 - **Blockers:** —
 - **Unknowns:**
-  - What is the magic link expiry window? PRD does not specify a duration. — Owner: user. Block: no (resolvable during planning; 15–30 minutes is a common default).
-- **Risk:** Email delivery reliability is a dependency outside the app's control; the PRD explicitly accepts this ("email delivery is a solved infrastructure problem") but deliverability must be verified with the chosen provider's free-tier limits before shipping.
+  - OTP expiry window — Entra External ID default is 30 minutes; configurable. Block: no.
+- **Risk:** Email delivery reliability is a dependency outside the app's control; deliverability must be verified with Entra External ID's email sending limits before shipping.
 - **Status:** blocked
 
 ### S-02: Save route
@@ -142,7 +140,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-02
 - **Blockers:** —
 - **Unknowns:**
-  - Does the chosen auth provider (F-01) support programmatic user deletion via its admin API, or does the app need to manage the users table directly? — Owner: TBD. Block: no (resolvable during planning once auth provider is decided).
+  - ~~Does the chosen auth provider support programmatic user deletion?~~ — **Resolved 2026-07-04:** Entra External ID supports user deletion via Microsoft Graph API (`DELETE /users/{id}`). Backend calls Graph API on account delete, then cascades the Postgres row via FK constraint.
 - **Risk:** Hard delete with no soft-delete buffer means a mis-click permanently destroys a user's route library. A confirmation prompt (e.g. "type DELETE to confirm") is the minimum safeguard; the PRD requires a prompt but does not specify its form.
 - **Status:** blocked
 
@@ -189,10 +187,10 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 | Roadmap ID | Change ID | Suggested issue title | Ready for `/10x-plan` | Notes |
 |---|---|---|---|---|
-| F-01 | `auth-provider-scaffold` | Auth provider scaffold — magic link + session middleware | no | Blocked: auth provider choice (Supabase Auth / NextAuth.js / Resend + JWT / other) must be decided first |
-| F-02 | `data-layer-schema` | Data layer — Postgres schema + migrations (users + routes) | no | Blocked: DB host choice must be decided first; consider deciding F-01 + F-02 together if Supabase collapses both |
+| F-01 | `auth-provider-scaffold` | Auth provider scaffold — Entra External ID + email OTP + .NET JWT middleware | yes | Run `/10x-plan auth-provider-scaffold`; provider decided: Entra External ID |
+| F-02 | `data-layer-schema` | Data layer — Azure Postgres schema + EF Core migrations (users + routes) | yes | Run `/10x-plan data-layer-schema`; host decided: Azure Database for PostgreSQL Flexible Server |
 | S-07 | `routing-quality-osm` | Routing quality — OSM scenic/low-traffic preference + cyclist POI proximity | yes | Run `/10x-plan routing-quality-osm`; no auth/data dependency |
-| S-01 | `magic-link-auth` | Magic link auth — signup, login, logout (FR-001–FR-003) | no | Depends on F-01 + F-02 |
+| S-01 | `magic-link-auth` | Email OTP auth — signup, login, logout (FR-001–FR-003) | no | Depends on F-01 + F-02 |
 | S-02 | `save-route` | Save route to personal library — one-click, auto-name, optional tags (FR-004–FR-005) | no | Depends on S-01 |
 | S-06 | `account-deletion` | Account deletion — self-serve hard delete of account + all routes (NFR) | no | Depends on S-01 + F-02; parallel with S-02 once unblocked |
 | S-03 | `route-library` | My Routes library — flat list, open saved route on map, GPX download (FR-007–FR-008) | no | North star; depends on S-02 |
@@ -201,9 +199,9 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Open Roadmap Questions
 
-1. **Which magic link provider?** Options: Supabase Auth, NextAuth.js + email provider (Resend/Postmark/SES), Resend + custom JWT, Azure AD B2C, Lucia. Choice affects both the .NET backend (token verification) and the Next.js frontend (SDK integration). — Owner: user. Block: F-01, S-01, and all downstream library slices.
+1. ~~**Which magic link provider?**~~ — **Resolved 2026-07-04:** Microsoft Entra External ID + email OTP. Azure-only; OIDC; MSAL.js on frontend; JWT/JWKS validation in .NET.
 
-2. **Which DB + host?** Options: Azure Database for PostgreSQL Flexible Server, Supabase (managed Postgres + auth SDK — potentially collapses Q1 + Q2), Azure SQL, SQLite (dev-only). Choice affects hosting cost, CI/CD provisioning, and auth integration. — Owner: user. Block: F-02, S-01, S-02, S-03, S-04, S-05, S-06.
+2. ~~**Which DB + host?**~~ — **Resolved 2026-07-04:** Azure Database for PostgreSQL Flexible Server. EF Core migrations; JSONB for route geometry.
 
 3. **Route generation latency under OSM POI querying.** The v1 ≤5 s NFR was not re-confirmed after adding Overpass API queries to the route generation path. Measure during S-07 implementation and define an acceptable threshold before shipping v2. — Owner: engineering. Block: no (does not block S-07 planning; defines the done-condition).
 
