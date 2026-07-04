@@ -1,116 +1,166 @@
 ---
 project: "VeloRoute"
-context_type: greenfield
-created: 2026-05-19
-updated: 2026-05-19
+context_type: brownfield
+created: 2026-07-04
+updated: 2026-07-04
 checkpoint:
   current_phase: 8
   phases_completed: [1, 2, 3, 4, 5, 6, 7]
-  frs_drafted: 6
+  frs_drafted: 13
   quality_check_status: accepted
 ---
 
+## Current System
+
+VeloRoute v1 is a free road-cycling loop-route planner. A user enters a starting point (search bar + map confirmation) and a distance range in km; the backend calls OpenRouteService to generate one loop route using a 3-bearing triangular waypoint approach, applying a paved-surface preference and ≤10% segment-overlap constraint. The resulting route is displayed on an interactive MapLibre map with total distance shown; the user can download it as a GPX file. No authentication, no persistence, no user accounts. Fully stateless by design.
+
+Tech stack: Next.js 15 / React 19 / TypeScript (deployed on Azure Static Web Apps) + ASP.NET Core .NET 10 minimal API (deployed on Azure App Service) + OpenRouteService HTTP API. GitHub Actions CI/CD on both. 43 backend unit + integration tests.
+
+Users today: individual road cyclists, anonymous, no account required.
+
 ## Vision & Problem Statement
 
-A road cyclist who wants to go for a ride often has no ready-made route in mind. Planning one manually — searching forums, piecing together maps, or adapting others' routes — costs meaningful time and still carries the risk of disappointment: a route that turns out to be heavily trafficked, poorly surfaced, or simply the wrong length for the day.
+Two gaps drive v2:
 
-Existing tools (Komoot, Strava, Google Maps) exist but either charge for quality route planning or treat loop routes of a specified length as a secondary concern. VeloRoute is entirely free and optimises specifically for this use case: generate a small set of high-quality, road-bike-appropriate proposals — paved, low-traffic — given a starting point and a desired distance range, including loops back to the start.
+1. **No persistence.** Routes generated in v1 vanish when the session ends. Cyclists who want to repeat a favourite route or compare options must regenerate from scratch or manage GPX files manually. The missing capability is a personal route library tied to an account.
 
-Pain category: workflow friction — the planning step is too slow and manual.
+2. **Route quality.** The current algorithm uses ORS road classification and surface data but does not account for cyclist-relevant OSM attributes: scenic or low-traffic road tags, or proximity to POIs (cafes, water points, rest stops). Routes are valid loops but may not feel like good cycling roads.
+
+v2 adds: user accounts with a personal route library (save, name/tag, delete, share publicly) and an improved routing algorithm that draws on OSM scenic/low-traffic tags and routes near cyclist POIs — using only free, publicly accessible data.
+
+Pain category: persistence gap (routes lost) + workflow friction (route quality requires manual curation).
 
 ## User & Persona
 
-**Primary persona:** An individual road cyclist, anywhere, who rides solo and wants to plan rides on their own terms. They are not a casual cyclist — they care specifically about surface quality and traffic levels, which rules out generic navigation apps. They reach for this product when they want to go for a ride soon and don't already have a route picked. They want a few good options fast, not an infinite feed to browse.
+**Primary persona (unchanged):** Individual road cyclist, solo, planning a ride shortly. Still reaches the product anonymously for a one-off route — anonymous generation is preserved in v2.
 
-## Access Control
+**Extended persona (new in v2):** The returning cyclist who has built a collection of routes over several rides and wants to manage, name, and revisit them without maintaining a folder of GPX files. They also want to share a specific loop with a friend without exporting a file.
 
-v1 — no authentication required. Route generation and GPX export are available to all users without an account. No sign-up, no login, no session.
-
-Auth is explicitly deferred to v2, where saving routes to a personal catalogue and managing a route library will require an account. At that point: email + password or OAuth login, flat user model (all authenticated users have the same capabilities), self-serve sign-up, no admin role.
+**Must preserve:** Anonymous route generation (no forced signup), GPX export compatibility (existing v1-generated files remain valid), and public sharing links once introduced must remain stable.
 
 ## Success Criteria
 
 ### Primary
-- A user can enter a start point and a distance range (km), receive at least 1 road-bike loop-route proposal displayed on an interactive map, and download it as a valid GPX file — without creating an account.
+A user can create an account via magic link, generate a loop route (start point + km range), save it to their personal library, navigate to their library, and download the GPX from there — without the anonymous route generation or GPX export flows breaking for unauthenticated users.
 
 ### Secondary
-- The results page loads and displays proposals within 5 seconds of submitting the form.
+The "My Routes" library page renders within 2 seconds.
 
 ### Guardrails
-- The exported GPX file must be importable to Strava, Garmin, and Komoot without modification.
-- At most 10% of the route length (configurable) may repeat (no significant out-and-back segments).
+- Anonymous route generation must continue to work in v2 without login.
+- GPX export from the map page must remain accessible without authentication.
 
-MVP scope note: auth, route library/catalogue, and server-side persistence are explicitly deferred to v2. GPX export is retained as the primary mechanism for taking routes off the platform.
+## Access Control
+
+v1: no authentication. All routes generated anonymously. Anonymous generation preserved in v2.
+
+v2 changes:
+- Magic link (passwordless email): user enters email address, receives a time-limited login link. No password stored.
+- Self-serve signup: providing an email address is the full signup flow. No admin approval.
+- Flat user model: all authenticated users have identical capabilities (save, name/tag, delete, share routes). No admin role in v2.
+- Unauthenticated users retain full access to route generation and GPX export. Authentication is required only to save routes to the library and to share routes publicly.
 
 ## Functional Requirements
 
-### Route input
-- FR-001: User can enter a starting point via a search bar and confirm it on a map. Priority: must-have
-  > Socrates: Counter-argument considered: "a full interactive map is over-engineering the input for v1 — a text address is enough." Resolution: revised to search-bar-first with map confirmation; avoids requiring the user to click a map but still shows them where the start point landed.
+### Authentication
+- FR-001: User can sign up by entering an email address and receiving a magic link. Priority: must-have. Change: new
+  > Socrates: Counter-argument considered: "email delivery failure leaves user unable to create account." Resolution: magic link only; email delivery is a solved infrastructure problem. No fallback auth in v2.
 
-- FR-002: User can specify a minimum and maximum route length in kilometres. Priority: must-have
-  > Socrates: Counter-argument considered: "a km/miles toggle adds a UI element without changing core value." Resolution: km only for v1; miles support added in v2.
+- FR-002: User can log in to an existing account via magic link; a stale or expired link shows a clear error with a one-click re-send option. Priority: must-have. Change: new
+  > Socrates: Counter-argument considered: "stale link produces confusing error with no recovery." Resolution: FR-002 updated to require clear expiry messaging and re-request flow as part of the capability.
 
-### Route generation & display
-- FR-003: User can trigger route generation and receive at least 1 loop-route proposal. Priority: must-have
-  > Socrates (former FR-002): Counter-argument considered: "a separate end point is rarely used — most road cyclists do loops." Resolution: FR-002 dropped; v1 generates loop routes only (start = end). Point-to-point added in v2.
-  > Socrates (former FR-004): Counter-argument considered: "generating 3+ proposals is expensive if the routing API charges per call." Resolution: revised to 1 proposal for v1; multiple proposals added in v2 once the algorithm is proven.
+- FR-003: Authenticated user can log out. Priority: must-have. Change: new
+  > Socrates: Counter-argument considered: "short-lived sessions make explicit logout unnecessary." Resolution: kept; users on shared devices need it. Minimal implementation cost.
 
-- FR-004: User can view the proposal displayed on an interactive map. Priority: must-have
-  > Socrates: Counter-argument considered: "static image or external link is sufficient." Resolution: kept; an interactive map display is essential to the product's value.
+### Route library
+- FR-004: Authenticated user can save a generated route to their personal library (manual action; not automatic). Priority: must-have. Change: new
+  > Socrates: Counter-argument considered: "auto-save avoids user forgetting to save." Resolution: manual save only; avoids library pollution from test or unwanted generations.
 
-- FR-005: User can see the total length of the proposal. Priority: must-have
-  > Socrates: Counter-argument considered: "length is redundant given the input range." Resolution: kept; showing the exact generated length is minimal and confirms the proposal is within bounds.
+- FR-005: Saved routes receive an auto-generated name (date + distance, e.g. "2026-07-04 • 42 km") with optional user-editable name and optional tags. Priority: must-have. Change: new
+  > Socrates: Counter-argument considered: "requiring a name adds friction; most users skip naming." Resolution: FR-005 updated to auto-name by default (date + distance); user can override. Tags remain optional.
 
-### Export
-- FR-006: User can download the GPX file for the proposal. Priority: must-have
-  > Socrates: Counter-argument considered: "GPX is niche; a direct import URL to Strava/Komoot would be more useful." Resolution: kept GPX as the core mechanism; it's the most universally compatible format across Strava, Garmin, and Komoot.
+- FR-006: Authenticated user can delete a saved route from their library after confirming a prompt (hard delete, no recovery). Priority: must-have. Change: new
+  > Socrates: Counter-argument considered: "mis-tap loses a route permanently without soft-delete." Resolution: hard delete with a confirmation prompt is sufficient; soft-delete adds complexity not justified in v2.
+
+- FR-007: Authenticated user can view their route library as a flat list sorted by date, with no search or filter. Priority: must-have. Change: new
+  > Socrates: Counter-argument considered: "flat list breaks down past ~10 routes." Resolution: kept; search and filter deferred to v3. Acceptable for v2 volume.
+
+- FR-008: Authenticated user can open a saved route to view it on an interactive map and download its GPX. Priority: must-have. Change: new
+  > Socrates: Counter-argument considered: "users may just want GPX, not a map view." Resolution: kept map view; user may want to inspect before downloading. Same experience as the generation flow.
+
+- FR-009: Authenticated user can share a saved route as a public link (viewable without login); the link shows a snapshot of the saved route data, not a re-generation. Priority: must-have. Change: new
+  > Socrates: Counter-argument considered: "live re-generation from same inputs may show a different route if the algorithm changes." Resolution: FR-009 updated to snapshot sharing — shared link always shows the exact saved route.
+
+### Routing quality
+- FR-010: Route generation prefers roads tagged as scenic or low-traffic in OSM, on a best-effort basis (graceful fallback where OSM tags are absent). Priority: must-have. Change: modified
+  > Socrates: Counter-argument considered: "OSM scenic tags are sparse — preference is a no-op in many regions." Resolution: best-effort preference accepted; algorithm falls back gracefully. Improvement is real where data exists.
+
+- FR-011: Route generation routes near cyclist POIs (cafes, water points, rest stops) from OSM, on a best-effort basis; distance constraint takes priority and POIs are included only when reachable within the user's min–max km range. Priority: must-have. Change: modified
+  > Socrates: Counter-argument considered: "POI routing may push route outside the requested distance range." Resolution: distance constraint wins; POIs are best-effort and never override the km bounds.
+
+### Preserved
+- FR-012: Anonymous user can generate a loop route without creating an account; no app-level rate limiting in v2 (ORS API limits act as the natural ceiling). Priority: must-have. Change: preserved
+  > Socrates: Counter-argument considered: "unlimited anonymous generation is abusable." Resolution: ORS free-tier rate limits are the de-facto ceiling. App-level throttling deferred.
+
+- FR-013: Anonymous user can download a GPX file without an account. Priority: must-have. Change: preserved
+  > Socrates: Counter-argument considered: "no account means no contact point if GPX format breaks." Resolution: GPX 1.1 is a mature standard; format breakage is a deploy-time catch, not a per-user issue.
 
 ## User Stories
 
-### US-01: User generates and exports a cycling route
+### US-01: User creates account, saves route, and downloads GPX from library
 
-- **Given** a user on the route planner page who has entered a starting point (loop route — start = end) and set a length range in kilometres
-- **When** they trigger route generation
-- **Then** they see at least 1 route proposal displayed on an interactive map, with its total length shown, and an option to download it as a GPX file
+- **Given** an unauthenticated user on the VeloRoute route planner page
+- **When** they sign up via magic link, generate a loop route, click "Save", navigate to "My Routes", open the saved route, and click "Download GPX"
+- **Then** they see the route displayed on an interactive map with its auto-generated name and can download the GPX file — and unauthenticated users on the same site can still generate routes and download GPX without logging in
 
 #### Acceptance Criteria
-- At least 1 distinct route proposal is shown
-- The proposal's total length (in km) is visible alongside the map
-- The proposal can be downloaded as a GPX file
-- The exported GPX is importable to Strava, Garmin, and Komoot without modification
-- At most 10% of the route length (default; configurable) may repeat within the proposal
-- The route is a loop: the end point is the same as the start point
+- Magic link signup and login work end-to-end
+- Generated route can be saved with one click; auto-name (date + distance) is applied
+- "My Routes" library shows the saved route in a flat list
+- Opening a saved route shows the interactive map view and a GPX download button
+- GPX downloaded from the library is importable to Strava, Garmin, and Komoot without modification
+- Anonymous route generation and GPX export continue to work without login
 
-## Business Logic
+## Business Logic Changes
 
-VeloRoute decides which road-network segments form a loop route that a road bicycle can ride comfortably, within the user's specified distance range.
+The existing v1 domain rule is modified (not replaced):
 
-The decision draws on surface type and road classification data (e.g. from OpenStreetMap), and optionally traffic volume data from available public sources. Segments on unpaved or low-quality surfaces and segments with heavy motor traffic are deprioritised or excluded. The generated route is constrained to loop back to the start point, stay within the user's minimum–maximum length bounds, and keep repetition (retracing of the same segment) to at most 10% of the total route length (default; configurable).
+**Current rule (v1):** VeloRoute decides which road-network segments form a loop route a road bicycle can ride comfortably, within the user's distance range — on paved or low-traffic roads, with at most 10% segment repetition.
 
-The user encounters the rule's output as: (a) a route displayed on a map, (b) a downloadable GPX file, and (c) a short route summary listing road types used, with warnings for any problematic segments that could not be avoided.
+**v2 modification:** The same constraints apply. v2 adds a preference layer: segments that are scenic or popular among cyclists (per OSM tags) are preferred; the route passes near cyclist POIs (cafes, water points, rest stops from OSM) where possible without violating the distance constraint. Both preferences are best-effort — the rule falls back gracefully where OSM data is absent.
+
+The user encounters the rule's output as: (a) a route on an interactive map, (b) a downloadable GPX file, and (c) a route that visibly favours cycling-friendly roads over the v1 baseline.
 
 ## Non-Functional Requirements
 
-- The app is usable on the latest two major versions of Chrome, Firefox, Safari, and Edge.
-- The app renders correctly and is fully usable on small-screen mobile devices (smartphones).
-- In v1, the user's starting point and any other location inputs are used only for the duration of the route-generation request and are not stored server-side.
+- The app is usable on the latest two major versions of Chrome, Firefox, Safari, and Edge. *(unchanged from v1)*
+- The app renders correctly and is fully usable on small-screen mobile devices. *(unchanged from v1)*
+- When a user deletes their account, all associated data (email address, saved routes) is permanently deleted. No third-party data sharing. *(new in v2)*
+- Account deletion is self-serve from account settings — no support contact required. *(new in v2)*
+- The "My Routes" library page renders within 2 seconds. *(new in v2; see also Success Criteria secondary)*
+- Route generation latency for anonymous users under OSM POI querying is an open question — the v1 ≤5 s NFR was not re-confirmed for v2. To be measured and defined during implementation. *(open question)*
+
+## Constraints & Preserved Behavior
+
+- Anonymous route generation must continue to work without an account in v2.
+- GPX export format must remain unchanged — v1-generated GPX files must still be importable to Strava, Garmin, and Komoot.
+- Public route sharing links introduced in v2 must be stable — once shared, a URL must remain valid.
+- Strava Segments API is explicitly excluded — requires OAuth and is not free/public. OSM is the only data source for routing improvements.
+- Routing improvement is OSM-only: scenic/low-traffic road tags + cyclist POIs (cafes, water, rest stops) from OpenStreetMap.
 
 ## Non-Goals
 
-- **No point-to-point routes in v1.** Only loop routes (start = end) are generated. Point-to-point support is deferred to v2. Rationale: simplifies route generation and aligns with the most common road-cyclist use case.
-- **No user accounts, saved routes, or route library in v1.** Authentication and persistence are deferred to v2. Rationale: eliminates the need for a backend data store and auth system; GPX export serves as the persistence mechanism for v1.
-- **No miles / imperial units in v1.** Kilometres only. Miles support is deferred to v2. Rationale: avoids a unit-toggle UI element without reducing core value.
-- **No multiple proposals in v1.** A single route proposal is generated per request. Multiple-proposal support is deferred to v2 once the algorithm is proven. Rationale: reduces API cost and complexity for the initial build.
-- **No social or sharing features.** No public route sharing, no community feed, no collaborative planning. These are explicitly out of scope.
-- **No offline-first or PWA capability in v1.** The app requires a network connection to generate routes.
+- **No multiple route proposals per request.** Still one route generated per request. Multiple proposals deferred to v3 once the algorithm is proven at scale.
+- **No library search or filter.** The "My Routes" library is a flat list sorted by date. Search and filter deferred to v3.
+- **No social feed, community features, or public route discovery.** No browsing other users' routes, no following, no community feed. Route sharing is link-only (FR-009); discovery is out of scope.
+- **No point-to-point routes.** Loop routes only (start = end). Point-to-point deferred.
+- **No imperial units.** Kilometres only. Miles support deferred.
+- **No offline-first or PWA capability.** App requires a network connection.
 
-## Forward: tech-stack
+## Product Framing
 
-- Route generation relies on public data APIs; likely candidates include OpenRouteService (cycling profiles, free tier) and OpenStreetMap data. Specific choice is a stack-selection concern.
-- At scale (~10k+ users), route-generation API calls may become a bottleneck; caching of frequently requested start-point areas or queuing heavy computations is a future-scale concern to address post-v1.
-
-
-
-
-
+- product_type: web-app (no change from v1)
+- target_scale: small/medium (no change from v1)
+- timeline_budget.delivery_weeks: open-ended (no hard deadline; after-hours work)
+- timeline_budget.hard_deadline: null
+- timeline_budget.after_hours_only: true
