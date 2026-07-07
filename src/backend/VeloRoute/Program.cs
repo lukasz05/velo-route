@@ -1,4 +1,7 @@
 using System.Net;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using VeloRoute.Routing;
 using Microsoft.Extensions.Options;
 
@@ -46,6 +49,30 @@ builder.Services.AddHttpClient<IOpenRouteServiceClient, OpenRouteServiceClient>(
 
 builder.Services.AddScoped<LoopRouteGenerator>();
 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = builder.Configuration["Clerk:Authority"];
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = false,
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                var azp = context.Principal?.FindFirst("azp")?.Value;
+                var allowed = builder.Configuration["Clerk:AllowedAzp"];
+                if (azp != allowed)
+                {
+                    context.Fail("azp claim did not match allowed origin");
+                }
+                return Task.CompletedTask;
+            },
+        };
+    });
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -53,9 +80,16 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/openapi/v1.json", "VeloRoute API v1"));
     app.UseHttpsRedirection();
+
+    app.MapGet("/auth/probe", (ClaimsPrincipal user) =>
+        Results.Ok(new { sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value }))
+        .RequireAuthorization();
 }
 
 app.UseCors();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
    .WithName("HealthCheck");

@@ -1,13 +1,37 @@
 using System.Collections.Concurrent;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
+using Microsoft.IdentityModel.Tokens;
 using VeloRoute.Routing;
 
 namespace VeloRoute.Tests.Routing;
+
+internal static class TestJwtFactory
+{
+    public const string TestAzp = "test-client";
+
+    public static RsaSecurityKey SigningKey { get; } = new(RSA.Create(2048)) { KeyId = "test-key" };
+
+    public static string CreateToken(string subject, string azp = TestAzp)
+    {
+        var claims = new[]
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, subject),
+            new Claim("azp", azp),
+        };
+        var credentials = new SigningCredentials(SigningKey, SecurityAlgorithms.RsaSha256);
+        var token = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddMinutes(5), signingCredentials: credentials);
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+}
 
 internal static class RouteTestHelpers
 {
@@ -54,15 +78,18 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
     private readonly string? _timeoutSeconds;
     private readonly string? _apiKey;
     private readonly bool _useFakeLogging;
+    private readonly bool _useTestAuth;
 
     public VeloRouteWebApplicationFactory(
         string? timeoutSeconds = null,
         string? apiKey = null,
-        bool useFakeLogging = false)
+        bool useFakeLogging = false,
+        bool useTestAuth = false)
     {
         _timeoutSeconds = timeoutSeconds;
         _apiKey = apiKey;
         _useFakeLogging = useFakeLogging;
+        _useTestAuth = useTestAuth;
     }
 
     public FakeOpenRouteServiceClient FakeClient { get; } = new();
@@ -77,6 +104,17 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
                 services.Remove(descriptor);
 
             services.AddSingleton<IOpenRouteServiceClient>(FakeClient);
+
+            if (_useTestAuth)
+            {
+                services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
+                {
+                    options.Authority = null;
+                    options.RequireHttpsMetadata = false;
+                    options.TokenValidationParameters.ValidateIssuer = false;
+                    options.TokenValidationParameters.IssuerSigningKey = TestJwtFactory.SigningKey;
+                });
+            }
         });
 
         var inMemory = new Dictionary<string, string?>();
@@ -84,6 +122,8 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
             inMemory["ORS:TimeoutSeconds"] = _timeoutSeconds;
         if (_apiKey is not null)
             inMemory["ORS:ApiKey"] = _apiKey;
+        if (_useTestAuth)
+            inMemory["Clerk:AllowedAzp"] = TestJwtFactory.TestAzp;
 
         if (inMemory.Count > 0)
             builder.ConfigureAppConfiguration(config => config.AddInMemoryCollection(inMemory));

@@ -377,30 +377,30 @@ Confirm the matcher doesn't block the existing `/api/geocode` route unintentiona
 
 #### Automated
 
-- [x] 1.1 Frontend `.env.example` updated with Clerk variables
-- [x] 1.2 Backend `appsettings.json` Clerk section added
-- [x] 1.3 JWKS endpoint resolves (curl returns JSON)
+- [x] 1.1 Frontend `.env.example` updated with Clerk variables — de99e65
+- [x] 1.2 Backend `appsettings.json` Clerk section added — de99e65
+- [x] 1.3 JWKS endpoint resolves (curl returns JSON) — de99e65
 
 #### Manual
 
-- [x] 1.4 Clerk application created; email OTP (or magic link) sign-in enabled
-- [x] 1.5 Publishable key + secret key + Frontend API domain recorded
-- [x] 1.6 Config values recorded in local .env.local and appsettings.Development.json
+- [x] 1.4 Clerk application created; email OTP (or magic link) sign-in enabled — de99e65
+- [x] 1.5 Publishable key + secret key + Frontend API domain recorded — de99e65
+- [x] 1.6 Config values recorded in local .env.local and appsettings.Development.json — de99e65
 
 ### Phase 2: Backend JWT Middleware + Test Infrastructure
 
 #### Automated
 
-- [ ] 2.1 Backend builds: `dotnet build src/backend/`
-- [ ] 2.2 All tests pass: `dotnet test src/backend/`
-- [ ] 2.3 GET /auth/probe without token → 401 (AuthMiddlewareTests)
-- [ ] 2.4 GET /auth/probe with test JWT → 200 (AuthMiddlewareTests)
-- [ ] 2.5 POST /routes/loop without token → not 401 (AuthMiddlewareTests)
+- [x] 2.1 Backend builds: `dotnet build src/backend/`
+- [x] 2.2 All tests pass: `dotnet test src/backend/`
+- [x] 2.3 GET /auth/probe without token → 401 (AuthMiddlewareTests)
+- [x] 2.4 GET /auth/probe with test JWT → 200 (AuthMiddlewareTests)
+- [x] 2.5 POST /routes/loop without token → not 401 (AuthMiddlewareTests)
 
 #### Manual
 
-- [ ] 2.6 `curl http://localhost:5098/auth/probe` → 401
-- [ ] 2.7 `curl -H "Authorization: Bearer bad" http://localhost:5098/auth/probe` → 401
+- [x] 2.6 `curl http://localhost:5098/auth/probe` → 401
+- [x] 2.7 `curl -H "Authorization: Bearer bad" http://localhost:5098/auth/probe` → 401
 
 ### Phase 3: Frontend Clerk Integration + Round-Trip Smoke Test
 
