@@ -406,17 +406,17 @@ Confirm the matcher doesn't block the existing `/api/geocode` route unintentiona
 
 #### Automated
 
-- [x] 3.1 Frontend builds: `npm run build` from src/frontend/
-- [x] 3.2 Lint passes: `npm run lint` from src/frontend/
-- [x] 3.3 Vitest tests pass: `npm test` from src/frontend/
-- [x] 3.4 No TypeScript errors in new Clerk files
+- [x] 3.1 Frontend builds: `npm run build` from src/frontend/ — 87a3f7c
+- [x] 3.2 Lint passes: `npm run lint` from src/frontend/ — 87a3f7c
+- [x] 3.3 Vitest tests pass: `npm test` from src/frontend/ — 87a3f7c
+- [x] 3.4 No TypeScript errors in new Clerk files — 87a3f7c
 
 #### Manual
 
-- [x] 3.5 Dev server starts without Clerk errors in browser console
-- [x] 3.6 Anonymous route generation works end-to-end without login
-- [x] 3.7 Sign-in flow reaches email OTP entry step
-- [x] 3.8 After OTP entry, session active; token retrievable via getToken()
-- [x] 3.9 `curl -H "Authorization: Bearer <token>" .../auth/probe` → 200
-- [x] 3.10 `curl .../auth/probe` (no token) → 401
-- [x] 3.11 POST /routes/loop without token → 200 (anonymous access preserved)
+- [x] 3.5 Dev server starts without Clerk errors in browser console — 87a3f7c
+- [x] 3.6 Anonymous route generation works end-to-end without login — 87a3f7c
+- [x] 3.7 Sign-in flow reaches email OTP entry step — 87a3f7c
+- [x] 3.8 After OTP entry, session active; token retrievable via getToken() — 87a3f7c
+- [x] 3.9 `curl -H "Authorization: Bearer <token>" .../auth/probe` → 200 — 87a3f7c
+- [x] 3.10 `curl .../auth/probe` (no token) → 401 — 87a3f7c
+- [x] 3.11 POST /routes/loop without token → 200 (anonymous access preserved) — 87a3f7c

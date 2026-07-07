@@ -1,7 +1,7 @@
 ---
 id: auth-provider-scaffold
 title: Auth provider scaffold — Clerk + email OTP + .NET JWT middleware
-status: implementing
+status: implemented
 created: 2026-07-04
 updated: 2026-07-07
 stream: A
