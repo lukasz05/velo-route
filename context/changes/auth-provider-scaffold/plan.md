@@ -391,33 +391,32 @@ Confirm the matcher doesn't block the existing `/api/geocode` route unintentiona
 
 #### Automated
 
-- [x] 2.1 Backend builds: `dotnet build src/backend/`
-- [x] 2.2 All tests pass: `dotnet test src/backend/`
-- [x] 2.3 GET /auth/probe without token → 401 (AuthMiddlewareTests)
-- [x] 2.4 GET /auth/probe with test JWT → 200 (AuthMiddlewareTests)
-- [x] 2.5 POST /routes/loop without token → not 401 (AuthMiddlewareTests)
+- [x] 2.1 Backend builds: `dotnet build src/backend/` — 74472c9
+- [x] 2.2 All tests pass: `dotnet test src/backend/` — 74472c9
+- [x] 2.3 GET /auth/probe without token → 401 (AuthMiddlewareTests) — 74472c9
+- [x] 2.4 GET /auth/probe with test JWT → 200 (AuthMiddlewareTests) — 74472c9
+- [x] 2.5 POST /routes/loop without token → not 401 (AuthMiddlewareTests) — 74472c9
 
 #### Manual
 
-- [x] 2.6 `curl http://localhost:5098/auth/probe` → 401
-- [x] 2.7 `curl -H "Authorization: Bearer bad" http://localhost:5098/auth/probe` → 401
+- [x] 2.6 `curl http://localhost:5098/auth/probe` → 401 — 74472c9
+- [x] 2.7 `curl -H "Authorization: Bearer bad" http://localhost:5098/auth/probe` → 401 — 74472c9
 
 ### Phase 3: Frontend Clerk Integration + Round-Trip Smoke Test
 
 #### Automated
 
-- [ ] 3.1 Frontend builds: `npm run build` from src/frontend/
-- [ ] 3.2 Lint passes: `npm run lint` from src/frontend/
-- [ ] 3.3 Vitest tests pass: `npm test` from src/frontend/
-- [ ] 3.4 No TypeScript errors in new Clerk files
+- [x] 3.1 Frontend builds: `npm run build` from src/frontend/
+- [x] 3.2 Lint passes: `npm run lint` from src/frontend/
+- [x] 3.3 Vitest tests pass: `npm test` from src/frontend/
+- [x] 3.4 No TypeScript errors in new Clerk files
 
 #### Manual
 
-- [ ] 3.5 Dev server starts without Clerk errors in browser console
-- [ ] 3.6 Anonymous route generation works end-to-end without login
-- [ ] 3.7 Sign-in flow reaches email OTP entry step
-- [ ] 3.8 After OTP entry, session active; token retrievable via getToken()
-- [ ] 3.9 `curl -H "Authorization: Bearer <token>" .../auth/probe` → 200
-- [ ] 3.10 `curl .../auth/probe` (no token) → 401
-- [ ] 3.11 POST /routes/loop without token → 200 (anonymous access preserved)
-</content>
+- [x] 3.5 Dev server starts without Clerk errors in browser console
+- [x] 3.6 Anonymous route generation works end-to-end without login
+- [x] 3.7 Sign-in flow reaches email OTP entry step
+- [x] 3.8 After OTP entry, session active; token retrievable via getToken()
+- [x] 3.9 `curl -H "Authorization: Bearer <token>" .../auth/probe` → 200
+- [x] 3.10 `curl .../auth/probe` (no token) → 401
+- [x] 3.11 POST /routes/loop without token → 200 (anonymous access preserved)
