@@ -50,6 +50,8 @@ src/backend/**/*.snupkg
 src/backend/**/publish/
 src/backend/.config/dotnet-tools.json.lock
 src/backend/**/.azure/
+src/backend/**/appsettings.Development.json
+src/backend/**/appsettings.*.local.json
 
 # -----------------------------------------------------------------------------
 # Logs & debug

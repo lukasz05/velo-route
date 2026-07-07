@@ -2,7 +2,9 @@
 
 ## Overview
 
-Wire Microsoft Entra External ID CIAM as the VeloRoute auth provider. No user-facing auth UI is built here — this is pure infrastructure: tenant configuration, MSAL.js in Next.js, JWT Bearer middleware in .NET, and a test JWT factory that keeps existing tests green. The deliverable is a verifiable token chain from Entra CIAM → frontend → backend, confirmed by a dev-only smoke endpoint.
+Wire Clerk as the VeloRoute auth provider. No user-facing auth UI is built here — this is pure infrastructure: Clerk application config, `@clerk/nextjs` in Next.js, JWT Bearer middleware in .NET, and a test JWT factory that keeps existing tests green. The deliverable is a verifiable token chain from Clerk → frontend → backend, confirmed by a dev-only smoke endpoint.
+
+**Provider change (2026-07-07):** originally planned against Microsoft Entra External ID CIAM. Blocked at tenant creation — the `Microsoft.AzureActiveDirectory/ciamDirectories` resource type only deploys to broad meta-regions (Global, United States, Europe, Asia Pacific, Australia, Japan), none of which intersect the Azure subscription's system-enforced region allowlist (a fraud-prevention policy tied to the "Azure for Students" offer, not customer-removable). Pivoted to Clerk — no Azure dependency, free tier (10k MAU), native email OTP/magic-link, JWKS-based JWT validation keeps the same backend architecture shape. Postgres (F-02) stays on Azure; this swap only affects F-01.
 
 ## Current State Analysis
 
@@ -12,9 +14,9 @@ Backend (`src/backend/VeloRoute/Program.cs`):
 - Middleware sequence today: `UseCors` (line 58) → endpoint definitions; auth middleware inserts between them
 
 Frontend (`src/frontend/`):
-- No auth packages; only Entra-related reference is ORS API key header in `app/api/geocode/route.ts` (unrelated)
-- `layout.tsx` is a clean server component — ready to receive a client wrapper child
-- `RouteApp.tsx` is already `"use client"` but wrapping there would block future pages (My Routes, account settings) from accessing auth state
+- No auth packages; only Entra-related reference was ORS API key header in `app/api/geocode/route.ts` (unrelated, unaffected by this pivot)
+- `layout.tsx` is a clean server component
+- `RouteApp.tsx` is already `"use client"` but wrapping auth context there would block future pages (My Routes, account settings) from accessing auth state
 
 Test infrastructure (`src/backend/VeloRoute.Tests/Routing/TestInfrastructure.cs`):
 - `VeloRouteWebApplicationFactory` already uses `ConfigureWebHost`/`ConfigureServices` pattern — test JWT factory extends the same pattern
@@ -23,9 +25,9 @@ Test infrastructure (`src/backend/VeloRoute.Tests/Routing/TestInfrastructure.cs`
 ## Desired End State
 
 After this plan:
-- A dedicated Entra External ID CIAM tenant exists for VeloRoute with two app registrations: Web API (with `user.data` scope) and SPA (with localhost + production redirect URIs)
-- Frontend has MSAL.js wired at the app root (`layout.tsx` via `MsalProviderWrapper`), using redirect flow, with CIAM authority
-- Backend validates Entra-issued JWTs via JWKS, serves a dev-only `GET /auth/probe` that returns 401 without a token and 200 with a valid token
+- A Clerk application exists for VeloRoute with email OTP (or email magic link) enabled as the sign-in method
+- Frontend has `@clerk/nextjs` wired at the app root (`layout.tsx` via `<ClerkProvider>`), plus `middleware.ts` using `clerkMiddleware()`
+- Backend validates Clerk-issued JWTs via JWKS, serves a dev-only `GET /auth/probe` that returns 401 without a token and 200 with a valid token
 - `POST /routes/loop` and `POST /routes/gpx` remain accessible without a token
 - All 43 existing backend tests pass; new auth middleware tests cover 401 rejection and 200 acceptance using a test JWT factory
 - All frontend builds, lint, and existing Vitest tests pass
@@ -33,106 +35,94 @@ After this plan:
 ### Verification:
 1. `dotnet test` — all tests green including new auth middleware tests
 2. `npm run build && npm run lint` — clean
-3. Manual: dev server running, `curl http://localhost:5098/auth/probe` → 401, with Bearer token from Entra OTP login → 200
+3. Manual: dev server running, `curl http://localhost:5098/auth/probe` → 401, with Bearer token from Clerk session → 200
 4. Manual: `POST /routes/loop` without token → 200 (anonymous access preserved)
-5. Manual: clicking login triggers redirect to Entra CIAM OTP sign-in page
+5. Manual: clicking sign-in triggers Clerk's email OTP sign-in flow
 
 ### Key Discoveries:
 
 - `Program.cs:58` — `app.UseCors()` already called with `AllowAnyHeader()`; auth middleware goes after this line, before endpoint definitions
 - `TestInfrastructure.cs:70` — `ConfigureWebHost`/`ConfigureServices` pattern is the extension point for test JWT override
-- No `staticwebapp.config.json` exists; SWA EasyAuth is off by default and stays off — MSAL owns all auth client-side
-- Entra External ID CIAM uses a different authority URL format than standard Entra: `https://<tenant>.ciamlogin.com/<tenant-id>` (not `login.microsoftonline.com`)
-- Free tier covers 50,000 MAU/month; CIAM tenant is separate from the Azure subscription hosting SWA + App Service
+- Clerk issues standard JWTs; each Clerk instance exposes a Frontend API domain (e.g. `https://<your-app>.clerk.accounts.dev` for dev instances) with a JWKS endpoint at `<frontend-api>/.well-known/jwks.json` and (per Clerk's OIDC support) a discovery document at `<frontend-api>/.well-known/openid-configuration`
+- Clerk session tokens carry `azp` (authorized party — the origin that requested the token) rather than a conventional `aud` audience claim unless a custom JWT template is configured in the Clerk dashboard; backend validation must account for this (see Critical Implementation Details)
+- No `staticwebapp.config.json` exists; SWA EasyAuth is off by default and stays off — Clerk owns all auth client-side
+- Free tier covers 10,000 MAU/month; no Azure subscription or region dependency at all
+- **Unverified, confirm during Phase 1/2 implementation:** exact shape of Clerk's OIDC discovery document and whether ASP.NET Core's standard `AddJwtBearer(Authority: ...)` auto-discovery works against it out of the box, or whether `MetadataAddress`/manual JWKS fetch is required. No official Microsoft.Identity-style Clerk package exists for .NET — this plan uses the generic `Microsoft.AspNetCore.Authentication.JwtBearer` package (already part of the ASP.NET Core shared framework).
 
 ## What We're NOT Doing
 
 - No login/logout UI (deferred to S-01: `magic-link-auth`)
 - No user row creation in the database (deferred to S-01, which requires F-02 as well)
 - No auth-state props or hooks added to `RouteForm`, `RouteMap`, `RouteInfoPanel` (invisible until S-01)
-- No SWA EasyAuth configuration (stays disabled; MSAL handles auth client-side)
-- No production Entra tenant (dev/staging tenant only in this scaffold; production tenant configured at deploy time)
+- No SWA EasyAuth configuration (stays disabled; Clerk handles auth client-side)
+- No production Clerk instance (dev instance only in this scaffold; production instance configured at deploy time)
 - No token passing from frontend to backend except via the manual smoke test
+- No Azure Entra External ID — superseded by this pivot; do not resume that path without re-opening the roadmap decision
 
 ## Implementation Approach
 
-Three sequential phases matching three concerns: (1) external Azure config first, because both frontend and backend config values flow from it; (2) backend middleware and test infrastructure next, so the JWT chain is verifiable independently; (3) frontend MSAL integration last, enabling the full round-trip smoke test.
+Three sequential phases matching three concerns: (1) external Clerk config first, because both frontend and backend config values flow from it; (2) backend middleware and test infrastructure next, so the JWT chain is verifiable independently; (3) frontend Clerk integration last, enabling the full round-trip smoke test.
 
-`Microsoft.Identity.Web` is used on the backend (not raw `JwtBearer`) — it's the Microsoft-maintained library for Entra integration in .NET, handles JWKS endpoint discovery, issuer, and audience validation automatically from a config section.
+Generic `Microsoft.AspNetCore.Authentication.JwtBearer` is used on the backend (not a Clerk-specific package — none exists for .NET) — `Authority` points at the Clerk Frontend API domain, and token validation is configured explicitly rather than relying on a provider-maintained helper.
 
-The test JWT factory generates JWTs signed with a test RSA key and overrides the JWT Bearer scheme's `IssuerSigningKey` in `VeloRouteWebApplicationFactory.ConfigureWebHost` — auth middleware runs in tests but trusts the test key instead of Entra JWKS.
+The test JWT factory generates JWTs signed with a test RSA key and overrides the JWT Bearer scheme's `IssuerSigningKey` in `VeloRouteWebApplicationFactory.ConfigureWebHost` — auth middleware runs in tests but trusts the test key instead of Clerk's JWKS. This part of the design is provider-agnostic and needed no changes from the original Entra-based plan.
 
 ## Critical Implementation Details
 
-**MSAL CIAM authority format** — Entra External ID CIAM uses `https://<tenant-name>.ciamlogin.com/<tenant-id>` as the authority, not the standard `https://login.microsoftonline.com/<tenant-id>`. MSAL also requires `knownAuthorities: ['<tenant-name>.ciamlogin.com']` in the config to avoid "untrusted authority" errors; without it, MSAL silently rejects the CIAM endpoint.
+**Clerk JWKS/discovery format** — Frontend API domain for a dev instance looks like `https://<slug>.clerk.accounts.dev`; JWKS lives at `<frontend-api>/.well-known/jwks.json`. Set `Authority` to the Frontend API domain. If ASP.NET Core's built-in OIDC discovery (`{Authority}/.well-known/openid-configuration`) doesn't resolve cleanly against Clerk's instance, fall back to setting `MetadataAddress` explicitly to the JWKS URL and skip discovery.
+
+**Audience/`azp` validation** — Clerk tokens generally don't carry a conventional `aud` claim unless a custom JWT template is set up in the Clerk dashboard. Set `ValidateAudience = false` in `TokenValidationParameters`, and instead add a custom `OnTokenValidated` check that asserts the `azp` claim matches the expected frontend origin(s) (`http://localhost:3000` in dev). Skipping this check would let a JWT minted for a different application on the same Clerk instance be accepted by this backend.
 
 **Middleware ordering** — In `Program.cs`, `app.UseAuthentication()` and `app.UseAuthorization()` must be inserted after `app.UseCors()` (line 58) and before the `app.MapGet`/`app.MapPost` endpoint definitions. This ensures CORS headers appear on 401 responses (CORS middleware runs first, adds headers to all responses including auth failures). Reversing this causes CORS preflight to pass but rejected auth calls to arrive at the client without CORS headers.
 
-**`MsalProviderWrapper` must be a `"use client"` component** — `layout.tsx` is a server component and cannot call React hooks or context providers directly. `MsalProvider` from `@azure/msal-react` uses React context (client-only). The wrapper component carries the `"use client"` directive and wraps `{children}`; `layout.tsx` imports and renders it without becoming a client component itself.
+**`<ClerkProvider>` placement** — unlike MSAL, Clerk's Next.js SDK (`@clerk/nextjs`) is designed for the App Router and `<ClerkProvider>` can wrap the root `layout.tsx` directly without requiring a separate `"use client"` wrapper component — Clerk handles the server/client boundary internally. A `middleware.ts` file at the frontend project root (or `src/`, matching where Next.js resolves middleware) must call `clerkMiddleware()` from `@clerk/nextjs/server` for `auth()`/session helpers to work.
 
 ---
 
-## Phase 1: Azure Tenant + App Registrations
+## Phase 1: Clerk Application Setup
 
 ### Overview
 
-Create the Entra External ID CIAM tenant, register the Web API and SPA applications, define the `user.data` scope, and document all config values needed by Phases 2 and 3. This phase produces no code — only configuration and updated `.env.example` files.
+Create the Clerk application, enable email OTP (or magic link) as the sign-in method, and document all config values needed by Phases 2 and 3. This phase produces no runtime code — only configuration and updated `.env.example`/`appsettings.json` shape.
 
 ### Changes Required:
 
-#### 1. Entra External ID CIAM tenant
+#### 1. Clerk application
 
-**File**: Azure portal (external configuration)
+**File**: Clerk dashboard (external configuration)
 
-**Intent**: Create a dedicated Entra External ID CIAM tenant for VeloRoute (free tier; separate from the Azure subscription hosting SWA and App Service). Enable email one-time passcode as the identity provider.
+**Intent**: Create a dedicated Clerk application for VeloRoute (free tier; dev instance). Enable email one-time-passcode (or email magic link) as the sign-in strategy under User & Authentication → Email, Phone, Username.
 
-**Contract**: Tenant produces a `<tenant-name>` and `<tenant-id>` (GUID). Authority base URL: `https://<tenant-name>.ciamlogin.com/<tenant-id>`. OIDC discovery endpoint: `https://<tenant-name>.ciamlogin.com/<tenant-id>/v2.0/.well-known/openid-configuration`.
+**Contract**: Application produces a Frontend API domain (`<slug>.clerk.accounts.dev`), a Publishable Key (`pk_test_...`), and a Secret Key (`sk_test_...`). JWKS endpoint: `https://<slug>.clerk.accounts.dev/.well-known/jwks.json`.
 
-#### 2. Web API app registration
-
-**File**: Azure portal — App registrations (in the CIAM tenant)
-
-**Intent**: Register the VeloRoute backend as a Web API resource application. Expose a single scope `user.data` that the SPA will request when acquiring access tokens.
-
-**Contract**: Produces a `<web-api-client-id>` (GUID). Scope URI: `api://<web-api-client-id>/user.data`. Audience for backend JWT validation: `<web-api-client-id>` (or the full `api://` URI — match whatever `Microsoft.Identity.Web` expects for the `Audience` config key).
-
-#### 3. SPA app registration
-
-**File**: Azure portal — App registrations (in the CIAM tenant)
-
-**Intent**: Register the VeloRoute frontend as a Single Page Application client. Configure redirect URIs for both local dev and production.
-
-**Contract**: Produces a `<spa-client-id>` (GUID). Redirect URIs: `http://localhost:3000` (dev) + the production SWA URL. Post-logout redirect URI: `http://localhost:3000`. Grant API permission to `api://<web-api-client-id>/user.data` (delegated).
-
-#### 4. Frontend `.env.example` update
+#### 2. Frontend `.env.example` update
 
 **File**: `src/frontend/.env.example`
 
-**Intent**: Document all MSAL-required environment variables so any contributor can wire up their own Entra app registration.
+**Intent**: Document all Clerk-required environment variables so any contributor can wire up their own Clerk application.
 
-**Contract**: Add four variables:
+**Contract**: Replace the Entra placeholder block with:
 ```
-NEXT_PUBLIC_ENTRA_CLIENT_ID=           # SPA app registration client ID
-NEXT_PUBLIC_ENTRA_AUTHORITY=           # https://<tenant-name>.ciamlogin.com/<tenant-id>
-NEXT_PUBLIC_ENTRA_REDIRECT_URI=        # http://localhost:3000
-NEXT_PUBLIC_ENTRA_API_SCOPE=           # api://<web-api-client-id>/user.data
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=     # pk_test_... from Clerk dashboard
+CLERK_SECRET_KEY=                      # sk_test_... server-only, never NEXT_PUBLIC
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in # placeholder route, no UI built yet
 ```
 
-#### 5. Backend appsettings section documentation
+#### 3. Backend appsettings section documentation
 
 **File**: `src/backend/VeloRoute/appsettings.json`
 
-**Intent**: Add the `EntraExternalId` configuration section shape with placeholder values so the backend knows what config keys to expect.
+**Intent**: Add the `Clerk` configuration section shape with placeholder values so the backend knows what config keys to expect.
 
-**Contract**: Add section:
+**Contract**: Replace the `EntraExternalId` section with:
 ```json
-"EntraExternalId": {
+"Clerk": {
   "Authority": "",
-  "ClientId": "",
-  "Audience": ""
+  "FrontendApiDomain": "",
+  "AllowedAzp": ""
 }
 ```
-Real values go in `appsettings.Development.json` (gitignored) or environment variables; the `appsettings.json` entry documents the shape.
+Real values go in `appsettings.Development.json` (gitignored) or environment variables; the `appsettings.json` entry documents the shape. `AllowedAzp` is the expected authorized-party origin (`http://localhost:3000` in dev) used by the custom `OnTokenValidated` check.
 
 ### Success Criteria:
 
@@ -140,15 +130,15 @@ Real values go in `appsettings.Development.json` (gitignored) or environment var
 
 - Frontend `.env.example` updated: `git diff --name-only` shows `src/frontend/.env.example`
 - Backend `appsettings.json` updated: `git diff --name-only` shows `src/backend/VeloRoute/appsettings.json`
-- OIDC discovery endpoint resolves: `curl https://<tenant-name>.ciamlogin.com/<tenant-id>/v2.0/.well-known/openid-configuration` returns JSON
+- JWKS endpoint resolves: `curl https://<slug>.clerk.accounts.dev/.well-known/jwks.json` returns JSON
 
 #### Manual Verification:
 
-- CIAM tenant created; both app registrations visible in Azure portal
-- SPA granted delegated permission to `user.data` scope on Web API registration
-- Config values (tenant name, tenant ID, SPA client ID, Web API client ID) recorded in local `src/frontend/.env.local` and `src/backend/appsettings.Development.json` (both gitignored)
+- Clerk application created; email OTP (or magic link) sign-in method enabled and visible in dashboard
+- Publishable key + secret key + Frontend API domain recorded
+- Config values recorded in local `src/frontend/.env.local` and `src/backend/appsettings.Development.json` (both gitignored)
 
-**Implementation Note**: After completing this phase and verifying the OIDC discovery endpoint resolves, pause for manual confirmation that config values are recorded locally before starting Phase 2.
+**Implementation Note**: After completing this phase and verifying the JWKS endpoint resolves, pause for manual confirmation that config values are recorded locally before starting Phase 2.
 
 ---
 
@@ -156,31 +146,51 @@ Real values go in `appsettings.Development.json` (gitignored) or environment var
 
 ### Overview
 
-Add JWT Bearer authentication to the .NET backend using `Microsoft.Identity.Web`, wire auth middleware into `Program.cs`, add a dev-only `/auth/probe` endpoint for smoke testing, and extend `VeloRouteWebApplicationFactory` with a test JWT factory so all 43 existing tests pass and new auth tests can verify token acceptance/rejection.
+Add JWT Bearer authentication to the .NET backend using the generic `Microsoft.AspNetCore.Authentication.JwtBearer` package, wire auth middleware into `Program.cs`, add a dev-only `/auth/probe` endpoint for smoke testing, and extend `VeloRouteWebApplicationFactory` with a test JWT factory so all 43 existing tests pass and new auth tests can verify token acceptance/rejection.
 
 ### Changes Required:
 
-#### 1. Add Microsoft.Identity.Web NuGet package
+#### 1. Confirm JwtBearer package availability
 
 **File**: `src/backend/VeloRoute/VeloRoute.csproj`
 
-**Intent**: Add the `Microsoft.Identity.Web` package, which provides Entra-native JWT Bearer configuration for .NET, including automatic JWKS endpoint discovery and issuer/audience validation.
+**Intent**: `Microsoft.AspNetCore.Authentication.JwtBearer` ships as part of the ASP.NET Core shared framework for web SDK projects — confirm no explicit `PackageReference` is needed (`Microsoft.NET.Sdk.Web` projects get it implicitly); add one explicitly only if the build fails to resolve the namespace.
 
-**Contract**: Add `<PackageReference Include="Microsoft.Identity.Web" Version="..." />`. Pin to a stable release compatible with .NET 10.
+**Contract**: No package change unless build proves otherwise.
 
 #### 2. Register auth services in Program.cs
 
 **File**: `src/backend/VeloRoute/Program.cs`
 
-**Intent**: Register JWT Bearer authentication with the Entra External ID CIAM authority and audience so the DI container can validate tokens on protected endpoints.
+**Intent**: Register JWT Bearer authentication against the Clerk Frontend API authority so the DI container can validate tokens on protected endpoints.
 
 **Contract**: After `builder.Services.AddCors(...)` and before `var app = builder.Build()`, add:
 ```csharp
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("EntraExternalId"));
+    .AddJwtBearer(options =>
+    {
+        options.Authority = builder.Configuration["Clerk:Authority"];
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = false,
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                var azp = context.Principal?.FindFirst("azp")?.Value;
+                var allowed = builder.Configuration["Clerk:AllowedAzp"];
+                if (azp != allowed)
+                {
+                    context.Fail("azp claim did not match allowed origin");
+                }
+                return Task.CompletedTask;
+            },
+        };
+    });
 builder.Services.AddAuthorization();
 ```
-The `EntraExternalId` config section must contain `Authority`, `ClientId`, and `Audience` keys (documented in Phase 1).
+The `Clerk` config section must contain `Authority`, `FrontendApiDomain`, and `AllowedAzp` keys (documented in Phase 1). If ASP.NET Core discovery against `Authority` fails during implementation, set `options.MetadataAddress` to the JWKS URL directly (see Critical Implementation Details).
 
 #### 3. Add auth middleware to pipeline
 
@@ -207,14 +217,15 @@ app.MapGet("/auth/probe", (ClaimsPrincipal user) =>
     Results.Ok(new { sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value }))
     .RequireAuthorization();
 ```
+Confirm during implementation whether Clerk's `sub` claim maps automatically to `ClaimTypes.NameIdentifier` (standard JwtBearer claim-type mapping behavior) or whether `user.FindFirst("sub")` is needed directly.
 
 #### 5. Add test JWT factory
 
 **File**: `src/backend/VeloRoute.Tests/Routing/TestInfrastructure.cs`
 
-**Intent**: Add a `TestJwtFactory` helper that generates RSA-signed JWTs using a test key, and extend `VeloRouteWebApplicationFactory` to accept an option that replaces the JWKS-based key with the test RSA key — so existing tests run without Entra dependency and new auth tests can issue valid test tokens.
+**Intent**: Add a `TestJwtFactory` helper that generates RSA-signed JWTs using a test key, and extend `VeloRouteWebApplicationFactory` to accept an option that replaces the JWKS-based key with the test RSA key — so existing tests run without a Clerk dependency and new auth tests can issue valid test tokens.
 
-**Contract**: Add a static `TestJwtFactory` class with a method `CreateToken(string subject, string[] scopes)` that returns a signed JWT string. Extend `VeloRouteWebApplicationFactory` constructor to accept `bool useTestAuth = false`; when true, `ConfigureTestServices` overrides the JwtBearer `IssuerSigningKey` with the test RSA key and sets `ValidateIssuer = false`, `ValidateAudience = false`.
+**Contract**: Add a static `TestJwtFactory` class with a method `CreateToken(string subject, string azp)` that returns a signed JWT string with a `sub` and `azp` claim. Extend `VeloRouteWebApplicationFactory` constructor to accept `bool useTestAuth = false`; when true, `ConfigureTestServices` overrides the JwtBearer `IssuerSigningKey` with the test RSA key, sets `ValidateIssuer = false`, and overrides `Clerk:AllowedAzp` config to match the test token's `azp` value.
 
 #### 6. Add auth middleware test class
 
@@ -224,10 +235,10 @@ app.MapGet("/auth/probe", (ClaimsPrincipal user) =>
 
 **Contract**: Three xUnit facts:
 - `GET /auth/probe` with no token → HTTP 401
-- `GET /auth/probe` with `TestJwtFactory.CreateToken("test-user", ["user.data"])` → HTTP 200
+- `GET /auth/probe` with `TestJwtFactory.CreateToken("test-user", "http://localhost:3000")` → HTTP 200
 - `POST /routes/loop` with no token → HTTP 200 or 422 (not 401; anonymous access preserved)
 
-#### 7. Add Microsoft.AspNetCore.Authentication.JwtBearer to test project
+#### 7. Add JWT test dependencies to test project
 
 **File**: `src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj`
 
@@ -256,53 +267,53 @@ app.MapGet("/auth/probe", (ClaimsPrincipal user) =>
 
 ---
 
-## Phase 3: Frontend MSAL Integration + Round-Trip Smoke Test
+## Phase 3: Frontend Clerk Integration + Round-Trip Smoke Test
 
 ### Overview
 
-Install MSAL packages, create the MSAL instance config pointing at the CIAM authority, wrap `layout.tsx` with a `"use client"` `MsalProviderWrapper`, and document all required environment variables. Then perform the full round-trip smoke test: sign in via Entra OTP, acquire a token, call `/auth/probe`, and verify anonymous route generation is unaffected.
+Install `@clerk/nextjs`, wrap `layout.tsx` with `<ClerkProvider>`, add `middleware.ts` with `clerkMiddleware()`, and document all required environment variables. Then perform the full round-trip smoke test: sign in via Clerk email OTP, acquire a session token, call `/auth/probe`, and verify anonymous route generation is unaffected.
 
 ### Changes Required:
 
-#### 1. Install MSAL packages
+#### 1. Install Clerk package
 
 **File**: `src/frontend/package.json`
 
-**Intent**: Add MSAL browser library and React bindings.
+**Intent**: Add the Clerk Next.js SDK.
 
-**Contract**: `npm install @azure/msal-browser @azure/msal-react` in `src/frontend/`. Add both as runtime dependencies.
+**Contract**: `npm install @clerk/nextjs` in `src/frontend/`. Add as a runtime dependency.
 
-#### 2. Create MSAL config
-
-**File**: `src/frontend/src/lib/msalConfig.ts`
-
-**Intent**: Create the MSAL `PublicClientApplication` instance with CIAM authority, SPA client ID, redirect URI, and localStorage cache. Exporting a singleton instance avoids multiple MSAL initializations across re-renders.
-
-**Contract**: Export a `msalInstance: PublicClientApplication` using environment variables `NEXT_PUBLIC_ENTRA_CLIENT_ID`, `NEXT_PUBLIC_ENTRA_AUTHORITY`, and `NEXT_PUBLIC_ENTRA_REDIRECT_URI`. Config must include `knownAuthorities: [new URL(process.env.NEXT_PUBLIC_ENTRA_AUTHORITY!).hostname]` to trust the CIAM endpoint. Cache location: `'localStorage'`, `storeAuthStateInCookie: false`.
-
-#### 3. Create MsalProviderWrapper client component
-
-**File**: `src/frontend/src/components/auth/MsalProviderWrapper.tsx`
-
-**Intent**: Wrap `MsalProvider` (a React context provider, client-only) in a named `"use client"` component so `layout.tsx` can import it without becoming a client component itself.
-
-**Contract**: `"use client"` directive at top. Accepts `{ children: React.ReactNode }` props. Renders `<MsalProvider instance={msalInstance}>{children}</MsalProvider>`. Imports `msalInstance` from `@/lib/msalConfig`.
-
-#### 4. Wrap layout.tsx with MsalProviderWrapper
+#### 2. Wrap layout.tsx with ClerkProvider
 
 **File**: `src/frontend/src/app/layout.tsx`
 
-**Intent**: Make MSAL auth context available to all pages and components in the app without making the root layout a client component.
+**Intent**: Make Clerk auth context available to all pages and components in the app.
 
-**Contract**: Import `MsalProviderWrapper` from `@/components/auth/MsalProviderWrapper`. Wrap the `{children}` inside `<body>` with `<MsalProviderWrapper>`. `layout.tsx` itself gains no `"use client"` directive; the `metadata` export and server component semantics are preserved.
+**Contract**: Import `ClerkProvider` from `@clerk/nextjs`. Wrap the `<html>`/`<body>` tree with `<ClerkProvider>`. Confirm during implementation whether `layout.tsx` needs `"use client"` — per Clerk's App Router docs it should not, but verify against the installed SDK version's current behavior (`AGENTS.md` warns this Next.js/React version has training-data-breaking changes; check `node_modules/next/dist/docs/` and `node_modules/@clerk/nextjs` docs before assuming).
 
-#### 5. Update frontend .env.local (local dev)
+#### 3. Add Clerk middleware
+
+**File**: `src/frontend/middleware.ts` (new file, project root alongside `src/`, matching Next.js middleware resolution rules for this project)
+
+**Intent**: Enable Clerk's `auth()`/session helpers across the app.
+
+**Contract**: 
+```ts
+import { clerkMiddleware } from '@clerk/nextjs/server'
+export default clerkMiddleware()
+export const config = {
+  matcher: ['/((?!_next|.*\\..*).*)'],
+}
+```
+Confirm the matcher doesn't block the existing `/api/geocode` route unintentionally.
+
+#### 4. Update frontend .env.local (local dev)
 
 **File**: `src/frontend/.env.local` (gitignored; created by developer)
 
-**Intent**: Supply actual Entra config values from Phase 1 to the dev environment.
+**Intent**: Supply actual Clerk config values from Phase 1 to the dev environment.
 
-**Contract**: Developer populates all four `NEXT_PUBLIC_*` variables from the SPA app registration created in Phase 1. `.env.example` already documents the shape (added in Phase 1).
+**Contract**: Developer populates `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` from the Clerk application created in Phase 1. `.env.example` already documents the shape (added in Phase 1).
 
 ### Success Criteria:
 
@@ -315,11 +326,11 @@ Install MSAL packages, create the MSAL instance config pointing at the CIAM auth
 
 #### Manual Verification:
 
-- `npm run dev` starts without MSAL errors in browser console
+- `npm run dev` starts without Clerk errors in browser console
 - Anonymous route generation works end-to-end (form → generate → map display → GPX download) without logging in
-- Triggering `loginRedirect()` from browser console (`await msalInstance.loginRedirect({ scopes: [process.env.NEXT_PUBLIC_ENTRA_API_SCOPE] })`) navigates to Entra CIAM OTP sign-in page
-- After completing OTP login, app redirects back to `http://localhost:3000`
-- Token present in localStorage under MSAL cache keys
+- Triggering Clerk's sign-in flow (via a temporary test route or Clerk's hosted `<SignIn />` component mounted ad hoc) navigates to the email OTP entry step
+- After completing OTP entry, a session is established
+- Session token retrievable client-side via `useAuth().getToken()` (or server-side via `auth().getToken()`)
 - `curl -H "Authorization: Bearer <token>" http://localhost:5098/auth/probe` → 200 with `{ "sub": "..." }`
 - `curl http://localhost:5098/auth/probe` → 401
 - `POST /routes/loop` without token → 200 (anonymous access preserved)
@@ -336,19 +347,18 @@ Install MSAL packages, create the MSAL instance config pointing at the CIAM auth
 
 ### Integration Tests:
 
-- Full round-trip (manual): Entra OTP sign-in → token → `/auth/probe` → 200
+- Full round-trip (manual): Clerk email OTP sign-in → session token → `/auth/probe` → 200
 - Anonymous route generation unaffected (manual + existing `LoopRouteIntegrationTests.cs`)
 
 ### Manual Testing Steps:
 
 1. Start backend: `dotnet run` from `src/backend/VeloRoute/`
 2. Start frontend: `npm run dev` from `src/frontend/`
-3. In browser console: `await msalInstance.loginRedirect({ scopes: ['api://<web-api-client-id>/user.data'] })`
-4. Complete Entra OTP flow; verify redirect back to `localhost:3000`
-5. In browser console: `const accounts = msalInstance.getAllAccounts(); const resp = await msalInstance.acquireTokenSilent({ scopes: ['api://<web-api-client-id>/user.data'], account: accounts[0] }); console.log(resp.accessToken)`
-6. `curl -H "Authorization: Bearer <token>" http://localhost:5098/auth/probe` → `{"sub":"..."}` 200
-7. `curl http://localhost:5098/auth/probe` → 401
-8. `curl -X POST http://localhost:5098/routes/loop -H "Content-Type: application/json" -d '{"startLon":0,"startLat":0,"minKm":20,"maxKm":40}' ` → not 401
+3. Mount a temporary `<SignIn />` component (or navigate to Clerk's hosted sign-in) and complete email OTP entry
+4. In browser console (or a temporary debug button): retrieve the session token via Clerk's client-side `getToken()` API
+5. `curl -H "Authorization: Bearer <token>" http://localhost:5098/auth/probe` → `{"sub":"..."}` 200
+6. `curl http://localhost:5098/auth/probe` → 401
+7. `curl -X POST http://localhost:5098/routes/loop -H "Content-Type: application/json" -d '{"startLon":0,"startLat":0,"minKm":20,"maxKm":40}' ` → not 401
 
 ## References
 
@@ -357,24 +367,25 @@ Install MSAL packages, create the MSAL instance config pointing at the CIAM auth
 - Existing backend bootstrap: `src/backend/VeloRoute/Program.cs`
 - Test infrastructure: `src/backend/VeloRoute.Tests/Routing/TestInfrastructure.cs`
 - Frontend entry point: `src/frontend/src/app/layout.tsx`
+- Clerk pivot rationale: this plan's Overview section, 2026-07-07 (superseded Entra External ID CIAM — blocked by Azure subscription region policy on the available subscription)
 
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
 
-### Phase 1: Azure Tenant + App Registrations
+### Phase 1: Clerk Application Setup
 
 #### Automated
 
-- [ ] 1.1 Frontend `.env.example` updated with NEXT_PUBLIC_ENTRA_* variables
-- [ ] 1.2 Backend `appsettings.json` EntraExternalId section added
-- [ ] 1.3 OIDC discovery endpoint resolves (curl returns JSON)
+- [x] 1.1 Frontend `.env.example` updated with Clerk variables
+- [x] 1.2 Backend `appsettings.json` Clerk section added
+- [x] 1.3 JWKS endpoint resolves (curl returns JSON)
 
 #### Manual
 
-- [ ] 1.4 CIAM tenant created; both app registrations visible in Azure portal
-- [ ] 1.5 SPA granted delegated permission to user.data scope
-- [ ] 1.6 Config values recorded in local .env.local and appsettings.Development.json
+- [x] 1.4 Clerk application created; email OTP (or magic link) sign-in enabled
+- [x] 1.5 Publishable key + secret key + Frontend API domain recorded
+- [x] 1.6 Config values recorded in local .env.local and appsettings.Development.json
 
 ### Phase 2: Backend JWT Middleware + Test Infrastructure
 
@@ -391,21 +402,22 @@ Install MSAL packages, create the MSAL instance config pointing at the CIAM auth
 - [ ] 2.6 `curl http://localhost:5098/auth/probe` → 401
 - [ ] 2.7 `curl -H "Authorization: Bearer bad" http://localhost:5098/auth/probe` → 401
 
-### Phase 3: Frontend MSAL Integration + Round-Trip Smoke Test
+### Phase 3: Frontend Clerk Integration + Round-Trip Smoke Test
 
 #### Automated
 
 - [ ] 3.1 Frontend builds: `npm run build` from src/frontend/
 - [ ] 3.2 Lint passes: `npm run lint` from src/frontend/
 - [ ] 3.3 Vitest tests pass: `npm test` from src/frontend/
-- [ ] 3.4 No TypeScript errors in new MSAL files
+- [ ] 3.4 No TypeScript errors in new Clerk files
 
 #### Manual
 
-- [ ] 3.5 Dev server starts without MSAL errors in browser console
+- [ ] 3.5 Dev server starts without Clerk errors in browser console
 - [ ] 3.6 Anonymous route generation works end-to-end without login
-- [ ] 3.7 loginRedirect() navigates to Entra CIAM OTP sign-in page
-- [ ] 3.8 After OTP login, app redirects back to localhost:3000; token in localStorage
+- [ ] 3.7 Sign-in flow reaches email OTP entry step
+- [ ] 3.8 After OTP entry, session active; token retrievable via getToken()
 - [ ] 3.9 `curl -H "Authorization: Bearer <token>" .../auth/probe` → 200
 - [ ] 3.10 `curl .../auth/probe` (no token) → 401
 - [ ] 3.11 POST /routes/loop without token → 200 (anonymous access preserved)
+</content>
