@@ -63,11 +63,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             {
                 var azp = context.Principal?.FindFirst("azp")?.Value;
                 var allowed = builder.Configuration["Clerk:AllowedAzp"];
-                if (azp != allowed)
+                if (string.IsNullOrEmpty(allowed) || azp != allowed)
                 {
                     context.Fail("azp claim did not match allowed origin");
                 }
                 return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                context.HandleResponse();
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+                return context.Response.WriteAsJsonAsync(new { error = "Unauthorized", code = "UNAUTHORIZED" });
             },
         };
     });
