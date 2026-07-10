@@ -87,7 +87,8 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() &&
+    !string.IsNullOrEmpty(app.Configuration.GetConnectionString("Default")))
 {
     using var scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();

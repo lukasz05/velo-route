@@ -492,10 +492,10 @@ additive migrations on top of `InitialCreate`.
 
 #### Automated
 
-- [x] 2.1 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj`
-- [x] 2.2 UserRouteSchemaTests: insert round-trip passes
-- [x] 2.3 UserRouteSchemaTests: cascade delete passes
-- [x] 2.4 UserRouteSchemaTests: geometry JSONB round-trip passes
+- [x] 2.1 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj` — 1ed8917
+- [x] 2.2 UserRouteSchemaTests: insert round-trip passes — 1ed8917
+- [x] 2.3 UserRouteSchemaTests: cascade delete passes — 1ed8917
+- [x] 2.4 UserRouteSchemaTests: geometry JSONB round-trip passes — 1ed8917
 
 #### Manual
 
