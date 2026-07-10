@@ -1,9 +1,10 @@
 ---
 id: security-privacy-guards
 title: Security and privacy guards
-status: done
+status: archived
 created: 2026-06-20
-updated: 2026-06-20
+updated: 2026-07-10
+archived_at: 2026-07-10T18:15:47Z
 roadmap_ref: F-04
 ---
 

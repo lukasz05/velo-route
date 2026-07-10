@@ -1,10 +1,10 @@
 ---
 change_id: loop-route-generation
 title: Loop route generation and interactive map display
-status: impl_reviewed
+status: archived
 created: 2026-05-30
-updated: 2025-07-14
-archived_at: null
+updated: 2026-07-10
+archived_at: 2026-07-10T18:15:47Z
 ---
 
 ## Notes

@@ -1,9 +1,10 @@
 ---
 id: backend-deploy
 title: Backend deployment and CI gate
-status: implemented
+status: archived
 created: 2026-06-30
-updated: 2026-07-01
+updated: 2026-07-10
+archived_at: 2026-07-10T18:15:47Z
 roadmap_ref: F-05
 ---
 
