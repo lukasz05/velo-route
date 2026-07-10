@@ -66,15 +66,15 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### F-01: Auth provider scaffold
 
-- **Outcome:** (foundation) Microsoft Entra External ID tenant configured for external (customer) identities with email OTP as the sign-in method; MSAL.js (`@azure/msal-browser`) integrated in Next.js App Router; .NET backend validates Entra-issued JWTs via the JWKS endpoint; route-level auth middleware configured so that `POST /routes/loop` and `POST /routes/gpx` remain accessible to unauthenticated users and new library endpoints require a valid session.
+- **Outcome:** (foundation) Clerk application configured for external (customer) identities with email OTP as the sign-in method; `@clerk/nextjs` integrated in Next.js App Router; .NET backend validates Clerk-issued JWTs via the JWKS endpoint; route-level auth middleware configured so that `POST /routes/loop` and `POST /routes/gpx` remain accessible to unauthenticated users and new library endpoints require a valid session.
 - **Change ID:** `auth-provider-scaffold`
 - **PRD refs:** FR-001, FR-002, FR-003, FR-012, FR-013, Access Control section ("unauthenticated users retain full access to route generation and GPX export")
 - **Unlocks:** S-01 (email OTP auth UI requires token issuance and session verification to be in place)
 - **Prerequisites:** —
 - **Parallel with:** F-02 (data layer schema has no dependency on auth provider choice)
 - **Blockers:** —
-- **Unknowns:** ~~Which magic link provider?~~ — **Resolved 2026-07-04:** Microsoft Entra External ID + email OTP (6-digit code). Azure-only; avoids Azure AD B2C custom-policy complexity.
-- **Risk:** MSAL.js + Next.js App Router (React Server Components) has rough edges — token storage and session refresh must be handled client-side; server components cannot access MSAL token cache directly. Plan the auth boundary carefully before implementation.
+- **Unknowns:** ~~Which magic link provider?~~ — **Resolved 2026-07-04:** Microsoft Entra External ID + email OTP. **Superseded 2026-07-07:** switched to Clerk + email OTP — Entra CIAM tenant creation blocked by Azure subscription region policy (`ciamDirectories` resource type only deploys to broad meta-regions that don't intersect the "Azure for Students" subscription's system-enforced region allowlist, which isn't customer-removable). Clerk has no Azure dependency; F-02 stays on Azure Postgres unaffected.
+- **Risk:** `@clerk/nextjs` + Next.js App Router (React Server Components) behavior should be checked against current SDK docs, not training data — `src/frontend/AGENTS.md` flags this Next.js/React version as having training-data-breaking changes. No official Clerk .NET package exists; backend JWKS/OIDC discovery against Clerk's endpoint needs verifying during implementation.
 - **Status:** ready
 
 ### F-02: Data layer schema
@@ -115,8 +115,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** —
 - **Blockers:** —
 - **Unknowns:**
-  - OTP expiry window — Entra External ID default is 30 minutes; configurable. Block: no.
-- **Risk:** Email delivery reliability is a dependency outside the app's control; deliverability must be verified with Entra External ID's email sending limits before shipping.
+  - OTP expiry window — Clerk default expiry is provider-configured; confirm exact value in Clerk dashboard during F-01 implementation. Block: no.
+- **Risk:** Email delivery reliability is a dependency outside the app's control; deliverability must be verified with Clerk's free-tier email sending limits before shipping.
 - **Status:** blocked
 
 ### S-02: Save route
@@ -140,7 +140,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-02
 - **Blockers:** —
 - **Unknowns:**
-  - ~~Does the chosen auth provider support programmatic user deletion?~~ — **Resolved 2026-07-04:** Entra External ID supports user deletion via Microsoft Graph API (`DELETE /users/{id}`). Backend calls Graph API on account delete, then cascades the Postgres row via FK constraint.
+  - ~~Does the chosen auth provider support programmatic user deletion?~~ — **Resolved 2026-07-04, provider updated 2026-07-07:** Clerk supports user deletion via its Backend API (`DELETE /users/{id}`). Backend calls Clerk's Backend API on account delete, then cascades the Postgres row via FK constraint.
 - **Risk:** Hard delete with no soft-delete buffer means a mis-click permanently destroys a user's route library. A confirmation prompt (e.g. "type DELETE to confirm") is the minimum safeguard; the PRD requires a prompt but does not specify its form.
 - **Status:** blocked
 
@@ -187,7 +187,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 | Roadmap ID | Change ID | Suggested issue title | Ready for `/10x-plan` | Notes |
 |---|---|---|---|---|
-| F-01 | `auth-provider-scaffold` | Auth provider scaffold — Entra External ID + email OTP + .NET JWT middleware | yes | Run `/10x-plan auth-provider-scaffold`; provider decided: Entra External ID |
+| F-01 | `auth-provider-scaffold` | Auth provider scaffold — Clerk + email OTP + .NET JWT middleware | yes | Run `/10x-plan auth-provider-scaffold`; provider decided: Clerk (superseded Entra External ID 2026-07-07, Azure region policy blocker) |
 | F-02 | `data-layer-schema` | Data layer — Azure Postgres schema + EF Core migrations (users + routes) | yes | Run `/10x-plan data-layer-schema`; host decided: Azure Database for PostgreSQL Flexible Server |
 | S-07 | `routing-quality-osm` | Routing quality — OSM scenic/low-traffic preference + cyclist POI proximity | yes | Run `/10x-plan routing-quality-osm`; no auth/data dependency |
 | S-01 | `magic-link-auth` | Email OTP auth — signup, login, logout (FR-001–FR-003) | no | Depends on F-01 + F-02 |
@@ -199,7 +199,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Open Roadmap Questions
 
-1. ~~**Which magic link provider?**~~ — **Resolved 2026-07-04:** Microsoft Entra External ID + email OTP. Azure-only; OIDC; MSAL.js on frontend; JWT/JWKS validation in .NET.
+1. ~~**Which magic link provider?**~~ — **Resolved 2026-07-04:** Microsoft Entra External ID + email OTP. **Superseded 2026-07-07:** Clerk + email OTP. Entra CIAM tenant creation blocked by the available Azure subscription's system-enforced region policy (no override available on the "Azure for Students" offer). Clerk removes the Azure dependency entirely; OIDC/JWKS validation in .NET unchanged in shape.
 
 2. ~~**Which DB + host?**~~ — **Resolved 2026-07-04:** Azure Database for PostgreSQL Flexible Server. EF Core migrations; JSONB for route geometry.
 
