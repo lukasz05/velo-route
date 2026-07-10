@@ -3,7 +3,7 @@ project: "VeloRoute"
 version: 2
 status: draft
 created: 2026-07-04
-updated: 2026-07-04
+updated: 2026-07-10
 prd_version: 2
 main_goal: quality
 top_blocker: none
@@ -29,7 +29,7 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 
 | ID | Change ID | Outcome (user can …) | Prerequisites | PRD refs | Status |
 |---|---|---|---|---|---|
-| F-01 | `auth-provider-scaffold` | (foundation) Microsoft Entra External ID wired; OIDC/MSAL in Next.js; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected | — | FR-001, FR-002, FR-003, FR-012, FR-013, Access Control | ready |
+| F-01 | `auth-provider-scaffold` | (foundation) Microsoft Entra External ID wired; OIDC/MSAL in Next.js; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected | — | FR-001, FR-002, FR-003, FR-012, FR-013, Access Control | done |
 | F-02 | `data-layer-schema` | (foundation) Azure Database for PostgreSQL Flexible Server deployed; users + routes schema + migrations; DB client wired to backend | — | FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, NFR (account deletion) | ready |
 | S-07 | `routing-quality-osm` | generate routes that prefer OSM scenic/low-traffic roads and pass near cyclist POIs (cafes, water, rest stops) — best-effort; distance constraint always wins | — | FR-010, FR-011, FR-012, FR-013 | ready |
 | S-01 | `magic-link-auth` | sign up by entering an email (receive 6-digit OTP), log in via OTP with a clear expiry error message and one-click re-send option, and log out | F-01, F-02 | FR-001, FR-002, FR-003, US-01 | blocked |
@@ -75,7 +75,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** ~~Which magic link provider?~~ — **Resolved 2026-07-04:** Microsoft Entra External ID + email OTP. **Superseded 2026-07-07:** switched to Clerk + email OTP — Entra CIAM tenant creation blocked by Azure subscription region policy (`ciamDirectories` resource type only deploys to broad meta-regions that don't intersect the "Azure for Students" subscription's system-enforced region allowlist, which isn't customer-removable). Clerk has no Azure dependency; F-02 stays on Azure Postgres unaffected.
 - **Risk:** `@clerk/nextjs` + Next.js App Router (React Server Components) behavior should be checked against current SDK docs, not training data — `src/frontend/AGENTS.md` flags this Next.js/React version as having training-data-breaking changes. No official Clerk .NET package exists; backend JWKS/OIDC discovery against Clerk's endpoint needs verifying during implementation.
-- **Status:** ready
+- **Status:** done
 
 ### F-02: Data layer schema
 
@@ -220,4 +220,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Done
 
-(Empty on first generation. `/10x-archive` appends an entry here when a change whose `Change ID` matches a roadmap item is archived.)
+- **F-01: (foundation) Microsoft Entra External ID wired; OIDC/MSAL in Next.js; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected** — Archived 2026-07-10 → `context/archive/2026-07-04-auth-provider-scaffold/`. Lesson: —.
