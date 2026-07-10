@@ -479,23 +479,23 @@ additive migrations on top of `InitialCreate`.
 
 #### Automated
 
-- [x] 1.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj`
-- [x] 1.2 `dotnet ef migrations add InitialCreate` completes and builds cleanly
-- [x] 1.3 App starts against Docker Compose Postgres in Development; `GET /health` returns 200
+- [x] 1.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj` — e085e9b
+- [x] 1.2 `dotnet ef migrations add InitialCreate` completes and builds cleanly — e085e9b
+- [x] 1.3 App starts against Docker Compose Postgres in Development; `GET /health` returns 200 — e085e9b
 
 #### Manual
 
-- [ ] 1.4 `docker compose up -d` + `dotnet run` auto-applies the migration
-- [ ] 1.5 `users`/`routes` tables inspected via psql/GUI client match expected columns, types, and FK cascade
+- [x] 1.4 `docker compose up -d` + `dotnet run` auto-applies the migration — e085e9b
+- [x] 1.5 `users`/`routes` tables inspected via psql/GUI client match expected columns, types, and FK cascade — e085e9b
 
 ### Phase 2: DB-Backed Test Infrastructure
 
 #### Automated
 
-- [ ] 2.1 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj`
-- [ ] 2.2 UserRouteSchemaTests: insert round-trip passes
-- [ ] 2.3 UserRouteSchemaTests: cascade delete passes
-- [ ] 2.4 UserRouteSchemaTests: geometry JSONB round-trip passes
+- [x] 2.1 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj`
+- [x] 2.2 UserRouteSchemaTests: insert round-trip passes
+- [x] 2.3 UserRouteSchemaTests: cascade delete passes
+- [x] 2.4 UserRouteSchemaTests: geometry JSONB round-trip passes
 
 #### Manual
 
