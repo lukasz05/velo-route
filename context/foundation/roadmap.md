@@ -3,7 +3,7 @@ project: "VeloRoute"
 version: 2
 status: draft
 created: 2026-07-04
-updated: 2026-07-10
+updated: 2026-07-11
 prd_version: 2
 main_goal: quality
 top_blocker: none
@@ -30,7 +30,7 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 | ID | Change ID | Outcome (user can …) | Prerequisites | PRD refs | Status |
 |---|---|---|---|---|---|
 | F-01 | `auth-provider-scaffold` | (foundation) Microsoft Entra External ID wired; OIDC/MSAL in Next.js; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected | — | FR-001, FR-002, FR-003, FR-012, FR-013, Access Control | done |
-| F-02 | `data-layer-schema` | (foundation) Azure Database for PostgreSQL Flexible Server deployed; users + routes schema + migrations; DB client wired to backend | — | FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, NFR (account deletion) | ready |
+| F-02 | `data-layer-schema` | (foundation) Azure Database for PostgreSQL Flexible Server deployed; users + routes schema + migrations; DB client wired to backend | — | FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, NFR (account deletion) | done |
 | S-07 | `routing-quality-osm` | generate routes that prefer OSM scenic/low-traffic roads and pass near cyclist POIs (cafes, water, rest stops) — best-effort; distance constraint always wins | — | FR-010, FR-011, FR-012, FR-013 | ready |
 | S-01 | `magic-link-auth` | sign up by entering an email (receive 6-digit OTP), log in via OTP with a clear expiry error message and one-click re-send option, and log out | F-01, F-02 | FR-001, FR-002, FR-003, US-01 | blocked |
 | S-02 | `save-route` | save a generated route to their personal library (one-click; auto-name date + distance; optional user-editable name and tags) | S-01 | FR-004, FR-005, US-01 | blocked |
@@ -88,7 +88,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** ~~Which DB host?~~ — **Resolved 2026-07-04:** Azure Database for PostgreSQL Flexible Server. Stays Azure-only; JSONB for route geometry; EF Core migrations.
 - **Risk:** Route geometry payloads can be large for long routes. Decide the geometry column type (JSONB array vs PostGIS geometry vs encoded polyline) before writing migrations — changing it later requires a data migration. JSONB is the recommended default unless PostGIS spatial queries are needed (they are not in v2 scope).
-- **Status:** ready
+- **Status:** done
 
 ## Slices
 
@@ -221,3 +221,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ## Done
 
 - **F-01: (foundation) Microsoft Entra External ID wired; OIDC/MSAL in Next.js; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected** — Archived 2026-07-10 → `context/archive/2026-07-04-auth-provider-scaffold/`. Lesson: —.
+- **F-02: (foundation) Postgres DB deployed and reachable from the .NET backend; schema with `users` and `routes` tables plus migrations; DB client wired and connection-tested; account hard-delete cascade configured (deleting a user row removes all associated route rows).** — Archived 2026-07-11 → `context/archive/2026-07-10-data-layer-schema/`. Lesson: —.
