@@ -9,7 +9,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using VeloRoute.Data;
 using VeloRoute.Routing;
 
 namespace VeloRoute.Tests.Routing;
@@ -79,17 +81,20 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
     private readonly string? _apiKey;
     private readonly bool _useFakeLogging;
     private readonly bool _useTestAuth;
+    private readonly string? _dbConnectionString;
 
     public VeloRouteWebApplicationFactory(
         string? timeoutSeconds = null,
         string? apiKey = null,
         bool useFakeLogging = false,
-        bool useTestAuth = false)
+        bool useTestAuth = false,
+        string? dbConnectionString = null)
     {
         _timeoutSeconds = timeoutSeconds;
         _apiKey = apiKey;
         _useFakeLogging = useFakeLogging;
         _useTestAuth = useTestAuth;
+        _dbConnectionString = dbConnectionString;
     }
 
     public FakeOpenRouteServiceClient FakeClient { get; } = new();
@@ -104,6 +109,16 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
                 services.Remove(descriptor);
 
             services.AddSingleton<IOpenRouteServiceClient>(FakeClient);
+
+            if (_dbConnectionString is not null)
+            {
+                var dbDescriptor = services.SingleOrDefault(
+                    d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
+                if (dbDescriptor is not null)
+                    services.Remove(dbDescriptor);
+
+                services.AddDbContext<AppDbContext>(opts => opts.UseNpgsql(_dbConnectionString));
+            }
 
             if (_useTestAuth)
             {
