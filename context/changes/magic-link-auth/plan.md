@@ -350,12 +350,12 @@ adds the code path that populates it.
 
 #### Automated
 
-- [x] 2.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj`
-- [x] 2.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj`
-- [x] 2.3 Sync endpoint tests pass: 401, row creation, idempotent re-sync
+- [x] 2.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj` — 803e712
+- [x] 2.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj` — 803e712
+- [x] 2.3 Sync endpoint tests pass: 401, row creation, idempotent re-sync — 803e712
 
 #### Manual
 
-- [x] 2.4 Full round trip creates exactly one `Users` row, verified in Postgres
-- [x] 2.5 Re-sign-in does not create a duplicate row
-- [ ] 2.6 CI (`backend.yml`) passes unmodified on a pushed branch
+- [x] 2.4 Full round trip creates exactly one `Users` row, verified in Postgres — 803e712
+- [x] 2.5 Re-sign-in does not create a duplicate row — 803e712
+- [x] 2.6 CI (`backend.yml`) passes unmodified on a pushed branch
