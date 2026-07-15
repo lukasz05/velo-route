@@ -335,27 +335,27 @@ adds the code path that populates it.
 
 #### Automated
 
-- [x] 1.1 Frontend builds: `npm run build`
-- [x] 1.2 Lint passes: `npm run lint`
+- [x] 1.1 Frontend builds: `npm run build` — 1e6e638
+- [x] 1.2 Lint passes: `npm run lint` — 1e6e638
 
 #### Manual
 
-- [x] 1.3 Sign-in control opens Clerk modal without page navigation
-- [x] 1.4 Magic-link sign-up completes and header updates without full reload
-- [x] 1.5 Resend option and expired-link error message work as expected
-- [x] 1.6 Logout returns header to signed-out state
-- [x] 1.7 Anonymous route generation/GPX export still work signed out
+- [x] 1.3 Sign-in control opens Clerk modal without page navigation — 1e6e638
+- [x] 1.4 Magic-link sign-up completes and header updates without full reload — 1e6e638
+- [x] 1.5 Resend option and expired-link error message work as expected — 1e6e638
+- [x] 1.6 Logout returns header to signed-out state — 1e6e638
+- [x] 1.7 Anonymous route generation/GPX export still work signed out — 1e6e638
 
 ### Phase 2: Backend JIT User Provisioning
 
 #### Automated
 
-- [ ] 2.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj`
-- [ ] 2.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj`
-- [ ] 2.3 Sync endpoint tests pass: 401, row creation, idempotent re-sync
+- [x] 2.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj`
+- [x] 2.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj`
+- [x] 2.3 Sync endpoint tests pass: 401, row creation, idempotent re-sync
 
 #### Manual
 
-- [ ] 2.4 Full round trip creates exactly one `Users` row, verified in Postgres
-- [ ] 2.5 Re-sign-in does not create a duplicate row
+- [x] 2.4 Full round trip creates exactly one `Users` row, verified in Postgres
+- [x] 2.5 Re-sign-in does not create a duplicate row
 - [ ] 2.6 CI (`backend.yml`) passes unmodified on a pushed branch

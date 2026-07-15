@@ -1,10 +1,23 @@
 'use client';
 
-import { useClerk, useUser } from '@clerk/nextjs';
+import { useEffect } from 'react';
+import { useAuth, useClerk, useUser } from '@clerk/nextjs';
 
 export default function Header() {
   const { openSignIn, signOut } = useClerk();
   const { isLoaded, isSignedIn, user } = useUser();
+  const { getToken } = useAuth();
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+    (async () => {
+      const token = await getToken();
+      await fetch('/api/auth/sync', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    })();
+  }, [isSignedIn, getToken]);
 
   if (!isLoaded) return <header className="flex items-center justify-end gap-4 p-4" />;
 
