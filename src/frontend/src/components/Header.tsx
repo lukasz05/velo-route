@@ -11,11 +11,15 @@ export default function Header() {
   useEffect(() => {
     if (!isSignedIn) return;
     (async () => {
-      const token = await getToken();
-      await fetch('/api/auth/sync', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      try {
+        const token = await getToken();
+        await fetch('/api/auth/sync', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (err) {
+        console.error('[auth/sync] failed:', err);
+      }
     })();
   }, [isSignedIn, getToken]);
 

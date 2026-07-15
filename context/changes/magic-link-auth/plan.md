@@ -259,6 +259,24 @@ cases: (a) no token → 401; (b) valid token with a new `sub` → creates exactl
 one `Users` row; (c) valid token with an already-provisioned `sub`, called
 twice → still exactly one row, no exception.
 
+#### Addendum (post-implementation-review): `/api/auth/sync` proxy route
+
+**File**: `src/frontend/src/app/api/auth/sync/route.ts` (new, not in the
+original file list above)
+
+**Intent**: Not planned explicitly, but a necessary consequence of item 2's
+contract — `Header.tsx` is a client component and `VELO_API_URL` is
+server-only, so a direct client→backend call would either need to expose
+that env var via `NEXT_PUBLIC_` or hardcode a URL client-side, breaking the
+existing invariant every other backend call in this codebase follows
+(`routes/gpx`, `routes/loop` both proxy the same way). Added during
+implementation to preserve that invariant; flagged by `/10x-impl-review` as
+an unplanned file and accepted as scope-appropriate.
+
+**Contract**: Forwards the client's `Authorization` header to
+`${VELO_API_URL}/auth/sync`, relays the backend's status code back to the
+client.
+
 ### Success Criteria:
 
 #### Automated Verification:

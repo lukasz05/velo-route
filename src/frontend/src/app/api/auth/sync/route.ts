@@ -15,5 +15,16 @@ export async function POST(request: Request) {
     return Response.json({ error: 'Could not reach backend', code: 'PROVIDER_ERROR' }, { status: 502 });
   }
 
+  if (!res.ok) {
+    let code = 'PROVIDER_ERROR';
+    let message = `Backend returned ${res.status}`;
+    try {
+      const errBody = await res.json() as { error?: string; code?: string };
+      if (errBody.code) code = errBody.code;
+      if (errBody.error) message = errBody.error;
+    } catch { /* ignore parse errors */ }
+    return Response.json({ error: message, code }, { status: res.status });
+  }
+
   return new Response(null, { status: res.status });
 }

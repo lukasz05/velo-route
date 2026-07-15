@@ -116,6 +116,8 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
 app.MapPost("/auth/sync", async (ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
     var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    if (sub is null) return Results.Unauthorized();
+
     await db.Database.ExecuteSqlInterpolatedAsync(
         $"""INSERT INTO "Users" ("Id") VALUES ({sub}) ON CONFLICT ("Id") DO NOTHING""", ct);
     return Results.Ok();

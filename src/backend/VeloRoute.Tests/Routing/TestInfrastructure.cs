@@ -33,6 +33,14 @@ internal static class TestJwtFactory
         var token = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddMinutes(5), signingCredentials: credentials);
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    public static string CreateTokenWithoutSub(string azp = TestAzp)
+    {
+        var claims = new[] { new Claim("azp", azp) };
+        var credentials = new SigningCredentials(SigningKey, SecurityAlgorithms.RsaSha256);
+        var token = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddMinutes(5), signingCredentials: credentials);
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
 }
 
 internal static class RouteTestHelpers

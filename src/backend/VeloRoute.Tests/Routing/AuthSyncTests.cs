@@ -42,6 +42,20 @@ public sealed class AuthSyncTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task Sync_TokenWithoutSub_Returns401()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory(
+            useTestAuth: true, dbConnectionString: fixture.ConnectionString);
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateTokenWithoutSub());
+
+        var response = await client.PostAsync("/auth/sync", null);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Sync_RepeatSub_StaysIdempotent()
     {
         await using var factory = new VeloRouteWebApplicationFactory(

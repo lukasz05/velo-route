@@ -1,7 +1,7 @@
 ---
 change_id: magic-link-auth
 title: Magic link auth (S-01)
-status: implemented
+status: impl_reviewed
 created: 2026-07-15
 updated: 2026-07-15
 archived_at: null
