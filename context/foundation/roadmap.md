@@ -32,7 +32,7 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 | F-01 | `auth-provider-scaffold` | (foundation) Microsoft Entra External ID wired; OIDC/MSAL in Next.js; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected | — | FR-001, FR-002, FR-003, FR-012, FR-013, Access Control | done |
 | F-02 | `data-layer-schema` | (foundation) Azure Database for PostgreSQL Flexible Server deployed; users + routes schema + migrations; DB client wired to backend | — | FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, NFR (account deletion) | done |
 | S-07 | `routing-quality-osm` | generate routes that prefer OSM scenic/low-traffic roads and pass near cyclist POIs (cafes, water, rest stops) — best-effort; distance constraint always wins | — | FR-010, FR-011, FR-012, FR-013 | ready |
-| S-01 | `magic-link-auth` | sign up by entering an email (receive 6-digit OTP), log in via OTP with a clear expiry error message and one-click re-send option, and log out | F-01, F-02 | FR-001, FR-002, FR-003, US-01 | blocked |
+| S-01 | `magic-link-auth` | sign up by entering an email (receive a magic link), log in via the link with a clear expiry error message and one-click re-send option, and log out | F-01, F-02 | FR-001, FR-002, FR-003, US-01 | ready |
 | S-02 | `save-route` | save a generated route to their personal library (one-click; auto-name date + distance; optional user-editable name and tags) | S-01 | FR-004, FR-005, US-01 | blocked |
 | S-06 | `account-deletion` | permanently delete their account and all associated data (email + saved routes) self-serve from account settings | S-01, F-02 | FR-003, NFR (account deletion) | blocked |
 | S-03 | `route-library` | view My Routes as a flat list sorted by date, open a saved route on an interactive map, and download its GPX | S-02 | FR-007, FR-008, US-01 | blocked |
@@ -106,18 +106,19 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** OSM scenic tag density varies widely by region — improvement may be imperceptible in areas with sparse tagging. Algorithm must fall back gracefully so route quality never regresses below v1. Acceptable-quality definition should be agreed before starting to avoid open-ended tuning (same risk that required explicit acceptance thresholds in the v1 S-03 loop-algorithm-tuning slice).
 - **Status:** ready
 
-### S-01: Email OTP auth
+### S-01: Magic link auth
 
-- **Outcome:** user can sign up by entering their email address and receiving a 6-digit one-time code; log in to an existing account by entering the code with a clear expiry error message and one-click re-send option; and log out.
+- **Outcome:** user can sign up by entering their email address and receiving a magic link; log in to an existing account by clicking the link, with a clear expiry error message and one-click re-send option; and log out.
 - **Change ID:** `magic-link-auth`
 - **PRD refs:** FR-001, FR-002, FR-003, US-01
 - **Prerequisites:** F-01, F-02
 - **Parallel with:** —
 - **Blockers:** —
 - **Unknowns:**
-  - OTP expiry window — Clerk default expiry is provider-configured; confirm exact value in Clerk dashboard during F-01 implementation. Block: no.
+  - ~~Email code (OTP) vs magic link?~~ — **Resolved 2026-07-15:** magic link (Clerk `email_link` strategy), prebuilt components in modal mode. Matches the change-id and the PRD's Access Control section; the roadmap's earlier "6-digit one-time code" wording was an unresolved carry-over from F-01 planning and has been corrected here.
+  - Link expiry window — Clerk default expiry is provider-configured; confirm exact value in Clerk dashboard during implementation. Block: no.
 - **Risk:** Email delivery reliability is a dependency outside the app's control; deliverability must be verified with Clerk's free-tier email sending limits before shipping.
-- **Status:** blocked
+- **Status:** ready
 
 ### S-02: Save route
 
@@ -190,7 +191,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | F-01 | `auth-provider-scaffold` | Auth provider scaffold — Clerk + email OTP + .NET JWT middleware | yes | Run `/10x-plan auth-provider-scaffold`; provider decided: Clerk (superseded Entra External ID 2026-07-07, Azure region policy blocker) |
 | F-02 | `data-layer-schema` | Data layer — Azure Postgres schema + EF Core migrations (users + routes) | yes | Run `/10x-plan data-layer-schema`; host decided: Azure Database for PostgreSQL Flexible Server |
 | S-07 | `routing-quality-osm` | Routing quality — OSM scenic/low-traffic preference + cyclist POI proximity | yes | Run `/10x-plan routing-quality-osm`; no auth/data dependency |
-| S-01 | `magic-link-auth` | Email OTP auth — signup, login, logout (FR-001–FR-003) | no | Depends on F-01 + F-02 |
+| S-01 | `magic-link-auth` | Magic link auth — signup, login, logout (FR-001–FR-003) | yes | Run `/10x-plan magic-link-auth`; F-01 + F-02 done, unblocked |
 | S-02 | `save-route` | Save route to personal library — one-click, auto-name, optional tags (FR-004–FR-005) | no | Depends on S-01 |
 | S-06 | `account-deletion` | Account deletion — self-serve hard delete of account + all routes (NFR) | no | Depends on S-01 + F-02; parallel with S-02 once unblocked |
 | S-03 | `route-library` | My Routes library — flat list, open saved route on map, GPX download (FR-007–FR-008) | no | North star; depends on S-02 |
