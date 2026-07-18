@@ -1,3 +1,5 @@
+const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader) {
@@ -5,6 +7,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
   const { id } = await params;
+  if (!GUID_PATTERN.test(id)) {
+    return Response.json({ error: 'Invalid route id', code: 'INVALID_ID' }, { status: 400 });
+  }
   const apiUrl = process.env.VELO_API_URL ?? 'http://localhost:5098';
   let res: Response;
   try {
