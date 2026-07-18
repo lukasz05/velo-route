@@ -33,7 +33,7 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 | F-02 | `data-layer-schema` | (foundation) Azure Database for PostgreSQL Flexible Server deployed; users + routes schema + migrations; DB client wired to backend | — | FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, NFR (account deletion) | done |
 | S-07 | `routing-quality-osm` | generate routes that prefer OSM scenic/low-traffic roads and pass near cyclist POIs (cafes, water, rest stops) — best-effort; distance constraint always wins | — | FR-010, FR-011, FR-012, FR-013 | ready |
 | S-01 | `magic-link-auth` | sign up by entering an email (receive a magic link), log in via the link with a clear expiry error message and one-click re-send option, and log out | F-01, F-02 | FR-001, FR-002, FR-003, US-01 | done |
-| S-02 | `save-route` | save a generated route to their personal library (one-click; auto-name date + distance; optional user-editable name and tags) | S-01 | FR-004, FR-005, US-01 | ready |
+| S-02 | `save-route` | save a generated route to their personal library (one-click; auto-name date + distance; optional user-editable name and tags) | S-01 | FR-004, FR-005, US-01 | done |
 | S-06 | `account-deletion` | permanently delete their account and all associated data (email + saved routes) self-serve from account settings | S-01, F-02 | FR-003, NFR (account deletion) | ready |
 | S-03 | `route-library` | view My Routes as a flat list sorted by date, open a saved route on an interactive map, and download its GPX | S-02 | FR-007, FR-008, US-01 | blocked |
 | S-04 | `delete-route` | delete a saved route after confirming a prompt (hard delete, no recovery) | S-02 | FR-006 | blocked |
@@ -130,7 +130,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** The save action stores the full route geometry (coordinate list) in Postgres. Route geometry payloads can be large for long routes; the schema's data type for the geometry column (JSON array, PostGIS geometry, or encoded polyline) should be decided in F-02 to avoid a costly migration later.
-- **Status:** ready
+- **Status:** done
 
 ### S-06: Account deletion
 
@@ -224,3 +224,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **F-01: (foundation) Microsoft Entra External ID wired; OIDC/MSAL in Next.js; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected** — Archived 2026-07-10 → `context/archive/2026-07-04-auth-provider-scaffold/`. Lesson: —.
 - **F-02: (foundation) Postgres DB deployed and reachable from the .NET backend; schema with `users` and `routes` tables plus migrations; DB client wired and connection-tested; account hard-delete cascade configured (deleting a user row removes all associated route rows).** — Archived 2026-07-11 → `context/archive/2026-07-10-data-layer-schema/`. Lesson: —.
 - **S-01: user can sign up by entering their email address and receiving a magic link; log in to an existing account by clicking the link, with a clear expiry error message and one-click re-send option; and log out.** — Archived 2026-07-18 → `context/archive/2026-07-15-magic-link-auth/`. Lesson: —.
+- **S-02: authenticated user can save a generated route to their personal library with one click; the route is auto-named with date + distance (e.g. "2026-07-04 • 42 km"); the user can optionally edit the name and optionally add tags before or after saving.** — Archived 2026-07-18 → `context/archive/2026-07-18-save-route/`. Lesson: —.
