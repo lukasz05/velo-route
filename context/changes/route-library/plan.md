@@ -202,16 +202,16 @@ None — no schema changes; both new endpoints read the existing `Routes` table.
 
 #### Automated
 
-- [x] 2.1 Frontend builds: `npm run build`
-- [x] 2.2 Lint passes: `npm run lint`
-- [x] 2.3 Proxy route tests pass: `npm test`
+- [x] 2.1 Frontend builds: `npm run build` — 3e18a6b
+- [x] 2.2 Lint passes: `npm run lint` — 3e18a6b
+- [x] 2.3 Proxy route tests pass: `npm test` — 3e18a6b
 
 #### Manual
 
-- [x] 2.4 Signed-out user navigating directly to `/my-routes` or `/my-routes/<any-id>` is redirected to `/` and sees the sign-in modal
-- [x] 2.5 Signed-in user with zero saved routes sees the empty-state message and a working link back to the planner
-- [x] 2.6 Signed-in user with saved routes sees them listed newest-first with correct name/date/distance/tags
-- [x] 2.7 Clicking a row opens the detail page, showing the correct route on the map with matching name/tags/distance
-- [x] 2.8 "Download GPX" on the detail page produces a GPX file matching the one from the original generation flow
-- [x] 2.9 "My Routes" link appears in the header only when signed in
-- [x] 2.10 Anonymous route generation, GPX export, and the save flow still work unaffected
+- [x] 2.4 Signed-out user navigating directly to `/my-routes` or `/my-routes/<any-id>` is redirected to `/` and sees the sign-in modal — 3e18a6b
+- [x] 2.5 Signed-in user with zero saved routes sees the empty-state message and a working link back to the planner — 3e18a6b
+- [x] 2.6 Signed-in user with saved routes sees them listed newest-first with correct name/date/distance/tags — 3e18a6b
+- [x] 2.7 Clicking a row opens the detail page, showing the correct route on the map with matching name/tags/distance — 3e18a6b
+- [x] 2.8 "Download GPX" on the detail page produces a GPX file matching the one from the original generation flow — 3e18a6b
+- [x] 2.9 "My Routes" link appears in the header only when signed in — 3e18a6b
+- [x] 2.10 Anonymous route generation, GPX export, and the save flow still work unaffected — 3e18a6b

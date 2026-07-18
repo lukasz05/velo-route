@@ -1,7 +1,7 @@
 ---
 change_id: route-library
 title: Route library
-status: implementing
+status: implemented
 created: 2026-07-18
 updated: 2026-07-18
 archived_at: null
