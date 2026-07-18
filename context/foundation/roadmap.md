@@ -36,8 +36,8 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 | S-02 | `save-route` | save a generated route to their personal library (one-click; auto-name date + distance; optional user-editable name and tags) | S-01 | FR-004, FR-005, US-01 | done |
 | S-06 | `account-deletion` | permanently delete their account and all associated data (email + saved routes) self-serve from account settings | S-01, F-02 | FR-003, NFR (account deletion) | ready |
 | S-03 | `route-library` | view My Routes as a flat list sorted by date, open a saved route on an interactive map, and download its GPX | S-02 | FR-007, FR-008, US-01 | done |
-| S-04 | `delete-route` | delete a saved route after confirming a prompt (hard delete, no recovery) | S-02 | FR-006 | blocked |
-| S-05 | `public-route-sharing` | share a saved route via a public link viewable without login; link shows the exact saved route snapshot, not a re-generation | S-02 | FR-009 | blocked |
+| S-04 | `delete-route` | delete a saved route after confirming a prompt (hard delete, no recovery) | S-02 | FR-006 | ready |
+| S-05 | `public-route-sharing` | share a saved route via a public link viewable without login; link shows the exact saved route snapshot, not a re-generation | S-02 | FR-009 | ready |
 
 ## Streams
 
@@ -168,7 +168,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Hard delete with no undo. Confirmation prompt is the only safeguard. PRD explicitly rejects soft-delete ("soft-delete adds complexity not justified in v2"); do not re-introduce it here.
-- **Status:** blocked
+- **Status:** ready
 
 ### S-05: Public route sharing
 
@@ -182,7 +182,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - What is the URL shape for public links? A random opaque token (e.g. `/r/<uuid>`) is the standard privacy-safe approach — avoids leaking route IDs in sequential enumeration. — Owner: TBD. Block: no (resolvable during planning; opaque token is the default path).
   - Should public links be revocable? PRD requires they "must remain stable — once shared, a URL must remain valid." Revocation would contradict this. — Owner: user. Block: no (PRD is clear: links are not revocable in v2).
 - **Risk:** Public snapshot links expose route geometry (coordinates) to anyone with the URL. The snapshot must store the geometry at save time, not re-query the DB at view time — otherwise a deleted route's link would 404 unexpectedly. The PRD's "snapshot sharing" requirement implies the geometry is stored with the share record, not just a pointer to the route row.
-- **Status:** blocked
+- **Status:** ready
 
 ## Backlog Handoff
 
@@ -194,9 +194,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-01 | `magic-link-auth` | Magic link auth — signup, login, logout (FR-001–FR-003) | yes | Run `/10x-plan magic-link-auth`; F-01 + F-02 done, unblocked |
 | S-02 | `save-route` | Save route to personal library — one-click, auto-name, optional tags (FR-004–FR-005) | yes | Run `/10x-plan save-route`; S-01 done, unblocked |
 | S-06 | `account-deletion` | Account deletion — self-serve hard delete of account + all routes (NFR) | yes | Run `/10x-plan account-deletion`; S-01 + F-02 done, unblocked; parallel with S-02 |
-| S-03 | `route-library` | My Routes library — flat list, open saved route on map, GPX download (FR-007–FR-008) | no | North star; depends on S-02 |
-| S-04 | `delete-route` | Delete route — confirmation prompt + hard delete (FR-006) | no | Depends on S-02; parallel with S-03 |
-| S-05 | `public-route-sharing` | Public route sharing — shareable link, snapshot, no login required (FR-009) | no | Depends on S-02; parallel with S-03 and S-04 |
+| S-04 | `delete-route` | Delete route — confirmation prompt + hard delete (FR-006) | yes | Run `/10x-plan delete-route`; S-02 done, unblocked; parallel with S-05 |
+| S-05 | `public-route-sharing` | Public route sharing — shareable link, snapshot, no login required (FR-009) | yes | Run `/10x-plan public-route-sharing`; S-02 done, unblocked; parallel with S-04 |
 
 ## Open Roadmap Questions
 
