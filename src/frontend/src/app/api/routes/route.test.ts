@@ -1,5 +1,44 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { POST } from './route';
+import { GET, POST } from './route';
+
+describe('GET /api/routes', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns 401 when Authorization header is missing', async () => {
+    const request = new Request('http://localhost/api/routes');
+
+    const res = await GET(request);
+
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.code).toBe('UNAUTHORIZED');
+  });
+
+  it('forwards the Authorization header and relays the backend array', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify([{ id: 'abc-123', name: 'Loop' }]), { status: 200 }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const request = new Request('http://localhost/api/routes', {
+      headers: { Authorization: 'Bearer test-token' },
+    });
+
+    const res = await GET(request);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:5098/routes',
+      expect.objectContaining({
+        headers: expect.objectContaining({ Authorization: 'Bearer test-token' }),
+      }),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toEqual([{ id: 'abc-123', name: 'Loop' }]);
+  });
+});
 
 describe('POST /api/routes', () => {
   afterEach(() => {

@@ -35,6 +35,23 @@ export interface LoopRouteRequest {
   seed?: number;
 }
 
+export interface SavedRouteSummary {
+  id: string;
+  name: string;
+  tags: string[] | null;
+  distanceKm: number;
+  createdAt: string;
+}
+
+export interface SavedRouteDetail {
+  id: string;
+  name: string;
+  tags: string[] | null;
+  distanceKm: number;
+  geometry: RouteGeometry;
+  createdAt: string;
+}
+
 export class RouteGenerationError extends Error {
   constructor(public readonly code: string, message: string) {
     super(message);
