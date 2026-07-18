@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import type { RouteResult } from '@/types/route';
 
@@ -29,6 +29,13 @@ export default function RouteInfoPanel({ route }: { route: RouteResult }) {
   const { isSignedIn } = useUser();
   const { getToken } = useAuth();
   const km = (route.distanceMeters / 1000).toFixed(1);
+
+  useEffect(() => {
+    setName(defaultName(route));
+    setTags('');
+    setIsSaved(false);
+    setSaveError(null);
+  }, [route]);
 
   async function handleSave() {
     setIsSaving(true);
