@@ -156,25 +156,25 @@ None — schema already exists from `data-layer-schema` (F-02).
 
 #### Automated
 
-- [x] 1.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj`
-- [x] 1.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj`
-- [x] 1.3 New save-endpoint tests pass: no-token → 401, missing/empty name → 400, empty coordinates → 400, valid request → 201 and persists exactly one `Routes` row with the submitted fields
+- [x] 1.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj` — 1752adb
+- [x] 1.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj` — 1752adb
+- [x] 1.3 New save-endpoint tests pass: no-token → 401, missing/empty name → 400, empty coordinates → 400, valid request → 201 and persists exactly one `Routes` row with the submitted fields — 1752adb
 
 #### Manual
 
-- [x] 1.4 `curl -X POST http://localhost:5098/routes` with a valid test bearer token and a small JSON body returns `201` and a `Routes` row appears in Postgres with the expected values
+- [x] 1.4 `curl -X POST http://localhost:5098/routes` with a valid test bearer token and a small JSON body returns `201` and a `Routes` row appears in Postgres with the expected values — 1752adb
 
 ### Phase 2: Frontend save UI
 
 #### Automated
 
-- [ ] 2.1 Frontend builds: `npm run build`
-- [ ] 2.2 Lint passes: `npm run lint`
-- [ ] 2.3 Proxy route tests pass: `npm test`
+- [x] 2.1 Frontend builds: `npm run build`
+- [x] 2.2 Lint passes: `npm run lint`
+- [x] 2.3 Proxy route tests pass: `npm test`
 
 #### Manual
 
-- [ ] 2.4 Signed-out user generates a route, clicks Save → Clerk sign-in modal opens, no request is sent
-- [ ] 2.5 Signed-in user: name field pre-fills as `"YYYY-MM-DD • Nkm"`, editing name/tags and clicking Save succeeds → button becomes disabled `"Saved ✓"`, row appears in Postgres with edited values
-- [ ] 2.6 Simulated save failure shows inline error text below the Save button
-- [ ] 2.7 Anonymous route generation and GPX export still work signed out
+- [x] 2.4 Signed-out user generates a route, clicks Save → Clerk sign-in modal opens, no request is sent
+- [x] 2.5 Signed-in user: name field pre-fills as `"YYYY-MM-DD • Nkm"`, editing name/tags and clicking Save succeeds → button becomes disabled `"Saved ✓"`, row appears in Postgres with edited values
+- [x] 2.6 Simulated save failure shows inline error text below the Save button
+- [x] 2.7 Anonymous route generation and GPX export still work signed out
