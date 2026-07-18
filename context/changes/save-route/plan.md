@@ -168,13 +168,13 @@ None — schema already exists from `data-layer-schema` (F-02).
 
 #### Automated
 
-- [x] 2.1 Frontend builds: `npm run build`
-- [x] 2.2 Lint passes: `npm run lint`
-- [x] 2.3 Proxy route tests pass: `npm test`
+- [x] 2.1 Frontend builds: `npm run build` — 23fc993
+- [x] 2.2 Lint passes: `npm run lint` — 23fc993
+- [x] 2.3 Proxy route tests pass: `npm test` — 23fc993
 
 #### Manual
 
-- [x] 2.4 Signed-out user generates a route, clicks Save → Clerk sign-in modal opens, no request is sent
-- [x] 2.5 Signed-in user: name field pre-fills as `"YYYY-MM-DD • Nkm"`, editing name/tags and clicking Save succeeds → button becomes disabled `"Saved ✓"`, row appears in Postgres with edited values
-- [x] 2.6 Simulated save failure shows inline error text below the Save button
-- [x] 2.7 Anonymous route generation and GPX export still work signed out
+- [x] 2.4 Signed-out user generates a route, clicks Save → Clerk sign-in modal opens, no request is sent — 23fc993
+- [x] 2.5 Signed-in user: name field pre-fills as `"YYYY-MM-DD • Nkm"`, editing name/tags and clicking Save succeeds → button becomes disabled `"Saved ✓"`, row appears in Postgres with edited values — 23fc993
+- [x] 2.6 Simulated save failure shows inline error text below the Save button — 23fc993
+- [x] 2.7 Anonymous route generation and GPX export still work signed out — 23fc993
