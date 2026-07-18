@@ -151,6 +151,37 @@ app.MapPost("/routes", async (SaveRouteRequest req, ClaimsPrincipal user, AppDbC
 })
 .RequireAuthorization();
 
+app.MapGet("/routes", async (ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
+{
+    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    if (sub is null) return Results.Unauthorized();
+
+    var routes = await db.Routes
+        .Where(r => r.UserId == sub)
+        .OrderByDescending(r => r.CreatedAt)
+        .Select(r => new RouteSummaryResponse(r.Id, r.Name, r.Tags, r.DistanceKm, r.CreatedAt))
+        .ToListAsync(ct);
+
+    return Results.Ok(routes);
+})
+.RequireAuthorization();
+
+app.MapGet("/routes/{id:guid}", async (Guid id, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
+{
+    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    if (sub is null) return Results.Unauthorized();
+
+    var route = await db.Routes.SingleOrDefaultAsync(r => r.Id == id && r.UserId == sub, ct);
+    if (route is null)
+        return Results.NotFound(new { error = "Route not found", code = "NOT_FOUND" });
+
+    var coordinates = route.Geometry.Coordinates.Select(c => new RouteCoordinate(c[0], c[1])).ToList();
+    return Results.Ok(new RouteDetailResponse(
+        route.Id, route.Name, route.Tags, route.DistanceKm,
+        new RouteGeometryResponse(coordinates), route.CreatedAt));
+})
+.RequireAuthorization();
+
 app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen, IOptions<OpenRouteServiceOptions> orsOpts, CancellationToken requestCt) =>
 {
     if (req.MinKm < 5 || req.MaxKm > 300 || req.MinKm >= req.MaxKm)
@@ -216,5 +247,22 @@ record SaveRouteRequest(
     string[]? Tags,
     double DistanceKm,
     IReadOnlyList<RouteCoordinate> Coordinates);
+
+record RouteSummaryResponse(
+    Guid Id,
+    string Name,
+    string[]? Tags,
+    double DistanceKm,
+    DateTimeOffset CreatedAt);
+
+record RouteGeometryResponse(IReadOnlyList<RouteCoordinate> Coordinates);
+
+record RouteDetailResponse(
+    Guid Id,
+    string Name,
+    string[]? Tags,
+    double DistanceKm,
+    RouteGeometryResponse Geometry,
+    DateTimeOffset CreatedAt);
 
 public partial class Program { }
