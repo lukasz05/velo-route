@@ -189,29 +189,29 @@ None — no schema changes; both new endpoints read the existing `Routes` table.
 
 #### Automated
 
-- [x] 1.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj`
-- [x] 1.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj`
-- [x] 1.3 New library-endpoint tests pass: list scoping/sort/summary-only, detail 404s and geometry round-trip
+- [x] 1.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj` — 2ca1cdd
+- [x] 1.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj` — 2ca1cdd
+- [x] 1.3 New library-endpoint tests pass: list scoping/sort/summary-only, detail 404s and geometry round-trip — 2ca1cdd
 
 #### Manual
 
-- [x] 1.4 `curl http://localhost:5098/routes` with a valid test bearer token returns the seeded user's routes newest-first
-- [x] 1.5 `curl http://localhost:5098/routes/<id>` for a route owned by a different test user returns `404`
+- [x] 1.4 `curl http://localhost:5098/routes` with a valid test bearer token returns the seeded user's routes newest-first — 2ca1cdd
+- [x] 1.5 `curl http://localhost:5098/routes/<id>` for a route owned by a different test user returns `404` — 2ca1cdd
 
 ### Phase 2: Frontend library pages
 
 #### Automated
 
-- [ ] 2.1 Frontend builds: `npm run build`
-- [ ] 2.2 Lint passes: `npm run lint`
-- [ ] 2.3 Proxy route tests pass: `npm test`
+- [x] 2.1 Frontend builds: `npm run build`
+- [x] 2.2 Lint passes: `npm run lint`
+- [x] 2.3 Proxy route tests pass: `npm test`
 
 #### Manual
 
-- [ ] 2.4 Signed-out user navigating directly to `/my-routes` or `/my-routes/<any-id>` is redirected to `/` and sees the sign-in modal
-- [ ] 2.5 Signed-in user with zero saved routes sees the empty-state message and a working link back to the planner
-- [ ] 2.6 Signed-in user with saved routes sees them listed newest-first with correct name/date/distance/tags
-- [ ] 2.7 Clicking a row opens the detail page, showing the correct route on the map with matching name/tags/distance
-- [ ] 2.8 "Download GPX" on the detail page produces a GPX file matching the one from the original generation flow
-- [ ] 2.9 "My Routes" link appears in the header only when signed in
-- [ ] 2.10 Anonymous route generation, GPX export, and the save flow still work unaffected
+- [x] 2.4 Signed-out user navigating directly to `/my-routes` or `/my-routes/<any-id>` is redirected to `/` and sees the sign-in modal
+- [x] 2.5 Signed-in user with zero saved routes sees the empty-state message and a working link back to the planner
+- [x] 2.6 Signed-in user with saved routes sees them listed newest-first with correct name/date/distance/tags
+- [x] 2.7 Clicking a row opens the detail page, showing the correct route on the map with matching name/tags/distance
+- [x] 2.8 "Download GPX" on the detail page produces a GPX file matching the one from the original generation flow
+- [x] 2.9 "My Routes" link appears in the header only when signed in
+- [x] 2.10 Anonymous route generation, GPX export, and the save flow still work unaffected

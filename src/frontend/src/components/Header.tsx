@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth, useClerk, useUser } from '@clerk/nextjs';
 
 export default function Header() {
@@ -23,12 +24,23 @@ export default function Header() {
     })();
   }, [isSignedIn, getToken]);
 
-  if (!isLoaded) return <header className="flex items-center justify-end gap-4 p-4" />;
+  if (!isLoaded) {
+    return (
+      <header className="flex items-center justify-between gap-4 p-4">
+        <Link href="/" className="text-sm font-bold text-zinc-900">VeloRoute</Link>
+      </header>
+    );
+  }
 
   return (
-    <header className="flex items-center justify-end gap-4 p-4">
+    <header className="flex items-center justify-between gap-4 p-4">
+      <Link href="/" className="text-sm font-bold text-zinc-900">VeloRoute</Link>
+      <div className="flex items-center gap-4">
       {isSignedIn ? (
         <>
+          <Link href="/my-routes" className="text-sm font-medium">
+            My Routes
+          </Link>
           <span className="text-sm">{user.primaryEmailAddress?.emailAddress}</span>
           <button onClick={() => signOut()} className="text-sm font-medium">
             Log out
@@ -39,6 +51,7 @@ export default function Header() {
           Sign in
         </button>
       )}
+      </div>
     </header>
   );
 }
