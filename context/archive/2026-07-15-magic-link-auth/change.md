@@ -1,10 +1,10 @@
 ---
 change_id: magic-link-auth
 title: Magic link auth (S-01)
-status: impl_reviewed
+status: archived
 created: 2026-07-15
-updated: 2026-07-15
-archived_at: null
+updated: 2026-07-18
+archived_at: 2026-07-18T09:50:16Z
 ---
 
 ## Notes

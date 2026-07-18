@@ -124,6 +124,33 @@ app.MapPost("/auth/sync", async (ClaimsPrincipal user, AppDbContext db, Cancella
 })
 .RequireAuthorization();
 
+app.MapPost("/routes", async (SaveRouteRequest req, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
+{
+    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    if (sub is null) return Results.Unauthorized();
+
+    if (string.IsNullOrWhiteSpace(req.Name))
+        return Results.BadRequest(new { error = "Name is required", code = "INVALID_INPUT" });
+
+    if (req.Coordinates is null || req.Coordinates.Count < 2)
+        return Results.BadRequest(new { error = "At least 2 coordinates are required", code = "INVALID_INPUT" });
+
+    var route = new VeloRoute.Data.Route(
+        Id: Guid.NewGuid(),
+        UserId: sub,
+        Name: req.Name,
+        Tags: req.Tags,
+        DistanceKm: req.DistanceKm,
+        Geometry: new GeoJsonLineString("LineString", req.Coordinates.Select(c => new[] { c.Longitude, c.Latitude }).ToArray()),
+        CreatedAt: DateTimeOffset.UtcNow);
+
+    db.Routes.Add(route);
+    await db.SaveChangesAsync(ct);
+
+    return Results.Created($"/routes/{route.Id}", new { id = route.Id });
+})
+.RequireAuthorization();
+
 app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen, IOptions<OpenRouteServiceOptions> orsOpts, CancellationToken requestCt) =>
 {
     if (req.MinKm < 5 || req.MaxKm > 300 || req.MinKm >= req.MaxKm)
@@ -183,5 +210,11 @@ record LoopRouteRequest(
     int?   Seed);
 
 record GpxRequest(IReadOnlyList<RouteCoordinate> Coordinates);
+
+record SaveRouteRequest(
+    string Name,
+    string[]? Tags,
+    double DistanceKm,
+    IReadOnlyList<RouteCoordinate> Coordinates);
 
 public partial class Program { }
