@@ -113,6 +113,17 @@ app.UseAuthorization();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
    .WithName("HealthCheck");
 
+app.MapPost("/auth/sync", async (ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
+{
+    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    if (sub is null) return Results.Unauthorized();
+
+    await db.Database.ExecuteSqlInterpolatedAsync(
+        $"""INSERT INTO "Users" ("Id") VALUES ({sub}) ON CONFLICT ("Id") DO NOTHING""", ct);
+    return Results.Ok();
+})
+.RequireAuthorization();
+
 app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen, IOptions<OpenRouteServiceOptions> orsOpts, CancellationToken requestCt) =>
 {
     if (req.MinKm < 5 || req.MaxKm > 300 || req.MinKm >= req.MaxKm)
