@@ -33,8 +33,8 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 | F-02 | `data-layer-schema` | (foundation) Azure Database for PostgreSQL Flexible Server deployed; users + routes schema + migrations; DB client wired to backend | — | FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, NFR (account deletion) | done |
 | S-07 | `routing-quality-osm` | generate routes that prefer OSM scenic/low-traffic roads and pass near cyclist POIs (cafes, water, rest stops) — best-effort; distance constraint always wins | — | FR-010, FR-011, FR-012, FR-013 | ready |
 | S-01 | `magic-link-auth` | sign up by entering an email (receive a magic link), log in via the link with a clear expiry error message and one-click re-send option, and log out | F-01, F-02 | FR-001, FR-002, FR-003, US-01 | done |
-| S-02 | `save-route` | save a generated route to their personal library (one-click; auto-name date + distance; optional user-editable name and tags) | S-01 | FR-004, FR-005, US-01 | blocked |
-| S-06 | `account-deletion` | permanently delete their account and all associated data (email + saved routes) self-serve from account settings | S-01, F-02 | FR-003, NFR (account deletion) | blocked |
+| S-02 | `save-route` | save a generated route to their personal library (one-click; auto-name date + distance; optional user-editable name and tags) | S-01 | FR-004, FR-005, US-01 | ready |
+| S-06 | `account-deletion` | permanently delete their account and all associated data (email + saved routes) self-serve from account settings | S-01, F-02 | FR-003, NFR (account deletion) | ready |
 | S-03 | `route-library` | view My Routes as a flat list sorted by date, open a saved route on an interactive map, and download its GPX | S-02 | FR-007, FR-008, US-01 | blocked |
 | S-04 | `delete-route` | delete a saved route after confirming a prompt (hard delete, no recovery) | S-02 | FR-006 | blocked |
 | S-05 | `public-route-sharing` | share a saved route via a public link viewable without login; link shows the exact saved route snapshot, not a re-generation | S-02 | FR-009 | blocked |
@@ -130,7 +130,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** The save action stores the full route geometry (coordinate list) in Postgres. Route geometry payloads can be large for long routes; the schema's data type for the geometry column (JSON array, PostGIS geometry, or encoded polyline) should be decided in F-02 to avoid a costly migration later.
-- **Status:** blocked
+- **Status:** ready
 
 ### S-06: Account deletion
 
@@ -143,7 +143,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - ~~Does the chosen auth provider support programmatic user deletion?~~ — **Resolved 2026-07-04, provider updated 2026-07-07:** Clerk supports user deletion via its Backend API (`DELETE /users/{id}`). Backend calls Clerk's Backend API on account delete, then cascades the Postgres row via FK constraint.
 - **Risk:** Hard delete with no soft-delete buffer means a mis-click permanently destroys a user's route library. A confirmation prompt (e.g. "type DELETE to confirm") is the minimum safeguard; the PRD requires a prompt but does not specify its form.
-- **Status:** blocked
+- **Status:** ready
 
 ### S-03: Route library
 
@@ -192,8 +192,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | F-02 | `data-layer-schema` | Data layer — Azure Postgres schema + EF Core migrations (users + routes) | yes | Run `/10x-plan data-layer-schema`; host decided: Azure Database for PostgreSQL Flexible Server |
 | S-07 | `routing-quality-osm` | Routing quality — OSM scenic/low-traffic preference + cyclist POI proximity | yes | Run `/10x-plan routing-quality-osm`; no auth/data dependency |
 | S-01 | `magic-link-auth` | Magic link auth — signup, login, logout (FR-001–FR-003) | yes | Run `/10x-plan magic-link-auth`; F-01 + F-02 done, unblocked |
-| S-02 | `save-route` | Save route to personal library — one-click, auto-name, optional tags (FR-004–FR-005) | no | Depends on S-01 |
-| S-06 | `account-deletion` | Account deletion — self-serve hard delete of account + all routes (NFR) | no | Depends on S-01 + F-02; parallel with S-02 once unblocked |
+| S-02 | `save-route` | Save route to personal library — one-click, auto-name, optional tags (FR-004–FR-005) | yes | Run `/10x-plan save-route`; S-01 done, unblocked |
+| S-06 | `account-deletion` | Account deletion — self-serve hard delete of account + all routes (NFR) | yes | Run `/10x-plan account-deletion`; S-01 + F-02 done, unblocked; parallel with S-02 |
 | S-03 | `route-library` | My Routes library — flat list, open saved route on map, GPX download (FR-007–FR-008) | no | North star; depends on S-02 |
 | S-04 | `delete-route` | Delete route — confirmation prompt + hard delete (FR-006) | no | Depends on S-02; parallel with S-03 |
 | S-05 | `public-route-sharing` | Public route sharing — shareable link, snapshot, no login required (FR-009) | no | Depends on S-02; parallel with S-03 and S-04 |
