@@ -1,7 +1,7 @@
 ---
 change_id: save-route
 title: Save route (S-02)
-status: planned
+status: implementing
 created: 2026-07-18
 updated: 2026-07-18
 archived_at: null

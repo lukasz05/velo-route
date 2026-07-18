@@ -156,13 +156,13 @@ None — schema already exists from `data-layer-schema` (F-02).
 
 #### Automated
 
-- [ ] 1.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj`
-- [ ] 1.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj`
-- [ ] 1.3 New save-endpoint tests pass: no-token → 401, missing/empty name → 400, empty coordinates → 400, valid request → 201 and persists exactly one `Routes` row with the submitted fields
+- [x] 1.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj`
+- [x] 1.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj`
+- [x] 1.3 New save-endpoint tests pass: no-token → 401, missing/empty name → 400, empty coordinates → 400, valid request → 201 and persists exactly one `Routes` row with the submitted fields
 
 #### Manual
 
-- [ ] 1.4 `curl -X POST http://localhost:5098/routes` with a valid test bearer token and a small JSON body returns `201` and a `Routes` row appears in Postgres with the expected values
+- [x] 1.4 `curl -X POST http://localhost:5098/routes` with a valid test bearer token and a small JSON body returns `201` and a `Routes` row appears in Postgres with the expected values
 
 ### Phase 2: Frontend save UI
 
