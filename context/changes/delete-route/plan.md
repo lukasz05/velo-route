@@ -182,28 +182,28 @@ None — no schema changes; the new endpoint operates on the existing `Routes` t
 
 #### Automated
 
-- [x] 1.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj`
-- [x] 1.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj`
-- [x] 1.3 New `DeleteRouteTests.cs` passes: 401, 404 nonexistent, 404 not-owned, 204 + row removed + follow-up GETs reflect the deletion
+- [x] 1.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj` — cfadf20
+- [x] 1.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj` — cfadf20
+- [x] 1.3 New `DeleteRouteTests.cs` passes: 401, 404 nonexistent, 404 not-owned, 204 + row removed + follow-up GETs reflect the deletion — cfadf20
 
 #### Manual
 
-- [x] 1.4 `curl -X DELETE` with a valid test bearer token for an owned route returns 204 and removes the row from Postgres
-- [x] 1.5 `curl -X DELETE` for a route owned by a different test user returns 404 and leaves the row untouched
+- [x] 1.4 `curl -X DELETE` with a valid test bearer token for an owned route returns 204 and removes the row from Postgres — cfadf20
+- [x] 1.5 `curl -X DELETE` for a route owned by a different test user returns 404 and leaves the row untouched — cfadf20
 
 ### Phase 2: Frontend delete UI
 
 #### Automated
 
-- [ ] 2.1 Frontend builds: `npm run build`
-- [ ] 2.2 Lint passes: `npm run lint`
-- [ ] 2.3 Tests pass: `npm test` — ConfirmModal component tests, proxy DELETE tests
+- [x] 2.1 Frontend builds: `npm run build`
+- [x] 2.2 Lint passes: `npm run lint`
+- [x] 2.3 Tests pass: `npm test` — ConfirmModal component tests, proxy DELETE tests
 
 #### Manual
 
-- [ ] 2.4 List-row delete: confirmation modal names the route; confirming removes just that row without a full reload; stays gone after refresh
-- [ ] 2.5 Detail-page delete: confirmation modal; confirming redirects to `/my-routes`; route no longer listed
-- [ ] 2.6 Canceling the modal (either surface) leaves the route untouched
-- [ ] 2.7 Deleting an already-deleted route (simulated via curl race) shows no error — treated as success
-- [ ] 2.8 A genuine delete failure shows inline error text and leaves the route in place, retryable
-- [ ] 2.9 Anonymous generation, GPX export, save, and other My Routes flows unaffected
+- [x] 2.4 List-row delete: confirmation modal names the route; confirming removes just that row without a full reload; stays gone after refresh
+- [x] 2.5 Detail-page delete: confirmation modal; confirming redirects to `/my-routes`; route no longer listed
+- [x] 2.6 Canceling the modal (either surface) leaves the route untouched
+- [x] 2.7 Deleting an already-deleted route (simulated via curl race) shows no error — treated as success
+- [x] 2.8 A genuine delete failure shows inline error text and leaves the route in place, retryable
+- [x] 2.9 Anonymous generation, GPX export, save, and other My Routes flows unaffected

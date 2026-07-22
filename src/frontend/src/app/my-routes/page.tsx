@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth, useClerk, useUser } from '@clerk/nextjs';
 import type { SavedRouteSummary } from '@/types/route';
+import ConfirmModal from '@/components/ConfirmModal';
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -20,6 +21,9 @@ export default function MyRoutesPage() {
 
   const [routes, setRoutes] = useState<SavedRouteSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [routeToDelete, setRouteToDelete] = useState<SavedRouteSummary | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -45,6 +49,30 @@ export default function MyRoutesPage() {
     })();
   }, [isLoaded, isSignedIn, getToken, openSignIn, router]);
 
+  async function handleConfirmDelete() {
+    if (!routeToDelete) return;
+    setDeletingId(routeToDelete.id);
+    setDeleteError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/routes/${routeToDelete.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 204 || res.status === 404) {
+        setRoutes((prev) => prev?.filter((r) => r.id !== routeToDelete.id) ?? prev);
+        setRouteToDelete(null);
+        return;
+      }
+      throw new Error(`Delete failed: ${res.status}`);
+    } catch {
+      setDeleteError('Could not delete this route. Please try again.');
+      setRouteToDelete(null);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   if (!isLoaded || !isSignedIn) return null;
 
   if (!error && routes !== null && routes.length === 0) {
@@ -66,6 +94,7 @@ export default function MyRoutesPage() {
       <h1 className="text-xl font-bold text-zinc-900">My Routes</h1>
 
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {deleteError && <p className="mt-4 text-sm text-red-600">{deleteError}</p>}
 
       {!error && routes === null && (
         <p className="mt-4 text-sm text-zinc-500">Loading your routes…</p>
@@ -81,7 +110,21 @@ export default function MyRoutesPage() {
               >
                 <div className="flex items-baseline justify-between gap-4">
                   <span className="text-base font-medium text-zinc-900">{route.name}</span>
-                  <span className="shrink-0 text-sm text-zinc-500">{formatDate(route.createdAt)}</span>
+                  <div className="flex shrink-0 items-baseline gap-3">
+                    <span className="text-sm text-zinc-500">{formatDate(route.createdAt)}</span>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setRouteToDelete(route);
+                      }}
+                      disabled={deletingId === route.id}
+                      aria-label={`Delete ${route.name}`}
+                      className="rounded px-1.5 py-0.5 text-xs font-medium text-zinc-400 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {deletingId === route.id ? 'Deleting…' : 'Delete'}
+                    </button>
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-medium text-zinc-700">{route.distanceKm.toFixed(1)} km</span>
@@ -98,6 +141,17 @@ export default function MyRoutesPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {routeToDelete && (
+        <ConfirmModal
+          title="Delete route?"
+          message={`Delete "${routeToDelete.name}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          isConfirming={deletingId === routeToDelete.id}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setRouteToDelete(null)}
+        />
       )}
     </div>
   );

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth, useClerk, useUser } from '@clerk/nextjs';
 import type { SavedRouteDetail } from '@/types/route';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const RouteMap = dynamic(() => import('@/components/RouteMap'), { ssr: false });
 
@@ -26,6 +27,9 @@ export default function RouteDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -87,6 +91,28 @@ export default function RouteDetailPage() {
     }
   }
 
+  async function handleConfirmDelete() {
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/routes/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 204 || res.status === 404) {
+        router.replace('/my-routes');
+        return;
+      }
+      throw new Error(`Delete failed: ${res.status}`);
+    } catch {
+      setDeleteError('Could not delete this route. Please try again.');
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   if (!isLoaded || !isSignedIn) return null;
 
   if (notFound) {
@@ -138,11 +164,31 @@ export default function RouteDetailPage() {
         {downloadError && (
           <p className="mt-2 text-sm text-red-600">{downloadError}</p>
         )}
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="mt-2 self-start rounded-md px-2 py-1 text-sm font-medium text-red-600 hover:bg-red-50"
+        >
+          Delete route
+        </button>
+        {deleteError && (
+          <p className="mt-2 text-sm text-red-600">{deleteError}</p>
+        )}
       </div>
 
       <div className="h-[60vh] md:h-full md:flex-1">
         <RouteMap startPoint={null} routeCoordinates={route.geometry.coordinates} />
       </div>
+
+      {showDeleteConfirm && (
+        <ConfirmModal
+          title="Delete route?"
+          message={`Delete "${route.name}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          isConfirming={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </div>
   );
 }
