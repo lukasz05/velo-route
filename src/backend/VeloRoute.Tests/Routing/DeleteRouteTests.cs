@@ -13,16 +13,6 @@ public sealed class DeleteRouteTests(PostgresFixture fixture)
     private AppDbContext NewContext() =>
         new(new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(fixture.ConnectionString).Options);
 
-    private static VeloRoute.Data.Route MakeRoute(string userId, string name, DateTimeOffset createdAt) =>
-        new(
-            Id: Guid.NewGuid(),
-            UserId: userId,
-            Name: name,
-            Tags: ["scenic"],
-            DistanceKm: 12.3,
-            Geometry: new GeoJsonLineString("LineString", [[16.37, 48.20], [16.38, 48.21]]),
-            CreatedAt: createdAt);
-
     [Fact]
     public async Task Delete_NoToken_Returns401()
     {
@@ -71,7 +61,7 @@ public sealed class DeleteRouteTests(PostgresFixture fixture)
         {
             seedContext.Users.Add(new User(sub, DateTimeOffset.UtcNow));
             seedContext.Users.Add(new User(otherSub, DateTimeOffset.UtcNow));
-            otherRoute = MakeRoute(otherSub, "Not mine", DateTimeOffset.UtcNow);
+            otherRoute = RouteTestHelpers.MakeRoute(otherSub, "Not mine", DateTimeOffset.UtcNow);
             seedContext.Routes.Add(otherRoute);
             await seedContext.SaveChangesAsync();
         }
@@ -106,7 +96,7 @@ public sealed class DeleteRouteTests(PostgresFixture fixture)
         await using (var seedContext = NewContext())
         {
             seedContext.Users.Add(new User(sub, DateTimeOffset.UtcNow));
-            saved = MakeRoute(sub, "Mine", DateTimeOffset.UtcNow);
+            saved = RouteTestHelpers.MakeRoute(sub, "Mine", DateTimeOffset.UtcNow);
             seedContext.Routes.Add(saved);
             await seedContext.SaveChangesAsync();
         }

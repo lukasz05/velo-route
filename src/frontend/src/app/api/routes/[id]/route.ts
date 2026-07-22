@@ -60,17 +60,12 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return new Response(null, { status: 204 });
   }
 
-  if (!res.ok) {
-    let code = 'PROVIDER_ERROR';
-    let message = `Backend returned ${res.status}`;
-    try {
-      const errBody = await res.json() as { error?: string; code?: string };
-      if (errBody.code) code = errBody.code;
-      if (errBody.error) message = errBody.error;
-    } catch { /* ignore parse errors */ }
-    return Response.json({ error: message, code }, { status: res.status });
-  }
-
-  const resBody = await res.json();
-  return Response.json(resBody, { status: res.status });
+  let code = 'PROVIDER_ERROR';
+  let message = `Backend returned ${res.status}`;
+  try {
+    const errBody = await res.json() as { error?: string; code?: string };
+    if (errBody.code) code = errBody.code;
+    if (errBody.error) message = errBody.error;
+  } catch { /* ignore parse errors */ }
+  return Response.json({ error: message, code }, { status: res.status });
 }

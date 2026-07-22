@@ -1,7 +1,7 @@
 ---
 change_id: delete-route
 title: Delete route
-status: implemented
+status: impl_reviewed
 created: 2026-07-18
 updated: 2026-07-22
 archived_at: null

@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect } from 'react';
+
 export default function ConfirmModal({
   title,
   message,
@@ -15,10 +17,18 @@ export default function ConfirmModal({
   onCancel: () => void;
   isConfirming?: boolean;
 }) {
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onCancel();
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onCancel]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
-        <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
+      <div role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
+        <h2 id="confirm-modal-title" className="text-lg font-semibold text-zinc-900">{title}</h2>
         <p className="mt-2 text-sm text-zinc-600">{message}</p>
         <div className="mt-6 flex justify-end gap-3">
           <button
