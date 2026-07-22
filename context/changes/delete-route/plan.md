@@ -195,15 +195,15 @@ None — no schema changes; the new endpoint operates on the existing `Routes` t
 
 #### Automated
 
-- [x] 2.1 Frontend builds: `npm run build`
-- [x] 2.2 Lint passes: `npm run lint`
-- [x] 2.3 Tests pass: `npm test` — ConfirmModal component tests, proxy DELETE tests
+- [x] 2.1 Frontend builds: `npm run build` — 24c7bcf
+- [x] 2.2 Lint passes: `npm run lint` — 24c7bcf
+- [x] 2.3 Tests pass: `npm test` — ConfirmModal component tests, proxy DELETE tests — 24c7bcf
 
 #### Manual
 
-- [x] 2.4 List-row delete: confirmation modal names the route; confirming removes just that row without a full reload; stays gone after refresh
-- [x] 2.5 Detail-page delete: confirmation modal; confirming redirects to `/my-routes`; route no longer listed
-- [x] 2.6 Canceling the modal (either surface) leaves the route untouched
-- [x] 2.7 Deleting an already-deleted route (simulated via curl race) shows no error — treated as success
-- [x] 2.8 A genuine delete failure shows inline error text and leaves the route in place, retryable
-- [x] 2.9 Anonymous generation, GPX export, save, and other My Routes flows unaffected
+- [x] 2.4 List-row delete: confirmation modal names the route; confirming removes just that row without a full reload; stays gone after refresh — 24c7bcf
+- [x] 2.5 Detail-page delete: confirmation modal; confirming redirects to `/my-routes`; route no longer listed — 24c7bcf
+- [x] 2.6 Canceling the modal (either surface) leaves the route untouched — 24c7bcf
+- [x] 2.7 Deleting an already-deleted route (simulated via curl race) shows no error — treated as success — 24c7bcf
+- [x] 2.8 A genuine delete failure shows inline error text and leaves the route in place, retryable — 24c7bcf
+- [x] 2.9 Anonymous generation, GPX export, save, and other My Routes flows unaffected — 24c7bcf
