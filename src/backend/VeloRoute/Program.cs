@@ -182,6 +182,22 @@ app.MapGet("/routes/{id:guid}", async (Guid id, ClaimsPrincipal user, AppDbConte
 })
 .RequireAuthorization();
 
+app.MapDelete("/routes/{id:guid}", async (Guid id, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
+{
+    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    if (sub is null) return Results.Unauthorized();
+
+    var route = await db.Routes.SingleOrDefaultAsync(r => r.Id == id && r.UserId == sub, ct);
+    if (route is null)
+        return Results.NotFound(new { error = "Route not found", code = "NOT_FOUND" });
+
+    db.Routes.Remove(route);
+    await db.SaveChangesAsync(ct);
+
+    return Results.NoContent();
+})
+.RequireAuthorization();
+
 app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen, IOptions<OpenRouteServiceOptions> orsOpts, CancellationToken requestCt) =>
 {
     if (req.MinKm < 5 || req.MaxKm > 300 || req.MinKm >= req.MaxKm)
