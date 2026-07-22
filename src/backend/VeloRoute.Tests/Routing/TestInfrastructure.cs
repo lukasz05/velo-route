@@ -45,6 +45,16 @@ internal static class TestJwtFactory
 
 internal static class RouteTestHelpers
 {
+    public static VeloRoute.Data.Route MakeRoute(string userId, string name, DateTimeOffset createdAt) =>
+        new(
+            Id: Guid.NewGuid(),
+            UserId: userId,
+            Name: name,
+            Tags: ["scenic"],
+            DistanceKm: 12.3,
+            Geometry: new GeoJsonLineString("LineString", [[16.37, 48.20], [16.38, 48.21]]),
+            CreatedAt: createdAt);
+
     public static double BboxAspectRatio(IReadOnlyList<RouteCoordinate> coords)
     {
         double minLon = coords.Min(c => c.Longitude);
