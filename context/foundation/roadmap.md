@@ -3,7 +3,7 @@ project: "VeloRoute"
 version: 2
 status: draft
 created: 2026-07-04
-updated: 2026-07-18
+updated: 2026-07-22
 prd_version: 2
 main_goal: quality
 top_blocker: none
@@ -36,7 +36,7 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 | S-02 | `save-route` | save a generated route to their personal library (one-click; auto-name date + distance; optional user-editable name and tags) | S-01 | FR-004, FR-005, US-01 | done |
 | S-06 | `account-deletion` | permanently delete their account and all associated data (email + saved routes) self-serve from account settings | S-01, F-02 | FR-003, NFR (account deletion) | ready |
 | S-03 | `route-library` | view My Routes as a flat list sorted by date, open a saved route on an interactive map, and download its GPX | S-02 | FR-007, FR-008, US-01 | done |
-| S-04 | `delete-route` | delete a saved route after confirming a prompt (hard delete, no recovery) | S-02 | FR-006 | ready |
+| S-04 | `delete-route` | delete a saved route after confirming a prompt (hard delete, no recovery) | S-02 | FR-006 | done |
 | S-05 | `public-route-sharing` | share a saved route via a public link viewable without login; link shows the exact saved route snapshot, not a re-generation | S-02 | FR-009 | ready |
 
 ## Streams
@@ -168,7 +168,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Hard delete with no undo. Confirmation prompt is the only safeguard. PRD explicitly rejects soft-delete ("soft-delete adds complexity not justified in v2"); do not re-introduce it here.
-- **Status:** ready
+- **Status:** done
 
 ### S-05: Public route sharing
 
@@ -225,3 +225,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-01: user can sign up by entering their email address and receiving a magic link; log in to an existing account by clicking the link, with a clear expiry error message and one-click re-send option; and log out.** — Archived 2026-07-18 → `context/archive/2026-07-15-magic-link-auth/`. Lesson: —.
 - **S-02: authenticated user can save a generated route to their personal library with one click; the route is auto-named with date + distance (e.g. "2026-07-04 • 42 km"); the user can optionally edit the name and optionally add tags before or after saving.** — Archived 2026-07-18 → `context/archive/2026-07-18-save-route/`. Lesson: —.
 - **S-03: authenticated user can view their route library as a flat list sorted by date (no search or filter); open any saved route to see it on an interactive map; and download its GPX file.** — Archived 2026-07-18 → `context/archive/2026-07-18-route-library/`. Lesson: —.
+- **S-04: authenticated user can delete a saved route from their library after confirming a prompt; the deletion is immediate and irreversible (hard delete, no recovery).** — Archived 2026-07-22 → `context/archive/2026-07-18-delete-route/`. Lesson: —.
