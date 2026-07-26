@@ -16,6 +16,7 @@ export default function SearchBar({ onSelect, placeholder = 'Search for a start 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const skipNextFetchRef = useRef(false);
 
   const fetchSuggestions = useCallback(async (q: string) => {
     if (q.length < 2) { setSuggestions([]); setIsOpen(false); return; }
@@ -35,6 +36,7 @@ export default function SearchBar({ onSelect, placeholder = 'Search for a start 
   }, []);
 
   useEffect(() => {
+    if (skipNextFetchRef.current) { skipNextFetchRef.current = false; return; }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => fetchSuggestions(query), 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
@@ -43,6 +45,7 @@ export default function SearchBar({ onSelect, placeholder = 'Search for a start 
   useEffect(() => () => { abortRef.current?.abort(); }, []);
 
   function selectSuggestion(feature: GeocodingFeature) {
+    skipNextFetchRef.current = true;
     setQuery(feature.properties.label);
     setSuggestions([]);
     setIsOpen(false);
@@ -58,9 +61,11 @@ export default function SearchBar({ onSelect, placeholder = 'Search for a start 
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActiveIndex(i => Math.max(i - 1, 0));
-    } else if (e.key === 'Enter' && activeIndex >= 0) {
+    } else if (e.key === 'Enter') {
       e.preventDefault();
-      selectSuggestion(suggestions[activeIndex]);
+      selectSuggestion(suggestions[activeIndex >= 0 ? activeIndex : 0]);
+    } else if (e.key === 'Tab' && suggestions.length > 0) {
+      selectSuggestion(suggestions[activeIndex >= 0 ? activeIndex : 0]);
     } else if (e.key === 'Escape') {
       e.preventDefault();
       setIsOpen(false);
