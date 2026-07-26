@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-VeloRoute is a free road-cycling loop-route planner: Next.js 15 / React 19 / TypeScript / Tailwind v4 frontend (Azure Static Web Apps) + ASP.NET Core .NET 10 minimal API backend (Azure App Service). See `@context/foundation/prd.md` for full scope.
+VeloRoute is a free road-cycling loop-route planner: Next.js 15 / React 19 / TypeScript / Tailwind v4 frontend (Azure Static Web Apps) + ASP.NET Core .NET 10 minimal API backend (Azure App Service). See `@context/foundation/prd-v2.md` for full current scope (`prd.md` is the frozen v1 doc).
 
 ## Hard Rules
 
@@ -13,7 +13,7 @@ VeloRoute is a free road-cycling loop-route planner: Next.js 15 / React 19 / Typ
 ## Project Structure
 
 `src/frontend/` — Next.js 15, React 19, TypeScript, Tailwind v4, App Router  
-`src/backend/` — ASP.NET Core .NET 10, minimal API (`Program.cs`, no controllers folder), root namespace `VeloRoute`  
+`src/backend/` — ASP.NET Core .NET 10, minimal API (`Program.cs`, no controllers folder), root namespace `VeloRoute`; `Data/` (EF Core entities + `AppDbContext`), `Migrations/`, `Auth/` (shared auth helpers), `Routing/` (ORS client + loop-route generator)  
 `context/` — knowledge base (PRD, tech-stack docs, per-change logs); never auto-modified  
 
 Each project manages its own dependencies independently. See `@.github/copilot-instructions.md` for full conventions.
