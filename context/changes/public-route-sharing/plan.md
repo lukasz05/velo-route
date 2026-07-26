@@ -258,16 +258,16 @@ New `Shares` table via EF Core migration (`dotnet ef migrations add AddShares`);
 
 #### Automated
 
-- [x] 2.1 Frontend builds: `npm run build`
-- [x] 2.2 Lint passes: `npm run lint`
-- [x] 2.3 Tests pass: `npm test` — share/unshare proxy tests, public share proxy tests
+- [x] 2.1 Frontend builds: `npm run build` — 46ae6aa
+- [x] 2.2 Lint passes: `npm run lint` — 46ae6aa
+- [x] 2.3 Tests pass: `npm test` — share/unshare proxy tests, public share proxy tests — 46ae6aa
 
 #### Manual
 
-- [x] 2.4 "Share" on detail page reveals a copyable URL; "Copy" copies it with a brief confirmation
-- [x] 2.5 Opening the URL in a private window (no session) shows name/distance/tags/map + working GPX download
-- [x] 2.6 Refreshing the detail page still shows the copy-link UI (not a bare "Share" button)
-- [x] 2.7 "Stop sharing" reverts to a bare "Share" button; the old URL now 404s
-- [x] 2.8 Re-sharing after revoke produces a different URL than before
-- [x] 2.9 Deleting the route also invalidates its active share URL
-- [x] 2.10 Anonymous generation, GPX export, save, delete-route, and other My Routes flows unaffected
+- [x] 2.4 "Share" on detail page reveals a copyable URL; "Copy" copies it with a brief confirmation — 46ae6aa
+- [x] 2.5 Opening the URL in a private window (no session) shows name/distance/tags/map + working GPX download — 46ae6aa
+- [x] 2.6 Refreshing the detail page still shows the copy-link UI (not a bare "Share" button) — 46ae6aa
+- [x] 2.7 "Stop sharing" reverts to a bare "Share" button; the old URL now 404s — 46ae6aa
+- [x] 2.8 Re-sharing after revoke produces a different URL than before — 46ae6aa
+- [x] 2.9 Deleting the route also invalidates its active share URL — 46ae6aa
+- [x] 2.10 Anonymous generation, GPX export, save, delete-route, and other My Routes flows unaffected — 46ae6aa
