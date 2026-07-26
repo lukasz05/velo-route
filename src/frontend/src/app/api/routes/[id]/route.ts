@@ -1,71 +1,43 @@
+import { requireAuthHeader, proxyFetch } from '@/lib/apiProxy';
+
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader) {
-    return Response.json({ error: 'Missing Authorization header', code: 'UNAUTHORIZED' }, { status: 401 });
-  }
+  const authHeader = requireAuthHeader(request);
+  if (authHeader instanceof Response) return authHeader;
 
   const { id } = await params;
   if (!GUID_PATTERN.test(id)) {
     return Response.json({ error: 'Invalid route id', code: 'INVALID_ID' }, { status: 400 });
   }
-  const apiUrl = process.env.VELO_API_URL ?? 'http://localhost:5098';
-  let res: Response;
-  try {
-    res = await fetch(`${apiUrl}/routes/${id}`, {
-      headers: { Authorization: authHeader },
-    });
-  } catch {
-    return Response.json({ error: 'Could not reach backend', code: 'PROVIDER_ERROR' }, { status: 502 });
-  }
 
-  if (!res.ok) {
-    let code = 'PROVIDER_ERROR';
-    let message = `Backend returned ${res.status}`;
-    try {
-      const errBody = await res.json() as { error?: string; code?: string };
-      if (errBody.code) code = errBody.code;
-      if (errBody.error) message = errBody.error;
-    } catch { /* ignore parse errors */ }
-    return Response.json({ error: message, code }, { status: res.status });
-  }
+  const res = await proxyFetch(`/routes/${id}`, {
+    headers: { Authorization: authHeader },
+  });
+  if (!res.ok) return res;
 
   const resBody = await res.json();
   return Response.json(resBody, { status: res.status });
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader) {
-    return Response.json({ error: 'Missing Authorization header', code: 'UNAUTHORIZED' }, { status: 401 });
-  }
+  const authHeader = requireAuthHeader(request);
+  if (authHeader instanceof Response) return authHeader;
 
   const { id } = await params;
   if (!GUID_PATTERN.test(id)) {
     return Response.json({ error: 'Invalid route id', code: 'INVALID_ID' }, { status: 400 });
   }
-  const apiUrl = process.env.VELO_API_URL ?? 'http://localhost:5098';
-  let res: Response;
-  try {
-    res = await fetch(`${apiUrl}/routes/${id}`, {
-      method: 'DELETE',
-      headers: { Authorization: authHeader },
-    });
-  } catch {
-    return Response.json({ error: 'Could not reach backend', code: 'PROVIDER_ERROR' }, { status: 502 });
-  }
+
+  const res = await proxyFetch(`/routes/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: authHeader },
+  });
+  if (!res.ok) return res;
 
   if (res.status === 204) {
     return new Response(null, { status: 204 });
   }
-
-  let code = 'PROVIDER_ERROR';
-  let message = `Backend returned ${res.status}`;
-  try {
-    const errBody = await res.json() as { error?: string; code?: string };
-    if (errBody.code) code = errBody.code;
-    if (errBody.error) message = errBody.error;
-  } catch { /* ignore parse errors */ }
-  return Response.json({ error: message, code }, { status: res.status });
+  const resBody = await res.json();
+  return Response.json(resBody, { status: res.status });
 }
