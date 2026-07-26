@@ -72,7 +72,7 @@ The two projects are independently runnable. In production, the Next.js frontend
 ## Workflow conventions
 
 - **Branch per change**: before running `/10x-implement` for any change, create a branch named after the change-id (`git checkout -b <change-id>`). Do this automatically without being asked.
-- **Keep docs accurate**: before every commit, check whether any fact in this file or in `context/` has become stale — version numbers, test counts, integration status, namespace names, "not yet implemented" claims. Update them in the same commit as the code change that made them stale. Never let a commit leave the docs describing a state that no longer exists.
+- **Keep docs accurate**: before every commit — and always as part of a change's final/epilogue commit, not just mid-implementation — check whether any fact has gone stale in *any* of: this file, root `README.md`, root `AGENTS.md`, `src/backend/VeloRoute/README.md`, `src/frontend/README.md`, or `context/`. Watch for: version numbers, test counts, integration status, namespace/folder names, env-var tables, "not yet implemented"/"no account required"/scope claims. Update them in the same commit as the code change that made them stale. Never let a commit leave any of these docs describing a state that no longer exists.
 
 ## Current scope (v2 in progress)
 
