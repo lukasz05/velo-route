@@ -335,19 +335,19 @@ None — no schema change. The existing cascade-delete FK configuration already 
 
 #### Automated
 
-- [x] 3.1 `npm run lint` passes
-- [x] 3.2 `npm test` passes, including new ConfirmModal case
+- [x] 3.1 `npm run lint` passes — ff1be9d
+- [x] 3.2 `npm test` passes, including new ConfirmModal case — ff1be9d
 
 ### Phase 4: Frontend — account page, nav, post-delete UX
 
 #### Automated
 
-- [ ] 4.1 `npm run build` succeeds
-- [ ] 4.2 `npm run lint` passes
-- [ ] 4.3 `npm test` passes
+- [x] 4.1 `npm run build` succeeds
+- [x] 4.2 `npm run lint` passes
+- [x] 4.3 `npm test` passes
 
 #### Manual
 
-- [ ] 4.4 Full signup → save → account page → typed-confirm delete flow verified
-- [ ] 4.5 Deleted account cannot sign in again with same email
-- [ ] 4.6 Anonymous route generation and GPX export still work
+- [x] 4.4 Full signup → save → account page → typed-confirm delete flow verified
+- [x] 4.5 Deleted account cannot sign in again with same email
+- [x] 4.6 Anonymous route generation and GPX export still work

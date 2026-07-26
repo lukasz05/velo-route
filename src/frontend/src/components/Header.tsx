@@ -41,6 +41,9 @@ export default function Header() {
           <Link href="/my-routes" className="text-sm font-medium">
             My Routes
           </Link>
+          <Link href="/account" className="text-sm font-medium">
+            Account
+          </Link>
           <span className="text-sm">{user.primaryEmailAddress?.emailAddress}</span>
           <button onClick={() => signOut()} className="text-sm font-medium">
             Log out
