@@ -38,7 +38,10 @@ export default function RouteMap({ startPoint, routeCoordinates }: RouteMapProps
     if (!isMapLoaded) return;
     if (routeCoordinates) return; // route view takes priority
     if (!startPoint) return;
-    mapRef.current?.flyTo({ center: [startPoint.lon, startPoint.lat], zoom: 11, duration: 800 });
+    const map = mapRef.current;
+    if (!map) return;
+    map.resize();
+    map.flyTo({ center: [startPoint.lon, startPoint.lat], zoom: 11, duration: 800 });
   }, [startPoint, routeCoordinates, isMapLoaded]);
 
   const geojson: GeoJSON.FeatureCollection | null = routeCoordinates && routeCoordinates.length >= 2

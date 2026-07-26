@@ -180,6 +180,12 @@ Add proxy routes for the new backend endpoints, wire a Share/Copy/Stop-sharing U
 
 **Contract**: Client Component reading `token` via `useParams<{ token: string }>()`. On mount, fetch `GET /api/shares/${token}` with no Authorization header. `404` → render a generic "Route not found" state (same shape as the existing not-found state in `my-routes/[id]/page.tsx`, but its "back" link points to `/` instead of `/my-routes` since the visitor may not be signed in). Other non-2xx → inline error text. On success, render: route name, distance, tags, the `RouteMap` component (same dynamic-import, `ssr: false` usage as the detail page), a "Download GPX" button reusing the existing unauthenticated `POST /api/routes/gpx` flow, and a "Plan your own route" link back to `/`.
 
+#### Addendum: unplanned RouteMap.tsx fix (discovered during manual verification)
+
+**File**: `src/frontend/src/components/RouteMap.tsx`
+
+Manual verification step 2.5 surfaced a pre-existing race in this shared component: the `fitBounds`/`flyTo` camera-move effects could fire before the underlying maplibre-gl map's `load` event, causing the route line to intermittently not render on both `/my-routes/[id]` and the new `/r/[token]` page. Not in this phase's original "Changes Required" — fixed in commit `46ae6aa` by adding an `isMapLoaded` state gated on a new `onLoad` handler on the `Map` component, plus a `map.resize()` call before `fitBounds`. Flagged and accepted as a justified, benign fix during `/10x-impl-review`.
+
 ### Success Criteria:
 
 #### Automated Verification:
