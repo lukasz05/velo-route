@@ -37,8 +37,9 @@ export default function AccountPage() {
       router.push('/?accountDeleted=1');
     } catch {
       setDeleteError('Could not delete your account. Please try again.');
-      setIsDeleting(false);
       setShowConfirm(false);
+    } finally {
+      setIsDeleting(false);
     }
   }
 

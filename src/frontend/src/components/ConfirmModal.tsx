@@ -23,11 +23,11 @@ export default function ConfirmModal({
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onCancel();
+      if (e.key === 'Escape' && !isConfirming) onCancel();
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onCancel]);
+  }, [onCancel, isConfirming]);
 
   const confirmDisabled =
     isConfirming || (confirmationPhrase !== undefined && typedValue !== confirmationPhrase);

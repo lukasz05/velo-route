@@ -86,6 +86,33 @@ public sealed class AccountDeletionTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task Delete_ClerkReturnsFalse_StillReturns204AndPostgresDeleteCommits()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory(
+            useTestAuth: true, dbConnectionString: fixture.ConnectionString);
+        factory.FakeClerkClient.DeleteResult = false;
+        var client = factory.CreateClient();
+        var sub = Guid.NewGuid().ToString();
+
+        await using (var seedContext = NewContext())
+        {
+            seedContext.Users.Add(new User(sub, DateTimeOffset.UtcNow));
+            await seedContext.SaveChangesAsync();
+        }
+
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken(sub));
+
+        var response = await client.DeleteAsync("/account");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        await using var verifyContext = NewContext();
+        Assert.Null(await verifyContext.Users.SingleOrDefaultAsync(u => u.Id == sub));
+        Assert.Contains(sub, factory.FakeClerkClient.DeletedUserIds);
+    }
+
+    [Fact]
     public async Task Delete_NoExistingUsersRow_StillReturns204AndAttemptsClerkDelete()
     {
         await using var factory = new VeloRouteWebApplicationFactory(
