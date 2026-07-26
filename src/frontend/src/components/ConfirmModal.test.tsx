@@ -60,4 +60,44 @@ describe('ConfirmModal', () => {
     )
     expect(screen.getByText('Deleting…')).toBeDisabled()
   })
+
+  it('keeps confirm disabled until the typed value matches confirmationPhrase', () => {
+    render(
+      <ConfirmModal
+        title="Delete account?"
+        message="This cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={() => {}}
+        onCancel={() => {}}
+        confirmationPhrase="DELETE"
+      />
+    )
+    const confirmButton = screen.getByText('Delete')
+    const input = screen.getByLabelText('Type DELETE to confirm')
+
+    expect(confirmButton).toBeDisabled()
+
+    fireEvent.change(input, { target: { value: 'delete' } })
+    expect(confirmButton).toBeDisabled()
+
+    fireEvent.change(input, { target: { value: 'DELETE' } })
+    expect(confirmButton).not.toBeDisabled()
+  })
+
+  it('is unaffected when confirmationPhrase is omitted', () => {
+    const onConfirm = vi.fn()
+    render(
+      <ConfirmModal
+        title="Delete route?"
+        message="This cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={onConfirm}
+        onCancel={() => {}}
+      />
+    )
+    const confirmButton = screen.getByText('Delete')
+    expect(confirmButton).not.toBeDisabled()
+    fireEvent.click(confirmButton)
+    expect(onConfirm).toHaveBeenCalledOnce()
+  })
 })

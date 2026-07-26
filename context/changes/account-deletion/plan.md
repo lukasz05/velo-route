@@ -324,19 +324,19 @@ None — no schema change. The existing cascade-delete FK configuration already 
 
 #### Automated
 
-- [x] 2.1 `dotnet test` passes, including all four new AccountDeletionTests cases
-- [x] 2.2 `dotnet build` has no warnings introduced by the new files
+- [x] 2.1 `dotnet test` passes, including all four new AccountDeletionTests cases — 2a105a7
+- [x] 2.2 `dotnet build` has no warnings introduced by the new files — 2a105a7
 
 #### Manual
 
-- [x] 2.3 Swagger UI manual DELETE /account verified against real Clerk dev JWT + DB inspection
+- [x] 2.3 Swagger UI manual DELETE /account verified against real Clerk dev JWT + DB inspection — 2a105a7
 
 ### Phase 3: Frontend — proxy route + typed-confirmation modal
 
 #### Automated
 
-- [ ] 3.1 `npm run lint` passes
-- [ ] 3.2 `npm test` passes, including new ConfirmModal case
+- [x] 3.1 `npm run lint` passes
+- [x] 3.2 `npm test` passes, including new ConfirmModal case
 
 ### Phase 4: Frontend — account page, nav, post-delete UX
 
