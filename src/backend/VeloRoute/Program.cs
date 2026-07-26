@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -50,6 +51,15 @@ builder.Services.AddHttpClient<IOpenRouteServiceClient, OpenRouteServiceClient>(
         options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
         options.CircuitBreaker.MinimumThroughput = 3;
         options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+    });
+
+builder.Services.AddHttpClient<IClerkClient, ClerkClient>()
+    .ConfigureHttpClient((sp, client) =>
+    {
+        client.BaseAddress = new Uri("https://api.clerk.com/v1/");
+        var secretKey = sp.GetRequiredService<IConfiguration>()["Clerk:SecretKey"];
+        if (!string.IsNullOrEmpty(secretKey))
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", secretKey);
     });
 
 builder.Services.AddDbContext<AppDbContext>(opts =>
