@@ -317,19 +317,19 @@ None — no schema change. The existing cascade-delete FK configuration already 
 
 #### Automated
 
-- [x] 1.1 Backend builds: `dotnet build`
-- [x] 1.2 Existing tests still pass: `dotnet test`
+- [x] 1.1 Backend builds: `dotnet build` — 9fb6ffc
+- [x] 1.2 Existing tests still pass: `dotnet test` — 9fb6ffc
 
 ### Phase 2: Backend — DELETE /account endpoint + tests
 
 #### Automated
 
-- [ ] 2.1 `dotnet test` passes, including all four new AccountDeletionTests cases
-- [ ] 2.2 `dotnet build` has no warnings introduced by the new files
+- [x] 2.1 `dotnet test` passes, including all four new AccountDeletionTests cases
+- [x] 2.2 `dotnet build` has no warnings introduced by the new files
 
 #### Manual
 
-- [ ] 2.3 Swagger UI manual DELETE /account verified against real Clerk dev JWT + DB inspection
+- [x] 2.3 Swagger UI manual DELETE /account verified against real Clerk dev JWT + DB inspection
 
 ### Phase 3: Frontend — proxy route + typed-confirmation modal
 

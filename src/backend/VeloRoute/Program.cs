@@ -137,6 +137,33 @@ app.MapPost("/auth/sync", async (ClaimsPrincipal user, AppDbContext db, Cancella
 })
 .RequireAuthorization();
 
+app.MapDelete("/account", async (ClaimsPrincipal user, AppDbContext db, IClerkClient clerkClient, CancellationToken ct) =>
+{
+    var sub = user.GetSub();
+    if (sub is null) return Results.Unauthorized();
+
+    var existing = await db.Users.SingleOrDefaultAsync(u => u.Id == sub, ct);
+    if (existing is not null)
+    {
+        db.Users.Remove(existing);
+        await db.SaveChangesAsync(ct);
+    }
+
+    try
+    {
+        await clerkClient.DeleteUserAsync(sub, ct);
+    }
+    catch
+    {
+        // Already logged inside ClerkClient; the Postgres-side delete above already
+        // committed, so a failure here is tolerated and self-heals via /auth/sync
+        // if the (still-existing) Clerk identity ever logs in again.
+    }
+
+    return Results.NoContent();
+})
+.RequireAuthorization();
+
 app.MapPost("/routes", async (SaveRouteRequest req, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
     var sub = user.GetSub();

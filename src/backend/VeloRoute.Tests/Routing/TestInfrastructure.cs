@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using VeloRoute.Auth;
 using VeloRoute.Data;
 using VeloRoute.Routing;
 
@@ -93,6 +94,20 @@ internal sealed class FakeOpenRouteServiceClient : IOpenRouteServiceClient
     }
 }
 
+internal sealed class FakeClerkClient : IClerkClient
+{
+    public bool DeleteResult { get; set; } = true;
+    public Exception? ThrowOnDelete { get; set; }
+    public List<string> DeletedUserIds { get; } = new();
+
+    public Task<bool> DeleteUserAsync(string clerkUserId, CancellationToken cancellationToken = default)
+    {
+        DeletedUserIds.Add(clerkUserId);
+        if (ThrowOnDelete is not null) throw ThrowOnDelete;
+        return Task.FromResult(DeleteResult);
+    }
+}
+
 internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string? _timeoutSeconds;
@@ -116,6 +131,7 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
     }
 
     public FakeOpenRouteServiceClient FakeClient { get; } = new();
+    public FakeClerkClient FakeClerkClient { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -127,6 +143,13 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
                 services.Remove(descriptor);
 
             services.AddSingleton<IOpenRouteServiceClient>(FakeClient);
+
+            var clerkDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(IClerkClient));
+            if (clerkDescriptor is not null)
+                services.Remove(clerkDescriptor);
+
+            services.AddSingleton<IClerkClient>(FakeClerkClient);
 
             if (_dbConnectionString is not null)
             {
