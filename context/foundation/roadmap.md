@@ -37,7 +37,7 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 | S-06 | `account-deletion` | permanently delete their account and all associated data (email + saved routes) self-serve from account settings | S-01, F-02 | FR-003, NFR (account deletion) | ready |
 | S-03 | `route-library` | view My Routes as a flat list sorted by date, open a saved route on an interactive map, and download its GPX | S-02 | FR-007, FR-008, US-01 | done |
 | S-04 | `delete-route` | delete a saved route after confirming a prompt (hard delete, no recovery) | S-02 | FR-006 | done |
-| S-05 | `public-route-sharing` | share a saved route via a public link viewable without login; link shows the exact saved route snapshot, not a re-generation | S-02 | FR-009 | ready |
+| S-05 | `public-route-sharing` | share a saved route via a public link viewable without login; link is a live read-through to the owner's saved route (not a snapshot) and dies if the route is deleted or unshared | S-02 | FR-009 | done |
 
 ## Streams
 
@@ -182,7 +182,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - ~~What is the URL shape for public links?~~ — **Resolved 2026-07-26 (planning):** short opaque random token (~12-char base62), not a GUID — enumeration-resistant, shorter URLs.
   - ~~Should public links be revocable?~~ — **Resolved 2026-07-26 (planning), reversed later same session:** yes, revocable. `DELETE /routes/{id}/share` hard-deletes the `Shares` row; re-sharing afterward mints a brand-new token, not the same URL. Combined with the FK-cascade-delete behavior below, a share now ends either when the owner revokes it or when the source route is deleted.
 - **Risk:** ~~Public snapshot links... store the geometry at save time...~~ — **Superseded 2026-07-26:** the team chose FK-to-Route (no geometry copy) over a snapshot table, accepting that a share stops working if the source route is deleted — see PRD-v2 Constraints (amended 2026-07-26) and Scope of Change → Route library. Revisit only if user feedback shows recipients are surprised by a link dying.
-- **Status:** ready
+- **Status:** done
 
 ## Backlog Handoff
 
