@@ -66,7 +66,7 @@ export default function RouteMap({ startPoint, routeCoordinates }: RouteMapProps
     <ReactMap
       ref={mapRef}
       onLoad={() => setIsMapLoaded(true)}
-      initialViewState={{ longitude: 16.37, latitude: 48.21, zoom: 10 }}
+      initialViewState={{ longitude: 21.0122, latitude: 52.2297, zoom: 10 }}
       style={{ width: '100%', height: '100%' }}
       mapStyle="https://tiles.openfreemap.org/styles/liberty"
     >
