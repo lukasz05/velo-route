@@ -342,12 +342,12 @@ None — no schema change. The existing cascade-delete FK configuration already 
 
 #### Automated
 
-- [x] 4.1 `npm run build` succeeds
-- [x] 4.2 `npm run lint` passes
-- [x] 4.3 `npm test` passes
+- [x] 4.1 `npm run build` succeeds — 72a91d9
+- [x] 4.2 `npm run lint` passes — 72a91d9
+- [x] 4.3 `npm test` passes — 72a91d9
 
 #### Manual
 
-- [x] 4.4 Full signup → save → account page → typed-confirm delete flow verified
-- [x] 4.5 Deleted account cannot sign in again with same email
-- [x] 4.6 Anonymous route generation and GPX export still work
+- [x] 4.4 Full signup → save → account page → typed-confirm delete flow verified — 72a91d9
+- [x] 4.5 Deleted account cannot sign in again with same email — 72a91d9
+- [x] 4.6 Anonymous route generation and GPX export still work — 72a91d9

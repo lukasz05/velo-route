@@ -34,7 +34,7 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 | S-07 | `routing-quality-osm` | generate routes that prefer OSM scenic/low-traffic roads and pass near cyclist POIs (cafes, water, rest stops) — best-effort; distance constraint always wins | — | FR-010, FR-011, FR-012, FR-013 | ready |
 | S-01 | `magic-link-auth` | sign up by entering an email (receive a magic link), log in via the link with a clear expiry error message and one-click re-send option, and log out | F-01, F-02 | FR-001, FR-002, FR-003, US-01 | done |
 | S-02 | `save-route` | save a generated route to their personal library (one-click; auto-name date + distance; optional user-editable name and tags) | S-01 | FR-004, FR-005, US-01 | done |
-| S-06 | `account-deletion` | permanently delete their account and all associated data (email + saved routes) self-serve from account settings | S-01, F-02 | FR-003, NFR (account deletion) | ready |
+| S-06 | `account-deletion` | permanently delete their account and all associated data (email + saved routes) self-serve from account settings | S-01, F-02 | FR-003, NFR (account deletion) | done |
 | S-03 | `route-library` | view My Routes as a flat list sorted by date, open a saved route on an interactive map, and download its GPX | S-02 | FR-007, FR-008, US-01 | done |
 | S-04 | `delete-route` | delete a saved route after confirming a prompt (hard delete, no recovery) | S-02 | FR-006 | done |
 | S-05 | `public-route-sharing` | share a saved route via a public link viewable without login; link is a live read-through to the owner's saved route (not a snapshot) and dies if the route is deleted or unshared | S-02 | FR-009 | done |
@@ -143,7 +143,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - ~~Does the chosen auth provider support programmatic user deletion?~~ — **Resolved 2026-07-04, provider updated 2026-07-07:** Clerk supports user deletion via its Backend API (`DELETE /users/{id}`). Backend calls Clerk's Backend API on account delete, then cascades the Postgres row via FK constraint.
 - **Risk:** Hard delete with no soft-delete buffer means a mis-click permanently destroys a user's route library. A confirmation prompt (e.g. "type DELETE to confirm") is the minimum safeguard; the PRD requires a prompt but does not specify its form.
-- **Status:** ready
+- **Status:** done
 
 ### S-03: Route library
 
