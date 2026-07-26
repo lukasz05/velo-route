@@ -230,8 +230,15 @@ app.MapPost("/routes/{id:guid}/share", async (Guid id, ClaimsPrincipal user, App
     }
     catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
     {
-        var winner = await db.Shares.SingleAsync(s => s.RouteId == id, ct);
-        return Results.Ok(new { token = winner.Token });
+        var winner = await db.Shares.SingleOrDefaultAsync(s => s.RouteId == id, ct);
+        if (winner is not null)
+            return Results.Ok(new { token = winner.Token });
+
+        db.Entry(share).State = EntityState.Detached;
+        share = share with { Token = RandomNumberGenerator.GetString(ShareTokenChars, 12) };
+        db.Shares.Add(share);
+        await db.SaveChangesAsync(ct);
+        return Results.Created($"/shares/{share.Token}", new { token = share.Token });
     }
 
     return Results.Created($"/shares/{share.Token}", new { token = share.Token });

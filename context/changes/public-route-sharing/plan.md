@@ -244,15 +244,15 @@ New `Shares` table via EF Core migration (`dotnet ef migrations add AddShares`);
 
 #### Automated
 
-- [x] 1.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj`
-- [x] 1.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj`
-- [x] 1.3 New `ShareRouteTests.cs` passes: creation (401/404/201+token/idempotent 200), revocation (401/404/404 no-share/204), public lookup (404/200 no-auth), cascade-on-delete, detail response `shareToken` reflects state
+- [x] 1.1 Backend builds: `dotnet build src/backend/VeloRoute/VeloRoute.csproj` — d1331e2
+- [x] 1.2 All backend tests pass: `dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj` — d1331e2
+- [x] 1.3 New `ShareRouteTests.cs` passes: creation (401/404/201+token/idempotent 200), revocation (401/404/404 no-share/204), public lookup (404/200 no-auth), cascade-on-delete, detail response `shareToken` reflects state — d1331e2
 
 #### Manual
 
-- [x] 1.4 `curl -X POST .../routes/<id>/share` returns 201+token; repeat call returns 200 with the same token
-- [x] 1.5 `curl .../shares/<token>` (no auth header) returns the route's data
-- [x] 1.6 `curl -X DELETE .../routes/<id>/share` revokes; subsequent `curl .../shares/<token>` returns 404
+- [x] 1.4 `curl -X POST .../routes/<id>/share` returns 201+token; repeat call returns 200 with the same token — d1331e2
+- [x] 1.5 `curl .../shares/<token>` (no auth header) returns the route's data — d1331e2
+- [x] 1.6 `curl -X DELETE .../routes/<id>/share` revokes; subsequent `curl .../shares/<token>` returns 404 — d1331e2
 
 ### Phase 2: Frontend — share UI + public page
 

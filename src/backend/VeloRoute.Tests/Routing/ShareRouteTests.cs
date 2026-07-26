@@ -48,6 +48,39 @@ public sealed class ShareRouteTests(PostgresFixture fixture)
     }
 
     [Fact]
+    public async Task ShareAndUnshare_OwnedByDifferentUser_Returns404()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory(
+            useTestAuth: true, dbConnectionString: fixture.ConnectionString);
+        var client = factory.CreateClient();
+        var sub = Guid.NewGuid().ToString();
+        var otherSub = Guid.NewGuid().ToString();
+        VeloRoute.Data.Route otherRoute;
+
+        await using (var seedContext = NewContext())
+        {
+            seedContext.Users.Add(new User(sub, DateTimeOffset.UtcNow));
+            seedContext.Users.Add(new User(otherSub, DateTimeOffset.UtcNow));
+            otherRoute = RouteTestHelpers.MakeRoute(otherSub, "Not mine", DateTimeOffset.UtcNow);
+            seedContext.Routes.Add(otherRoute);
+            await seedContext.SaveChangesAsync();
+        }
+
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken(sub));
+
+        var shareResponse = await client.PostAsync($"/routes/{otherRoute.Id}/share", null);
+        Assert.Equal(HttpStatusCode.NotFound, shareResponse.StatusCode);
+
+        var unshareResponse = await client.DeleteAsync($"/routes/{otherRoute.Id}/share");
+        Assert.Equal(HttpStatusCode.NotFound, unshareResponse.StatusCode);
+
+        await using var verifyContext = NewContext();
+        var shares = await verifyContext.Shares.Where(s => s.RouteId == otherRoute.Id).ToListAsync();
+        Assert.Empty(shares);
+    }
+
+    [Fact]
     public async Task Share_ValidRoute_Returns201WithToken()
     {
         await using var factory = new VeloRouteWebApplicationFactory(
