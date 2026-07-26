@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
+using VeloRoute.Auth;
 using VeloRoute.Data;
 using VeloRoute.Routing;
 using Microsoft.Extensions.Options;
@@ -103,7 +104,7 @@ if (app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
     app.MapGet("/auth/probe", (ClaimsPrincipal user) =>
-        Results.Ok(new { sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value }))
+        Results.Ok(new { sub = user.GetSub() }))
         .RequireAuthorization();
 }
 
@@ -117,7 +118,7 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
 
 app.MapPost("/auth/sync", async (ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
-    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
     await db.Database.ExecuteSqlInterpolatedAsync(
@@ -128,7 +129,7 @@ app.MapPost("/auth/sync", async (ClaimsPrincipal user, AppDbContext db, Cancella
 
 app.MapPost("/routes", async (SaveRouteRequest req, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
-    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
     if (string.IsNullOrWhiteSpace(req.Name))
@@ -155,7 +156,7 @@ app.MapPost("/routes", async (SaveRouteRequest req, ClaimsPrincipal user, AppDbC
 
 app.MapGet("/routes", async (ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
-    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
     var routes = await db.Routes
@@ -170,7 +171,7 @@ app.MapGet("/routes", async (ClaimsPrincipal user, AppDbContext db, Cancellation
 
 app.MapGet("/routes/{id:guid}", async (Guid id, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
-    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
     var route = await db.Routes.SingleOrDefaultAsync(r => r.Id == id && r.UserId == sub, ct);
@@ -187,7 +188,7 @@ app.MapGet("/routes/{id:guid}", async (Guid id, ClaimsPrincipal user, AppDbConte
 
 app.MapDelete("/routes/{id:guid}", async (Guid id, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
-    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
     var route = await db.Routes.SingleOrDefaultAsync(r => r.Id == id && r.UserId == sub, ct);
@@ -205,7 +206,7 @@ const string ShareTokenChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuv
 
 app.MapPost("/routes/{id:guid}/share", async (Guid id, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
-    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
     var route = await db.Routes.SingleOrDefaultAsync(r => r.Id == id && r.UserId == sub, ct);
@@ -247,7 +248,7 @@ app.MapPost("/routes/{id:guid}/share", async (Guid id, ClaimsPrincipal user, App
 
 app.MapDelete("/routes/{id:guid}/share", async (Guid id, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
-    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
     var route = await db.Routes.SingleOrDefaultAsync(r => r.Id == id && r.UserId == sub, ct);
