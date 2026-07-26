@@ -30,6 +30,10 @@ export default function RouteDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -54,6 +58,7 @@ export default function RouteDetailPage() {
         if (!res.ok) throw new Error(`Failed to load route: ${res.status}`);
         const data = await res.json() as SavedRouteDetail;
         setRoute(data);
+        setShareToken(data.shareToken);
       } catch {
         setError('Could not load this route. Please try again.');
       }
@@ -113,6 +118,55 @@ export default function RouteDetailPage() {
     }
   }
 
+  async function handleShare() {
+    setIsSharing(true);
+    setShareError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/routes/${id}/share`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`Share failed: ${res.status}`);
+      const data = await res.json() as { token: string };
+      setShareToken(data.token);
+    } catch {
+      setShareError('Could not share this route. Please try again.');
+    } finally {
+      setIsSharing(false);
+    }
+  }
+
+  async function handleStopSharing() {
+    setIsSharing(true);
+    setShareError(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/routes/${id}/share`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok && res.status !== 404) throw new Error(`Stop sharing failed: ${res.status}`);
+      setShareToken(null);
+      setIsCopied(false);
+    } catch {
+      setShareError('Could not stop sharing this route. Please try again.');
+    } finally {
+      setIsSharing(false);
+    }
+  }
+
+  async function handleCopy() {
+    if (!shareToken) return;
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/r/${shareToken}`);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch {
+      setShareError('Could not copy the link. Please copy it manually.');
+    }
+  }
+
   if (!isLoaded || !isSignedIn) return null;
 
   if (notFound) {
@@ -163,6 +217,42 @@ export default function RouteDetailPage() {
         </button>
         {downloadError && (
           <p className="mt-2 text-sm text-red-600">{downloadError}</p>
+        )}
+        {shareToken ? (
+          <div className="mt-3 flex flex-col gap-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                readOnly
+                value={`${typeof window !== 'undefined' ? window.location.origin : ''}/r/${shareToken}`}
+                className="w-full rounded-md border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm text-zinc-700"
+              />
+              <button
+                onClick={handleCopy}
+                className="shrink-0 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+              >
+                {isCopied ? 'Copied!' : 'Copy'}
+              </button>
+            </div>
+            <button
+              onClick={handleStopSharing}
+              disabled={isSharing}
+              className="self-start rounded-md px-2 py-1 text-sm font-medium text-zinc-600 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSharing ? 'Stopping…' : 'Stop sharing'}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={handleShare}
+            disabled={isSharing}
+            className="mt-3 w-full rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSharing ? 'Sharing…' : 'Share'}
+          </button>
+        )}
+        {shareError && (
+          <p className="mt-2 text-sm text-red-600">{shareError}</p>
         )}
         <button
           onClick={() => setShowDeleteConfirm(true)}
