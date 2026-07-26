@@ -23,6 +23,8 @@ cp .env.example .env.local
 | Variable | Required | Description |
 |---|---|---|
 | `VELO_API_URL` | Yes | Backend API base URL (default: `http://localhost:5098`) |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | Clerk publishable key (`pk_test_...`) — needed for sign-in/library/share UI |
+| `CLERK_SECRET_KEY` | Yes | Clerk secret key (`sk_test_...`), server-only, never `NEXT_PUBLIC` |
 | `ORS_API_KEY` | No | OpenRouteService API key — only needed if the frontend calls ORS directly (currently handled by the backend) |
 
 ### Corporate SSL proxy
@@ -36,3 +38,6 @@ If you're behind a corporate SSL proxy, export its CA certificate to `local-ca.p
 | `npm run dev` | Start dev server with hot reload |
 | `npm run build` | Production build |
 | `npm run lint` | Run ESLint |
+| `npm test` | Run Vitest test suite (single pass) |
+| `npm run test:watch` | Vitest in watch mode |
+| `npm run coverage` | Vitest with coverage report |

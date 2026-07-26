@@ -22,6 +22,26 @@ dotnet run --launch-profile https
 
 ## Configuration
 
+### Database (required)
+
+Postgres via `docker compose up -d` (repo root `docker-compose.yml`; `veloroute`/`veloroute`/`veloroute` on `localhost:5432`). Set the connection string as a user secret:
+
+```bash
+dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Database=veloroute;Username=veloroute;Password=veloroute"
+```
+
+EF Core migrations apply automatically on startup in Development.
+
+### Clerk auth (required for account-gated endpoints)
+
+```bash
+dotnet user-secrets set "Clerk:Authority" "<your-clerk-instance>"
+dotnet user-secrets set "Clerk:FrontendApiDomain" "<your-clerk-frontend-api-domain>"
+dotnet user-secrets set "Clerk:AllowedAzp" "<your-frontend-origin>"
+```
+
+Route generation and GPX export (`POST /routes/loop`, `POST /routes/gpx`) stay unauthenticated; the route-library endpoints (`/routes`, `/routes/{id}`, `/routes/{id}/share`) require a valid Clerk-issued JWT. `GET /shares/{token}` is public by design (the token is the access control).
+
 ### ORS API key (required for route generation)
 
 Store the OpenRouteService API key as a user secret (never commit it):
@@ -50,6 +70,10 @@ If you're behind a corporate SSL proxy, the ORS HTTP client may fail certificate
 src/backend/
   Program.cs          # App bootstrap, CORS, DI wiring, all API endpoints
   Routing/            # ORS HTTP client, loop-route generator, data models
+  Data/               # EF Core entities (User, Route, Share) + AppDbContext
+  Migrations/         # EF Core migrations
+  Auth/               # Shared auth helpers (e.g. ClaimsPrincipalExtensions.GetSub())
   appsettings.json    # Default config (ORS base URL, log levels)
   VeloRoute.csproj    # Project file
+VeloRoute.Tests/       # xUnit suite; Testcontainers-backed Postgres fixture
 ```
