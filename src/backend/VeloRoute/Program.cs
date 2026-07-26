@@ -1,8 +1,11 @@
 using System.Net;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql;
+using VeloRoute.Auth;
 using VeloRoute.Data;
 using VeloRoute.Routing;
 using Microsoft.Extensions.Options;
@@ -101,7 +104,7 @@ if (app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 
     app.MapGet("/auth/probe", (ClaimsPrincipal user) =>
-        Results.Ok(new { sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value }))
+        Results.Ok(new { sub = user.GetSub() }))
         .RequireAuthorization();
 }
 
@@ -115,7 +118,7 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
 
 app.MapPost("/auth/sync", async (ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
-    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
     await db.Database.ExecuteSqlInterpolatedAsync(
@@ -126,7 +129,7 @@ app.MapPost("/auth/sync", async (ClaimsPrincipal user, AppDbContext db, Cancella
 
 app.MapPost("/routes", async (SaveRouteRequest req, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
-    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
     if (string.IsNullOrWhiteSpace(req.Name))
@@ -153,7 +156,7 @@ app.MapPost("/routes", async (SaveRouteRequest req, ClaimsPrincipal user, AppDbC
 
 app.MapGet("/routes", async (ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
-    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
     var routes = await db.Routes
@@ -168,23 +171,24 @@ app.MapGet("/routes", async (ClaimsPrincipal user, AppDbContext db, Cancellation
 
 app.MapGet("/routes/{id:guid}", async (Guid id, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
-    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
     var route = await db.Routes.SingleOrDefaultAsync(r => r.Id == id && r.UserId == sub, ct);
     if (route is null)
         return Results.NotFound(new { error = "Route not found", code = "NOT_FOUND" });
 
+    var share = await db.Shares.SingleOrDefaultAsync(s => s.RouteId == id, ct);
     var coordinates = route.Geometry.Coordinates.Select(c => new RouteCoordinate(c[0], c[1])).ToList();
     return Results.Ok(new RouteDetailResponse(
         route.Id, route.Name, route.Tags, route.DistanceKm,
-        new RouteGeometryResponse(coordinates), route.CreatedAt));
+        new RouteGeometryResponse(coordinates), route.CreatedAt, share?.Token));
 })
 .RequireAuthorization();
 
 app.MapDelete("/routes/{id:guid}", async (Guid id, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
-    var sub = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? user.FindFirst("sub")?.Value;
+    var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
     var route = await db.Routes.SingleOrDefaultAsync(r => r.Id == id && r.UserId == sub, ct);
@@ -197,6 +201,86 @@ app.MapDelete("/routes/{id:guid}", async (Guid id, ClaimsPrincipal user, AppDbCo
     return Results.NoContent();
 })
 .RequireAuthorization();
+
+const string ShareTokenChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+app.MapPost("/routes/{id:guid}/share", async (Guid id, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
+{
+    var sub = user.GetSub();
+    if (sub is null) return Results.Unauthorized();
+
+    var route = await db.Routes.SingleOrDefaultAsync(r => r.Id == id && r.UserId == sub, ct);
+    if (route is null)
+        return Results.NotFound(new { error = "Route not found", code = "NOT_FOUND" });
+
+    var existing = await db.Shares.SingleOrDefaultAsync(s => s.RouteId == id, ct);
+    if (existing is not null)
+        return Results.Ok(new { token = existing.Token });
+
+    var share = new Share(
+        Id: Guid.NewGuid(),
+        RouteId: id,
+        Token: RandomNumberGenerator.GetString(ShareTokenChars, 12),
+        CreatedAt: DateTimeOffset.UtcNow);
+
+    db.Shares.Add(share);
+
+    try
+    {
+        await db.SaveChangesAsync(ct);
+    }
+    catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+    {
+        var winner = await db.Shares.SingleOrDefaultAsync(s => s.RouteId == id, ct);
+        if (winner is not null)
+            return Results.Ok(new { token = winner.Token });
+
+        db.Entry(share).State = EntityState.Detached;
+        share = share with { Token = RandomNumberGenerator.GetString(ShareTokenChars, 12) };
+        db.Shares.Add(share);
+        await db.SaveChangesAsync(ct);
+        return Results.Created($"/shares/{share.Token}", new { token = share.Token });
+    }
+
+    return Results.Created($"/shares/{share.Token}", new { token = share.Token });
+})
+.RequireAuthorization();
+
+app.MapDelete("/routes/{id:guid}/share", async (Guid id, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
+{
+    var sub = user.GetSub();
+    if (sub is null) return Results.Unauthorized();
+
+    var route = await db.Routes.SingleOrDefaultAsync(r => r.Id == id && r.UserId == sub, ct);
+    if (route is null)
+        return Results.NotFound(new { error = "Route not found", code = "NOT_FOUND" });
+
+    var share = await db.Shares.SingleOrDefaultAsync(s => s.RouteId == id, ct);
+    if (share is null)
+        return Results.NotFound(new { error = "Share not found", code = "NOT_FOUND" });
+
+    db.Shares.Remove(share);
+    await db.SaveChangesAsync(ct);
+
+    return Results.NoContent();
+})
+.RequireAuthorization();
+
+app.MapGet("/shares/{token}", async (string token, AppDbContext db, CancellationToken ct) =>
+{
+    var share = await db.Shares.SingleOrDefaultAsync(s => s.Token == token, ct);
+    if (share is null)
+        return Results.NotFound(new { error = "Route not found", code = "NOT_FOUND" });
+
+    var route = await db.Routes.SingleOrDefaultAsync(r => r.Id == share.RouteId, ct);
+    if (route is null)
+        return Results.NotFound(new { error = "Route not found", code = "NOT_FOUND" });
+
+    var coordinates = route.Geometry.Coordinates.Select(c => new RouteCoordinate(c[0], c[1])).ToList();
+    return Results.Ok(new RouteDetailResponse(
+        route.Id, route.Name, route.Tags, route.DistanceKm,
+        new RouteGeometryResponse(coordinates), route.CreatedAt, share.Token));
+});
 
 app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen, IOptions<OpenRouteServiceOptions> orsOpts, CancellationToken requestCt) =>
 {
@@ -279,6 +363,7 @@ record RouteDetailResponse(
     string[]? Tags,
     double DistanceKm,
     RouteGeometryResponse Geometry,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    string? ShareToken);
 
 public partial class Program { }

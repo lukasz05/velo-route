@@ -3,7 +3,7 @@ project: "VeloRoute"
 version: 2
 status: draft
 created: 2026-07-04
-updated: 2026-07-22
+updated: 2026-07-26
 prd_version: 2
 main_goal: quality
 top_blocker: none
@@ -37,7 +37,7 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 | S-06 | `account-deletion` | permanently delete their account and all associated data (email + saved routes) self-serve from account settings | S-01, F-02 | FR-003, NFR (account deletion) | ready |
 | S-03 | `route-library` | view My Routes as a flat list sorted by date, open a saved route on an interactive map, and download its GPX | S-02 | FR-007, FR-008, US-01 | done |
 | S-04 | `delete-route` | delete a saved route after confirming a prompt (hard delete, no recovery) | S-02 | FR-006 | done |
-| S-05 | `public-route-sharing` | share a saved route via a public link viewable without login; link shows the exact saved route snapshot, not a re-generation | S-02 | FR-009 | ready |
+| S-05 | `public-route-sharing` | share a saved route via a public link viewable without login; link is a live read-through to the owner's saved route (not a snapshot) and dies if the route is deleted or unshared | S-02 | FR-009 | done |
 
 ## Streams
 
@@ -172,17 +172,17 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-05: Public route sharing
 
-- **Outcome:** authenticated user can generate a public shareable link for a saved route; anyone with the link can view the route as a snapshot (exact saved geometry, not a re-generation) on an interactive map, without logging in.
+- **Outcome:** authenticated user can generate a public shareable link for a saved route, and later revoke ("stop sharing") it; anyone with an active link can view the route (live geometry read from the owner's saved route, not a re-generation) on an interactive map, without logging in. The link is tied to the source route's lifetime — deleting the route also removes the share.
 - **Change ID:** `public-route-sharing`
 - **PRD refs:** FR-009
 - **Prerequisites:** S-02
 - **Parallel with:** S-03, S-04
 - **Blockers:** —
 - **Unknowns:**
-  - What is the URL shape for public links? A random opaque token (e.g. `/r/<uuid>`) is the standard privacy-safe approach — avoids leaking route IDs in sequential enumeration. — Owner: TBD. Block: no (resolvable during planning; opaque token is the default path).
-  - Should public links be revocable? PRD requires they "must remain stable — once shared, a URL must remain valid." Revocation would contradict this. — Owner: user. Block: no (PRD is clear: links are not revocable in v2).
-- **Risk:** Public snapshot links expose route geometry (coordinates) to anyone with the URL. The snapshot must store the geometry at save time, not re-query the DB at view time — otherwise a deleted route's link would 404 unexpectedly. The PRD's "snapshot sharing" requirement implies the geometry is stored with the share record, not just a pointer to the route row.
-- **Status:** ready
+  - ~~What is the URL shape for public links?~~ — **Resolved 2026-07-26 (planning):** short opaque random token (~12-char base62), not a GUID — enumeration-resistant, shorter URLs.
+  - ~~Should public links be revocable?~~ — **Resolved 2026-07-26 (planning), reversed later same session:** yes, revocable. `DELETE /routes/{id}/share` hard-deletes the `Shares` row; re-sharing afterward mints a brand-new token, not the same URL. Combined with the FK-cascade-delete behavior below, a share now ends either when the owner revokes it or when the source route is deleted.
+- **Risk:** ~~Public snapshot links... store the geometry at save time...~~ — **Superseded 2026-07-26:** the team chose FK-to-Route (no geometry copy) over a snapshot table, accepting that a share stops working if the source route is deleted — see PRD-v2 Constraints (amended 2026-07-26) and Scope of Change → Route library. Revisit only if user feedback shows recipients are surprised by a link dying.
+- **Status:** done
 
 ## Backlog Handoff
 

@@ -50,6 +50,7 @@ export interface SavedRouteDetail {
   distanceKm: number;
   geometry: RouteGeometry;
   createdAt: string;
+  shareToken: string | null;
 }
 
 export class RouteGenerationError extends Error {

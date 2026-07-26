@@ -7,6 +7,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<Route> Routes => Set<Route>();
+    public DbSet<Share> Shares => Set<Share>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,6 +32,19 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             builder.HasOne<User>()
                 .WithMany()
                 .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Share>(builder =>
+        {
+            builder.HasKey(s => s.Id);
+            builder.Property(s => s.CreatedAt).HasDefaultValueSql("now()");
+            builder.HasIndex(s => s.RouteId).IsUnique();
+            builder.HasIndex(s => s.Token).IsUnique();
+
+            builder.HasOne<Route>()
+                .WithMany()
+                .HasForeignKey(s => s.RouteId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

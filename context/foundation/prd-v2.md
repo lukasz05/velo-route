@@ -105,8 +105,11 @@ The "My Routes" library page renders within 2 seconds.
 - [new] Authenticated user can open a saved route to view it on an interactive map and download its GPX. Priority: must-have.
   > Socrates: Counter-argument considered: "users may just want GPX, not a map view." Resolution: kept map view; user may want to inspect before downloading. Same experience as the generation flow.
 
-- [new] Authenticated user can share a saved route as a public link (viewable without login); the link shows a snapshot of the saved route data, not a re-generation. Priority: must-have.
-  > Socrates: Counter-argument considered: "live re-generation from same inputs may show a different route if the algorithm changes." Resolution: updated to snapshot sharing — shared link always shows the exact saved route.
+- [new] Authenticated user can share a saved route as a public link (viewable without login); the link reads the live saved route, not a re-generation — it always reflects the route's current name/tags/geometry as stored in the owner's library. Priority: must-have.
+  > Socrates: Counter-argument considered: "live re-generation from same inputs may show a different route if the algorithm changes." Resolution: the link reads the persisted `Routes` row directly (not a re-generation from the original start point + km range), so algorithm changes never affect it. It is not a frozen snapshot, however: it is tied to the route row's lifetime.
+  > Socrates: Counter-argument considered (2026-07-26, during S-05 planning): "should the link keep working if the owner later deletes the route from their library?" Resolution: **no** — a share is implemented as a lookup keyed to the live `Routes` row (no independent copy), so deleting the source route also removes the share; the link 404s thereafter. This narrows the stability guarantee below (see Constraints) but was chosen deliberately to avoid data duplication; revisit if user feedback shows this surprises recipients.
+- [new] Authenticated user can revoke ("stop sharing") a previously shared route; the link 404s immediately, and re-sharing later issues a brand-new token (the old URL never comes back). Priority: must-have.
+  > Socrates: Counter-argument considered (2026-07-26, during S-05 planning): "hard delete on revoke discards the old token, so a re-share can't restore the exact same link a recipient may have bookmarked." Resolution: accepted — hard delete matches the codebase's existing no-soft-delete philosophy (see delete-route, S-04); no requirement calls for preserving the exact same URL across a revoke/re-share cycle.
 
 ### Routing quality (modified)
 
@@ -134,7 +137,7 @@ The "My Routes" library page renders within 2 seconds.
 
 - Anonymous route generation must continue to work without an account in v2.
 - GPX export format must remain unchanged — v1-generated GPX files must still be importable to Strava, Garmin, and Komoot.
-- Public route sharing links introduced in v2 must be stable — once shared, a URL must remain valid.
+- Public route sharing links introduced in v2 remain valid while the source route exists and the owner has not revoked the share; they are unaffected by edits to the route's name/tags. **Amended 2026-07-26:** the link is tied to the source route's lifetime, so deleting the route (S-04) also removes the share and the link 404s thereafter — links are not independent snapshots. **Amended 2026-07-26 (later same session):** links are also owner-revocable ("stop sharing"); a revoked link 404s immediately and re-sharing mints a new token, not the same URL.
 - Strava Segments API is explicitly excluded — requires OAuth and is not free/public. OSM is the only data source for routing improvements.
 - Routing improvement is OSM-only: scenic/low-traffic road tags + cyclist POIs (cafes, water, rest stops) from OpenStreetMap.
 - The app is usable on the latest two major versions of Chrome, Firefox, Safari, and Edge. *(preserved from v1)*

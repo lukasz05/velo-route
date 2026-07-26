@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Map as ReactMap, Marker, Source, Layer } from '@vis.gl/react-maplibre';
 import type { MapRef } from '@vis.gl/react-maplibre';
 import type { LngLatBoundsLike } from 'maplibre-gl';
@@ -13,8 +13,14 @@ interface RouteMapProps {
 
 export default function RouteMap({ startPoint, routeCoordinates }: RouteMapProps) {
   const mapRef = useRef<MapRef>(null);
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   useEffect(() => {
+    // Camera moves before the underlying maplibre-gl map fires 'load' are
+    // unreliable (container not yet measured, style not yet parsed) and
+    // don't self-correct — this is the source of the flaky "route line
+    // doesn't appear" behavior. Gate every camera move on load having fired.
+    if (!isMapLoaded) return;
     if (!routeCoordinates || routeCoordinates.length < 2) return;
     const map = mapRef.current;
     if (!map) return;
@@ -24,14 +30,19 @@ export default function RouteMap({ startPoint, routeCoordinates }: RouteMapProps
       [Math.min(...lngs), Math.min(...lats)],
       [Math.max(...lngs), Math.max(...lats)],
     ];
+    map.resize();
     map.fitBounds(bounds, { padding: 50, duration: 800 });
-  }, [routeCoordinates]);
+  }, [routeCoordinates, isMapLoaded]);
 
   useEffect(() => {
+    if (!isMapLoaded) return;
     if (routeCoordinates) return; // route view takes priority
     if (!startPoint) return;
-    mapRef.current?.flyTo({ center: [startPoint.lon, startPoint.lat], zoom: 11, duration: 800 });
-  }, [startPoint, routeCoordinates]);
+    const map = mapRef.current;
+    if (!map) return;
+    map.resize();
+    map.flyTo({ center: [startPoint.lon, startPoint.lat], zoom: 11, duration: 800 });
+  }, [startPoint, routeCoordinates, isMapLoaded]);
 
   const geojson: GeoJSON.FeatureCollection | null = routeCoordinates && routeCoordinates.length >= 2
     ? {
@@ -54,6 +65,7 @@ export default function RouteMap({ startPoint, routeCoordinates }: RouteMapProps
   return (
     <ReactMap
       ref={mapRef}
+      onLoad={() => setIsMapLoaded(true)}
       initialViewState={{ longitude: 16.37, latitude: 48.21, zoom: 10 }}
       style={{ width: '100%', height: '100%' }}
       mapStyle="https://tiles.openfreemap.org/styles/liberty"
