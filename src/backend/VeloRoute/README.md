@@ -38,9 +38,10 @@ EF Core migrations apply automatically on startup in Development.
 dotnet user-secrets set "Clerk:Authority" "<your-clerk-instance>"
 dotnet user-secrets set "Clerk:FrontendApiDomain" "<your-clerk-frontend-api-domain>"
 dotnet user-secrets set "Clerk:AllowedAzp" "<your-frontend-origin>"
+dotnet user-secrets set "Clerk:SecretKey" "<your-clerk-backend-api-secret-key>"
 ```
 
-Route generation and GPX export (`POST /routes/loop`, `POST /routes/gpx`) stay unauthenticated; the route-library endpoints (`/routes`, `/routes/{id}`, `/routes/{id}/share`) require a valid Clerk-issued JWT. `GET /shares/{token}` is public by design (the token is the access control).
+Route generation and GPX export (`POST /routes/loop`, `POST /routes/gpx`) stay unauthenticated; the route-library endpoints (`/routes`, `/routes/{id}`, `/routes/{id}/share`) require a valid Clerk-issued JWT. `GET /shares/{token}` is public by design (the token is the access control). `DELETE /account` additionally uses `Clerk:SecretKey` to call Clerk's Backend API and delete the caller's identity there too.
 
 ### ORS API key (required for route generation)
 

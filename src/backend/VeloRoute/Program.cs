@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -50,6 +51,15 @@ builder.Services.AddHttpClient<IOpenRouteServiceClient, OpenRouteServiceClient>(
         options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
         options.CircuitBreaker.MinimumThroughput = 3;
         options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+    });
+
+builder.Services.AddHttpClient<IClerkClient, ClerkClient>()
+    .ConfigureHttpClient((sp, client) =>
+    {
+        client.BaseAddress = new Uri("https://api.clerk.com/v1/");
+        var secretKey = sp.GetRequiredService<IConfiguration>()["Clerk:SecretKey"];
+        if (!string.IsNullOrEmpty(secretKey))
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", secretKey);
     });
 
 builder.Services.AddDbContext<AppDbContext>(opts =>
@@ -124,6 +134,33 @@ app.MapPost("/auth/sync", async (ClaimsPrincipal user, AppDbContext db, Cancella
     await db.Database.ExecuteSqlInterpolatedAsync(
         $"""INSERT INTO "Users" ("Id") VALUES ({sub}) ON CONFLICT ("Id") DO NOTHING""", ct);
     return Results.Ok();
+})
+.RequireAuthorization();
+
+app.MapDelete("/account", async (ClaimsPrincipal user, AppDbContext db, IClerkClient clerkClient, CancellationToken ct) =>
+{
+    var sub = user.GetSub();
+    if (sub is null) return Results.Unauthorized();
+
+    var existing = await db.Users.SingleOrDefaultAsync(u => u.Id == sub, ct);
+    if (existing is not null)
+    {
+        db.Users.Remove(existing);
+        await db.SaveChangesAsync(ct);
+    }
+
+    try
+    {
+        await clerkClient.DeleteUserAsync(sub, ct);
+    }
+    catch
+    {
+        // Already logged inside ClerkClient; the Postgres-side delete above already
+        // committed, so a failure here is tolerated and self-heals via /auth/sync
+        // if the (still-existing) Clerk identity ever logs in again.
+    }
+
+    return Results.NoContent();
 })
 .RequireAuthorization();
 

@@ -78,8 +78,8 @@ The two projects are independently runnable. In production, the Next.js frontend
 
 **v1 (shipped)**: anonymous start-point search, km range input, single loop-route proposal, interactive map display, GPX export, mobile-responsive UI. Still fully unauthenticated — no v2 feature gates this path.
 
-**v2 done**: Clerk email-magic-link auth (sign up/in/out); save a generated route to a personal library; view the library and open a saved route (map + GPX); delete a saved route; share a saved route via a public unauthenticated link (live read-through, revocable, dies if the route is deleted).
+**v2 done**: Clerk email-magic-link auth (sign up/in/out); save a generated route to a personal library; view the library and open a saved route (map + GPX); delete a saved route; share a saved route via a public unauthenticated link (live read-through, revocable, dies if the route is deleted); account self-serve deletion (Postgres user/routes/shares cascade + Clerk identity removal).
 
-**v2 remaining** (see `context/foundation/roadmap.md` for current status): account self-serve deletion, OSM-driven routing quality improvements (scenic/low-traffic preference, cyclist POIs).
+**v2 remaining** (see `context/foundation/roadmap.md` for current status): OSM-driven routing quality improvements (scenic/low-traffic preference, cyclist POIs).
 
 **Still explicitly deferred** (per `context/foundation/prd-v2.md` Non-Goals): multiple route proposals per request, point-to-point routes, imperial units, offline/PWA, library search/filter/pagination, social/community features.
