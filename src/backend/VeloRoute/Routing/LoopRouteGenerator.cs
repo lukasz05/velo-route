@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace VeloRoute.Routing;
 
@@ -7,17 +8,27 @@ internal sealed class LoopRouteGenerator
     private const double RadiusFactor = 0.45;
     private const int BearingCount = 3;
     private const double PrimaryOverlapThreshold = 0.10;
+    private const double PoiBandLowFactor = 0.5;
+    private const double PoiBandHighFactor = 1.5;
 
     private static readonly OrsDirectionOptions DefaultOptions = new(
         AvoidFeatures: ["steps", "ferries"],
         SteepnessDifficulty: 1);
 
     private readonly IOpenRouteServiceClient _client;
+    private readonly IOverpassClient _overpassClient;
+    private readonly TimeSpan _poiLookupTimeout;
     private readonly ILogger<LoopRouteGenerator> _logger;
 
-    public LoopRouteGenerator(IOpenRouteServiceClient client, ILogger<LoopRouteGenerator> logger)
+    public LoopRouteGenerator(
+        IOpenRouteServiceClient client,
+        IOverpassClient overpassClient,
+        IOptions<OverpassOptions> overpassOptions,
+        ILogger<LoopRouteGenerator> logger)
     {
         _client = client;
+        _overpassClient = overpassClient;
+        _poiLookupTimeout = TimeSpan.FromSeconds(overpassOptions.Value.PoiLookupTimeoutSeconds);
         _logger = logger;
     }
 
@@ -35,16 +46,19 @@ internal sealed class LoopRouteGenerator
         return SelectBestRoute(results, minKm * 1000, maxKm * 1000, targetMidMeters);
     }
 
-    private Task<RoutingResult<RouteResult>[]> FetchCandidatesAsync(
+    private async Task<RoutingResult<RouteResult>[]> FetchCandidatesAsync(
         RouteCoordinate start, double radius, double baseBearing, CancellationToken cancellationToken)
     {
         double angularSpacing = 360.0 / BearingCount;
         double phaseOffset = angularSpacing / 2;
 
+        var pois = await FindNearbyPoisAsync(start, radius * 2, cancellationToken);
+
         var tasks = Enumerable.Range(0, BearingCount)
             .Select(i =>
             {
-                double bearing = (baseBearing + phaseOffset + angularSpacing * i) % 360;
+                double geometricBearing = (baseBearing + phaseOffset + angularSpacing * i) % 360;
+                double bearing = SelectBearing(start, radius, geometricBearing, angularSpacing / 2, pois) ?? geometricBearing;
                 var wp1 = WaypointCalculator.DestinationPoint(start, bearing, radius);
                 var wp2 = WaypointCalculator.DestinationPoint(start, (bearing + angularSpacing) % 360, radius);
                 IReadOnlyList<RouteCoordinate> waypoints = [start, wp1, wp2, start];
@@ -52,7 +66,71 @@ internal sealed class LoopRouteGenerator
             })
             .ToList();
 
-        return Task.WhenAll(tasks);
+        return await Task.WhenAll(tasks);
+    }
+
+    private async Task<IReadOnlyList<OsmPoi>> FindNearbyPoisAsync(
+        RouteCoordinate start, double radiusMeters, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var timeoutCts = new CancellationTokenSource(_poiLookupTimeout);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+            var result = await _overpassClient.FindPoisAsync(start, radiusMeters, linkedCts.Token);
+            return result.IsSuccess ? result.Value! : [];
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return [];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "POI lookup failed; falling back to geometric bearings");
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// Returns the bearing of the POI whose distance from <paramref name="start"/> is closest to
+    /// <paramref name="radius"/> (i.e. closest to where the geometric waypoint would land) among
+    /// POIs both within the <c>[0.5, 1.5] * radius</c> band and within <paramref name="halfWidthDeg"/>
+    /// of <paramref name="sectorCenterBearing"/>. The band guard exists because a plain "nearest POI"
+    /// pick always favors amenities close to the start point regardless of loop scale — for large
+    /// loops that pulls the waypoint bearing toward a random cafe a few hundred metres away instead
+    /// of a POI that actually sits near the loop's arc. Returns null if no POI matches — the caller
+    /// falls back to the geometric bearing in that case.
+    /// </summary>
+    private static double? SelectBearing(
+        RouteCoordinate start, double radius, double sectorCenterBearing, double halfWidthDeg,
+        IReadOnlyList<OsmPoi> pois)
+    {
+        double bandLow = radius * PoiBandLowFactor;
+        double bandHigh = radius * PoiBandHighFactor;
+
+        double? bestBearing = null;
+        double bestDistanceDelta = double.MaxValue;
+
+        foreach (var poi in pois)
+        {
+            double distance = WaypointCalculator.DistanceMeters(start, poi.Location);
+            if (distance < bandLow || distance > bandHigh)
+                continue;
+
+            double poiBearing = WaypointCalculator.BearingTo(start, poi.Location);
+            double angularDiff = Math.Abs(((poiBearing - sectorCenterBearing + 540) % 360) - 180);
+            if (angularDiff > halfWidthDeg)
+                continue;
+
+            double distanceDelta = Math.Abs(distance - radius);
+            if (distanceDelta < bestDistanceDelta)
+            {
+                bestDistanceDelta = distanceDelta;
+                bestBearing = poiBearing;
+            }
+        }
+
+        return bestBearing;
     }
 
     private RoutingResult<RouteResult> SelectBestRoute(

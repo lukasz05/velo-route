@@ -73,6 +73,7 @@ internal sealed class FakeOpenRouteServiceClient : IOpenRouteServiceClient
 {
     public ConcurrentQueue<RoutingResult<RouteResult>> Results { get; } = new();
     public TimeSpan Delay { get; set; } = TimeSpan.Zero;
+    public ConcurrentBag<IReadOnlyList<RouteCoordinate>> RequestedWaypoints { get; } = new();
 
     public Task<RoutingResult<RouteResult>> GetDirectionsAsync(
         RouteCoordinate start,
@@ -85,6 +86,8 @@ internal sealed class FakeOpenRouteServiceClient : IOpenRouteServiceClient
         OrsDirectionOptions? options = null,
         CancellationToken cancellationToken = default)
     {
+        RequestedWaypoints.Add(waypoints);
+
         if (Delay > TimeSpan.Zero)
             await Task.Delay(Delay, cancellationToken);
 
@@ -141,6 +144,7 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
 {
     private readonly string? _timeoutSeconds;
     private readonly string? _apiKey;
+    private readonly string? _overpassPoiLookupTimeoutSeconds;
     private readonly bool _useFakeLogging;
     private readonly bool _useTestAuth;
     private readonly string? _dbConnectionString;
@@ -148,12 +152,14 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
     public VeloRouteWebApplicationFactory(
         string? timeoutSeconds = null,
         string? apiKey = null,
+        string? overpassPoiLookupTimeoutSeconds = null,
         bool useFakeLogging = false,
         bool useTestAuth = false,
         string? dbConnectionString = null)
     {
         _timeoutSeconds = timeoutSeconds;
         _apiKey = apiKey;
+        _overpassPoiLookupTimeoutSeconds = overpassPoiLookupTimeoutSeconds;
         _useFakeLogging = useFakeLogging;
         _useTestAuth = useTestAuth;
         _dbConnectionString = dbConnectionString;
@@ -215,6 +221,8 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
             inMemory["ORS:TimeoutSeconds"] = _timeoutSeconds;
         if (_apiKey is not null)
             inMemory["ORS:ApiKey"] = _apiKey;
+        if (_overpassPoiLookupTimeoutSeconds is not null)
+            inMemory["Overpass:PoiLookupTimeoutSeconds"] = _overpassPoiLookupTimeoutSeconds;
         if (_useTestAuth)
             inMemory["Clerk:AllowedAzp"] = TestJwtFactory.TestAzp;
 

@@ -104,7 +104,8 @@ public sealed class LoopRouteIntegrationTests
     [Fact]
     public async Task PostRoutesLoop_WhenOrsSlowAndDeadlineFires_Returns504WithinBudget()
     {
-        await using var factory = new VeloRouteWebApplicationFactory(timeoutSeconds: "0.1");
+        await using var factory = new VeloRouteWebApplicationFactory(
+            timeoutSeconds: "0.1", overpassPoiLookupTimeoutSeconds: "0.01");
         factory.FakeClient.Delay = TimeSpan.FromMilliseconds(500);
         for (int i = 0; i < 3; i++)
             factory.FakeClient.Results.Enqueue(
@@ -122,5 +123,86 @@ public sealed class LoopRouteIntegrationTests
         Assert.Contains("TIMEOUT", body);
         Assert.True(sw.ElapsedMilliseconds < 2000,
             $"Hang-guard: expected response within 2000 ms but took {sw.ElapsedMilliseconds} ms");
+    }
+
+    // seed=null -> baseBearing=0; angularSpacing=120, phaseOffset=60 -> sector bearings 60, 180, 300.
+    // minKm=15, maxKm=25 -> radius = (15+25)/2*1000/2*0.45 = 4500m.
+    private const double SectorRadiusMeters = 4_500;
+    private static readonly RouteCoordinate StartCoordinate = new(16.37, 48.20);
+
+    private static bool AnyRequestHasWaypointNear(
+        FakeOpenRouteServiceClient orsClient, double expectedBearing, double toleranceMeters = 1.0)
+    {
+        var expected = WaypointCalculator.DestinationPoint(StartCoordinate, expectedBearing, SectorRadiusMeters);
+        return orsClient.RequestedWaypoints.Any(wps =>
+            WaypointCalculator.DistanceMeters(wps[1], expected) < toleranceMeters);
+    }
+
+    [Fact]
+    public async Task PostRoutesLoop_WhenPoiFoundInSector_NudgesThatSectorsWaypoint()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory();
+        // Radius = 4500; band is [2250, 6750] -> 4200 sits inside it.
+        var poiLocation = WaypointCalculator.DestinationPoint(StartCoordinate, 70, 4_200);
+        factory.FakeOverpassClient.PoiResults.Enqueue(
+            RoutingResult<IReadOnlyList<OsmPoi>>.Success([new OsmPoi(poiLocation, "cafe")]));
+        var coords = SimplePolygon();
+        for (int i = 0; i < 3; i++)
+            factory.FakeClient.Results.Enqueue(
+                RoutingResult<RouteResult>.Success(MakeRoute(20_000, coords)));
+
+        var client = factory.CreateClient();
+        var response = await client.PostAsync(
+            "/routes/loop",
+            new StringContent(RequestBody, System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        Assert.True(AnyRequestHasWaypointNear(factory.FakeClient, 70));
+        Assert.False(AnyRequestHasWaypointNear(factory.FakeClient, 60));
+    }
+
+    [Fact]
+    public async Task PostRoutesLoop_WhenPoiLookupFails_FallsBackToGeometricBearings()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory();
+        factory.FakeOverpassClient.PoiResults.Enqueue(
+            RoutingResult<IReadOnlyList<OsmPoi>>.Failure(new RoutingError("PROVIDER_ERROR", "down")));
+        var coords = SimplePolygon();
+        for (int i = 0; i < 3; i++)
+            factory.FakeClient.Results.Enqueue(
+                RoutingResult<RouteResult>.Success(MakeRoute(20_000, coords)));
+
+        var client = factory.CreateClient();
+        var response = await client.PostAsync(
+            "/routes/loop",
+            new StringContent(RequestBody, System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        Assert.True(AnyRequestHasWaypointNear(factory.FakeClient, 60));
+        Assert.True(AnyRequestHasWaypointNear(factory.FakeClient, 180));
+        Assert.True(AnyRequestHasWaypointNear(factory.FakeClient, 300));
+    }
+
+    [Fact]
+    public async Task PostRoutesLoop_WhenPoiLookupTimesOut_FallsBackToGeometricBearingsWithin200()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory();
+        factory.FakeOverpassClient.Delay = TimeSpan.FromSeconds(30);
+        factory.FakeOverpassClient.PoiResults.Enqueue(RoutingResult<IReadOnlyList<OsmPoi>>.Success(
+            [new OsmPoi(WaypointCalculator.DestinationPoint(StartCoordinate, 70, 1_000), "cafe")]));
+        var coords = SimplePolygon();
+        for (int i = 0; i < 3; i++)
+            factory.FakeClient.Results.Enqueue(
+                RoutingResult<RouteResult>.Success(MakeRoute(20_000, coords)));
+
+        var client = factory.CreateClient();
+        var response = await client.PostAsync(
+            "/routes/loop",
+            new StringContent(RequestBody, System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        Assert.True(AnyRequestHasWaypointNear(factory.FakeClient, 60));
+        Assert.True(AnyRequestHasWaypointNear(factory.FakeClient, 180));
+        Assert.True(AnyRequestHasWaypointNear(factory.FakeClient, 300));
     }
 }
