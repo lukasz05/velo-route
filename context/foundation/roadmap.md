@@ -217,6 +217,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Offline-first / PWA** — Why parked: PRD §Non-Goals ("app requires a network connection").
 - **Strava Segments API** — Why parked: PRD §Constraints ("requires OAuth and is not free/public; OSM is the only data source for routing improvements in v2").
 - **Library pagination, search, filter** — Why parked: PRD §Non-Goals ("flat list is acceptable for v2 volume; search/filter deferred to v3").
+- **Start-point wiggle** — Why parked: captured during `routing-quality-osm` (S-07) planning (2026-07-26); shifting the actual start/end coordinate toward a higher-quality direction changes a user-visible contract (GPX/marker no longer matches the entered point exactly) and needs its own scoping (radius, opt-in vs. default, interaction with the distance constraint) before it can be planned. S-07 keeps the start/end pinned exactly to user input; see `context/foundation/route-enhancement-ideas.md` Idea #7.
 
 ## Done
 
