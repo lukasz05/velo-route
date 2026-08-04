@@ -94,6 +94,35 @@ internal sealed class FakeOpenRouteServiceClient : IOpenRouteServiceClient
     }
 }
 
+internal sealed class FakeOverpassClient : IOverpassClient
+{
+    public ConcurrentQueue<RoutingResult<IReadOnlyList<OsmPoi>>> PoiResults { get; } = new();
+    public ConcurrentQueue<RoutingResult<IReadOnlyList<OsmWay>>> ScenicWayResults { get; } = new();
+    public TimeSpan Delay { get; set; } = TimeSpan.Zero;
+
+    public async Task<RoutingResult<IReadOnlyList<OsmPoi>>> FindPoisAsync(
+        RouteCoordinate center, double radiusMeters, CancellationToken cancellationToken)
+    {
+        if (Delay > TimeSpan.Zero)
+            await Task.Delay(Delay, cancellationToken);
+
+        return PoiResults.TryDequeue(out var result)
+            ? result
+            : RoutingResult<IReadOnlyList<OsmPoi>>.Failure(new RoutingError("EMPTY", "no more fake results"));
+    }
+
+    public async Task<RoutingResult<IReadOnlyList<OsmWay>>> FindScenicWaysAsync(
+        RouteCoordinate center, double radiusMeters, CancellationToken cancellationToken)
+    {
+        if (Delay > TimeSpan.Zero)
+            await Task.Delay(Delay, cancellationToken);
+
+        return ScenicWayResults.TryDequeue(out var result)
+            ? result
+            : RoutingResult<IReadOnlyList<OsmWay>>.Failure(new RoutingError("EMPTY", "no more fake results"));
+    }
+}
+
 internal sealed class FakeClerkClient : IClerkClient
 {
     public bool DeleteResult { get; set; } = true;
@@ -131,6 +160,7 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
     }
 
     public FakeOpenRouteServiceClient FakeClient { get; } = new();
+    public FakeOverpassClient FakeOverpassClient { get; } = new();
     public FakeClerkClient FakeClerkClient { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -143,6 +173,13 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
                 services.Remove(descriptor);
 
             services.AddSingleton<IOpenRouteServiceClient>(FakeClient);
+
+            var overpassDescriptor = services.FirstOrDefault(
+                d => d.ServiceType == typeof(IOverpassClient));
+            if (overpassDescriptor is not null)
+                services.Remove(overpassDescriptor);
+
+            services.AddSingleton<IOverpassClient>(FakeOverpassClient);
 
             var clerkDescriptor = services.FirstOrDefault(
                 d => d.ServiceType == typeof(IClerkClient));

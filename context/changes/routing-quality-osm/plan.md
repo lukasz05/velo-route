@@ -352,14 +352,14 @@ No data migration — route generation remains fully stateless/DB-free. The only
 
 #### Automated
 
-- [ ] 1.1 Build succeeds: `dotnet build`
-- [ ] 1.2 Unit tests pass: `dotnet test --filter FullyQualifiedName~OverpassClientTests`
-- [ ] 1.3 Full backend test suite passes: `dotnet test`
+- [x] 1.1 Build succeeds: `dotnet build`
+- [x] 1.2 Unit tests pass: `dotnet test --filter FullyQualifiedName~OverpassClientTests`
+- [x] 1.3 Full backend test suite passes: `dotnet test`
 
 #### Manual
 
-- [ ] 1.4 Manual `FindPoisAsync` call against real Overpass returns at least one POI for central Warsaw
-- [ ] 1.5 Confirm exact Overpass QL query text matches intended tag filters
+- [x] 1.4 Manual `FindPoisAsync` call against real Overpass returns at least one POI for central Warsaw
+- [x] 1.5 Confirm exact Overpass QL query text matches intended tag filters
 
 ### Phase 2: POI-directed waypoint bearing nudging
 

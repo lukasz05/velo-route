@@ -1,9 +1,9 @@
 ---
 change_id: routing-quality-osm
 title: Routing quality — OSM scenic/low-traffic preference + cyclist POI proximity
-status: planned
+status: implementing
 created: 2026-07-26
-updated: 2026-07-26
+updated: 2026-08-04
 archived_at: null
 ---
 

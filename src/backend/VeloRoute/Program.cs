@@ -53,6 +53,26 @@ builder.Services.AddHttpClient<IOpenRouteServiceClient, OpenRouteServiceClient>(
         options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
     });
 
+builder.Services.Configure<OverpassOptions>(
+    builder.Configuration.GetSection("Overpass"));
+
+builder.Services.AddHttpClient<IOverpassClient, OverpassClient>()
+    .ConfigureHttpClient((sp, client) =>
+    {
+        var opts = sp.GetRequiredService<IOptions<OverpassOptions>>().Value;
+        client.BaseAddress = new Uri(opts.BaseUrl);
+    })
+    .AddStandardResilienceHandler(options =>
+    {
+        // Zero retries: Overpass is a best-effort call on an already-short timeout,
+        // so a retry would only spend more of that budget on a shared public service.
+        options.Retry.ShouldHandle = _ => ValueTask.FromResult(false);
+        options.CircuitBreaker.FailureRatio = 0.5;
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+        options.CircuitBreaker.MinimumThroughput = 3;
+        options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
+    });
+
 builder.Services.AddHttpClient<IClerkClient, ClerkClient>()
     .ConfigureHttpClient((sp, client) =>
     {
