@@ -205,4 +205,78 @@ public sealed class RouteQualityTests
         Assert.True(smoothnessScore >= 0.90,
             $"Expected smooth candidate (smoothnessScore ≥ 0.90), got {smoothnessScore:F4}");
     }
+
+    // Same shape as DiamondLoop, shifted +1°/+1° so it shares no coordinates or scenic-way
+    // overlap with it, while keeping the same "5-coord square loop → 0% overlap" property.
+    private static IReadOnlyList<RouteCoordinate> FarFromScenicWaysLoop() =>
+    [
+        new RouteCoordinate(22.05, 53.33),
+        new RouteCoordinate(22.05, 53.43),
+        new RouteCoordinate(22.15, 53.43),
+        new RouteCoordinate(22.15, 53.33),
+        new RouteCoordinate(22.05, 53.33),
+    ];
+
+    [Fact]
+    public async Task SelectsMoreScenicCandidateOverMorePavedCandidate()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory();
+
+        // Scenic way exactly matches DiamondLoop's edges.
+        factory.FakeOverpassClient.ScenicWayResults.Enqueue(
+            RoutingResult<IReadOnlyList<OsmWay>>.Success([new OsmWay(DiamondLoop())]));
+
+        // Scenic candidate: 0% paved, but runs entirely along the fetched scenic way.
+        var scenicButUnpaved = MakeRouteWithSegments(25_000, DiamondLoop(), []);
+
+        // Non-scenic candidate: 100% paved, but its geometry never touches the scenic way.
+        var pavedButNotScenic = MakeRouteWithSegments(25_000, FarFromScenicWaysLoop(),
+        [
+            new RouteWaySegment(0, 4, SurfaceType.Asphalt, RoadClass.Road),
+        ]);
+
+        factory.FakeClient.Results.Enqueue(RoutingResult<RouteResult>.Success(scenicButUnpaved));
+        factory.FakeClient.Results.Enqueue(RoutingResult<RouteResult>.Success(pavedButNotScenic));
+        factory.FakeClient.Results.Enqueue(RoutingResult<RouteResult>.Success(
+            MakeRouteWithSegments(5_000, DiamondLoop(), [])));  // out-of-range filler
+
+        var response = await factory.CreateClient().PostAsync("/routes/loop", JsonBody(RequestBody));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        double pavedRatio = doc.RootElement.GetProperty("pavedRatio").GetDouble();
+        Assert.True(pavedRatio <= 0.01,
+            $"Expected the scenic-but-unpaved candidate to win over the paved-but-not-scenic one, got pavedRatio={pavedRatio:F4}");
+    }
+
+    [Fact]
+    public async Task WhenScenicFetchFails_FallsBackToPavedOrderingUnchanged()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory();
+        factory.FakeOverpassClient.ScenicWayResults.Enqueue(
+            RoutingResult<IReadOnlyList<OsmWay>>.Failure(new RoutingError("PROVIDER_ERROR", "down")));
+        var coords = DiamondLoop();
+
+        var highPaved = MakeRouteWithSegments(25_000, coords,
+        [
+            new RouteWaySegment(0, 4, SurfaceType.Asphalt, RoadClass.Road),
+        ]);
+        var lowPaved = MakeRouteWithSegments(25_000, coords,
+        [
+            new RouteWaySegment(0, 1, SurfaceType.Asphalt, RoadClass.Road),
+            new RouteWaySegment(1, 4, SurfaceType.Unpaved, RoadClass.Path),
+        ]);
+
+        factory.FakeClient.Results.Enqueue(RoutingResult<RouteResult>.Success(highPaved));
+        factory.FakeClient.Results.Enqueue(RoutingResult<RouteResult>.Success(lowPaved));
+        factory.FakeClient.Results.Enqueue(RoutingResult<RouteResult>.Success(
+            MakeRouteWithSegments(5_000, coords, [])));  // out-of-range
+
+        var response = await factory.CreateClient().PostAsync("/routes/loop", JsonBody(RequestBody));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        double pavedRatio = doc.RootElement.GetProperty("pavedRatio").GetDouble();
+        Assert.True(pavedRatio >= 0.80, $"Expected most-paved candidate (≥0.80), got {pavedRatio:F4}");
+    }
 }

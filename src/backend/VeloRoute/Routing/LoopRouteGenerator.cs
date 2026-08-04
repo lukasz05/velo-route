@@ -10,6 +10,7 @@ internal sealed class LoopRouteGenerator
     private const double PrimaryOverlapThreshold = 0.10;
     private const double PoiBandLowFactor = 0.5;
     private const double PoiBandHighFactor = 1.5;
+    private const double ScenicRadiusFactor = 1.5;
 
     private static readonly OrsDirectionOptions DefaultOptions = new(
         AvoidFeatures: ["steps", "ferries"],
@@ -18,6 +19,7 @@ internal sealed class LoopRouteGenerator
     private readonly IOpenRouteServiceClient _client;
     private readonly IOverpassClient _overpassClient;
     private readonly TimeSpan _poiLookupTimeout;
+    private readonly TimeSpan _scenicLookupTimeout;
     private readonly ILogger<LoopRouteGenerator> _logger;
 
     public LoopRouteGenerator(
@@ -29,6 +31,7 @@ internal sealed class LoopRouteGenerator
         _client = client;
         _overpassClient = overpassClient;
         _poiLookupTimeout = TimeSpan.FromSeconds(overpassOptions.Value.PoiLookupTimeoutSeconds);
+        _scenicLookupTimeout = TimeSpan.FromSeconds(overpassOptions.Value.ScenicLookupTimeoutSeconds);
         _logger = logger;
     }
 
@@ -42,8 +45,12 @@ internal sealed class LoopRouteGenerator
         double radius = targetMidMeters / 2.0 * RadiusFactor;
         double baseBearing = seed.HasValue ? seed.Value % 360 : 0;
 
-        var results = await FetchCandidatesAsync(start, radius, baseBearing, cancellationToken);
-        return SelectBestRoute(results, minKm * 1000, maxKm * 1000, targetMidMeters);
+        var candidatesTask = FetchCandidatesAsync(start, radius, baseBearing, cancellationToken);
+        var scenicWaysTask = FindScenicWaysAsync(start, radius * ScenicRadiusFactor, cancellationToken);
+        await Task.WhenAll(candidatesTask, scenicWaysTask);
+
+        return SelectBestRoute(
+            await candidatesTask, minKm * 1000, maxKm * 1000, targetMidMeters, await scenicWaysTask);
     }
 
     private async Task<RoutingResult<RouteResult>[]> FetchCandidatesAsync(
@@ -91,6 +98,31 @@ internal sealed class LoopRouteGenerator
         }
     }
 
+    private async Task<IReadOnlyList<OsmWay>> FindScenicWaysAsync(
+        RouteCoordinate start, double radiusMeters, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var timeoutCts = new CancellationTokenSource(_scenicLookupTimeout);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+            var result = await _overpassClient.FindScenicWaysAsync(start, radiusMeters, linkedCts.Token);
+            return result.IsSuccess ? result.Value! : [];
+        }
+        catch (OperationCanceledException)
+        {
+            // Swallowed unconditionally (unlike the POI lookup) — this call runs in parallel with
+            // FetchCandidatesAsync via Task.WhenAll, so it must never surface as the reason the
+            // overall request looks cancelled; that meaning is reserved for Program.cs's ORS-timeout catch.
+            return [];
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Scenic way lookup failed; scenic scoring skipped");
+            return [];
+        }
+    }
+
     /// <summary>
     /// Returns the bearing of the POI whose distance from <paramref name="start"/> is closest to
     /// <paramref name="radius"/> (i.e. closest to where the geometric waypoint would land) among
@@ -134,7 +166,8 @@ internal sealed class LoopRouteGenerator
     }
 
     private RoutingResult<RouteResult> SelectBestRoute(
-        RoutingResult<RouteResult>[] results, double minMeters, double maxMeters, double targetMidMeters)
+        RoutingResult<RouteResult>[] results, double minMeters, double maxMeters, double targetMidMeters,
+        IReadOnlyList<OsmWay> scenicWays)
     {
         var candidates = results
             .Where(r => r.IsSuccess)
@@ -145,13 +178,15 @@ internal sealed class LoopRouteGenerator
                 distance = route.DistanceMeters,
                 overlapRatio = OverlapDetector.ComputeOverlapRatio(route.Geometry.Coordinates),
                 pavedRatio = route.PavedRatio,
-                smoothnessScore = route.SmoothnessScore
+                smoothnessScore = route.SmoothnessScore,
+                scenicScore = ScenicScoreCalculator.Compute(route, scenicWays)
             })
             .ToList();
 
         var primary = candidates
             .Where(c => c.distance >= minMeters && c.distance <= maxMeters && c.overlapRatio <= PrimaryOverlapThreshold)
-            .OrderByDescending(c => c.pavedRatio)
+            .OrderByDescending(c => c.scenicScore)
+            .ThenByDescending(c => c.pavedRatio)
             .ThenByDescending(c => c.smoothnessScore)
             .ThenBy(c => Math.Abs(c.distance - targetMidMeters))
             .FirstOrDefault();
@@ -161,7 +196,8 @@ internal sealed class LoopRouteGenerator
 
         var fallback = candidates
             .Where(c => c.distance >= minMeters && c.distance <= maxMeters)
-            .OrderBy(c => c.overlapRatio)
+            .OrderByDescending(c => c.scenicScore)
+            .ThenBy(c => c.overlapRatio)
             .ThenBy(c => Math.Abs(c.distance - targetMidMeters))
             .FirstOrDefault();
 

@@ -367,28 +367,28 @@ No data migration — route generation remains fully stateless/DB-free. The only
 
 #### Automated
 
-- [x] 2.1 Unit tests pass: `dotnet test --filter FullyQualifiedName~LoopRouteGeneratorTests`
-- [x] 2.2 Integration tests pass: `dotnet test --filter FullyQualifiedName~LoopRouteIntegrationTests`
-- [x] 2.3 Full backend test suite passes: `dotnet test`
+- [x] 2.1 Unit tests pass: `dotnet test --filter FullyQualifiedName~LoopRouteGeneratorTests` — 5209b39
+- [x] 2.2 Integration tests pass: `dotnet test --filter FullyQualifiedName~LoopRouteIntegrationTests` — 5209b39
+- [x] 2.3 Full backend test suite passes: `dotnet test` — 5209b39
 
 #### Manual
 
-- [x] 2.4 Route near real POI cluster visibly passes closer to a POI than pre-change baseline
-- [x] 2.5 Overpass-unavailable simulation still returns HTTP 200 with geometric fallback within combined timeout
-- [x] 2.6 Manual p95 latency measurement recorded for the composed timeout budget
+- [x] 2.4 Route near real POI cluster visibly passes closer to a POI than pre-change baseline — 5209b39
+- [x] 2.5 Overpass-unavailable simulation still returns HTTP 200 with geometric fallback within combined timeout — 5209b39
+- [x] 2.6 Manual p95 latency measurement recorded for the composed timeout budget — 5209b39
 
 ### Phase 3: Scenic/low-traffic way-tag scoring
 
 #### Automated
 
-- [ ] 3.1 Unit tests pass: `dotnet test --filter FullyQualifiedName~ScenicScoreCalculatorTests`
-- [ ] 3.2 Integration tests pass: `dotnet test --filter FullyQualifiedName~RouteQualityTests`
-- [ ] 3.3 Full backend test suite passes: `dotnet test`
+- [x] 3.1 Unit tests pass: `dotnet test --filter FullyQualifiedName~ScenicScoreCalculatorTests`
+- [x] 3.2 Integration tests pass: `dotnet test --filter FullyQualifiedName~RouteQualityTests`
+- [x] 3.3 Full backend test suite passes: `dotnet test`
 
 #### Manual
 
-- [ ] 3.4 Route in well-tagged area differs from pre-change baseline, attributable to scenic scoring
-- [ ] 3.5 Route in sparsely-tagged area behaves as graceful no-op
+- [x] 3.4 Route in well-tagged area differs from pre-change baseline, attributable to scenic scoring
+- [x] 3.5 Route in sparsely-tagged area behaves as graceful no-op
 
 ### Phase 4: `osmEnriched` observability flag and response contract
 
