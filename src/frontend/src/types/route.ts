@@ -20,6 +20,7 @@ export interface RouteResult {
   segments: RouteWaySegment[];
   pavedRatio: number;
   smoothnessScore: number;
+  osmEnriched: boolean;
 }
 
 export interface GeocodingFeature {

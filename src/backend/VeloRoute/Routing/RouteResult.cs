@@ -3,7 +3,8 @@ namespace VeloRoute.Routing;
 public sealed record RouteResult(
     RouteGeometry Geometry,
     double DistanceMeters,
-    IReadOnlyList<RouteWaySegment> Segments)
+    IReadOnlyList<RouteWaySegment> Segments,
+    bool OsmEnriched = false)
 {
     public double PavedRatio => PavedRatioCalculator.Compute(this);
     public double SmoothnessScore => SmoothnessCalculator.Compute(this);

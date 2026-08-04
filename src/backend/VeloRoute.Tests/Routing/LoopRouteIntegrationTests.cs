@@ -1,3 +1,4 @@
+using System.Text.Json;
 using VeloRoute.Routing;
 
 namespace VeloRoute.Tests.Routing;
@@ -204,5 +205,45 @@ public sealed class LoopRouteIntegrationTests
         Assert.True(AnyRequestHasWaypointNear(factory.FakeClient, 60));
         Assert.True(AnyRequestHasWaypointNear(factory.FakeClient, 180));
         Assert.True(AnyRequestHasWaypointNear(factory.FakeClient, 300));
+    }
+
+    [Fact]
+    public async Task PostRoutesLoop_WhenScenicWaysMatchWinningRoute_OsmEnrichedTrue()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory();
+        var coords = SimplePolygon();
+        factory.FakeOverpassClient.ScenicWayResults.Enqueue(
+            RoutingResult<IReadOnlyList<OsmWay>>.Success([new OsmWay(coords)]));
+        for (int i = 0; i < 3; i++)
+            factory.FakeClient.Results.Enqueue(
+                RoutingResult<RouteResult>.Success(MakeRoute(20_000, coords)));
+
+        var client = factory.CreateClient();
+        var response = await client.PostAsync(
+            "/routes/loop",
+            new StringContent(RequestBody, System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.True(doc.RootElement.GetProperty("osmEnriched").GetBoolean());
+    }
+
+    [Fact]
+    public async Task PostRoutesLoop_WhenNoOsmDataAvailable_OsmEnrichedFalse()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory();
+        var coords = SimplePolygon();
+        for (int i = 0; i < 3; i++)
+            factory.FakeClient.Results.Enqueue(
+                RoutingResult<RouteResult>.Success(MakeRoute(20_000, coords)));
+
+        var client = factory.CreateClient();
+        var response = await client.PostAsync(
+            "/routes/loop",
+            new StringContent(RequestBody, System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.False(doc.RootElement.GetProperty("osmEnriched").GetBoolean());
     }
 }

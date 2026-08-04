@@ -381,27 +381,27 @@ No data migration — route generation remains fully stateless/DB-free. The only
 
 #### Automated
 
-- [x] 3.1 Unit tests pass: `dotnet test --filter FullyQualifiedName~ScenicScoreCalculatorTests`
-- [x] 3.2 Integration tests pass: `dotnet test --filter FullyQualifiedName~RouteQualityTests`
-- [x] 3.3 Full backend test suite passes: `dotnet test`
+- [x] 3.1 Unit tests pass: `dotnet test --filter FullyQualifiedName~ScenicScoreCalculatorTests` — af5647c
+- [x] 3.2 Integration tests pass: `dotnet test --filter FullyQualifiedName~RouteQualityTests` — af5647c
+- [x] 3.3 Full backend test suite passes: `dotnet test` — af5647c
 
 #### Manual
 
-- [x] 3.4 Route in well-tagged area differs from pre-change baseline, attributable to scenic scoring
-- [x] 3.5 Route in sparsely-tagged area behaves as graceful no-op
+- [x] 3.4 Route in well-tagged area differs from pre-change baseline, attributable to scenic scoring — af5647c
+- [x] 3.5 Route in sparsely-tagged area behaves as graceful no-op — af5647c
 
 ### Phase 4: `osmEnriched` observability flag and response contract
 
 #### Automated
 
-- [ ] 4.1 Integration tests pass: `dotnet test --filter FullyQualifiedName~LoopRouteIntegrationTests`
-- [ ] 4.2 Frontend type check passes: `npx tsc --noEmit` (from `src/frontend/`)
-- [ ] 4.3 Full backend test suite passes: `dotnet test`
+- [x] 4.1 Integration tests pass: `dotnet test --filter FullyQualifiedName~LoopRouteIntegrationTests`
+- [x] 4.2 Frontend type check passes: `npx tsc --noEmit` (from `src/frontend/`)
+- [x] 4.3 Full backend test suite passes: `dotnet test`
 
 #### Manual
 
-- [ ] 4.4 Network tab shows `osmEnriched: true` for a well-tagged area
-- [ ] 4.5 Network tab shows `osmEnriched: false` when Overpass is misconfigured, request still succeeds
+- [ ] 4.4 Network tab shows `osmEnriched: true` for a well-tagged area — pending: public Overpass instances unreachable during manual verification (2026-08-04), recheck when reachable, e.g. alongside Phase 5's live-smoke run
+- [x] 4.5 Network tab shows `osmEnriched: false` when Overpass is misconfigured, request still succeeds
 
 ### Phase 5: Testing, acceptance lock-in, and doc sync
 

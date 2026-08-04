@@ -53,7 +53,7 @@ internal sealed class LoopRouteGenerator
             await candidatesTask, minKm * 1000, maxKm * 1000, targetMidMeters, await scenicWaysTask);
     }
 
-    private async Task<RoutingResult<RouteResult>[]> FetchCandidatesAsync(
+    private async Task<CandidateFetch[]> FetchCandidatesAsync(
         RouteCoordinate start, double radius, double baseBearing, CancellationToken cancellationToken)
     {
         double angularSpacing = 360.0 / BearingCount;
@@ -61,20 +61,29 @@ internal sealed class LoopRouteGenerator
 
         var pois = await FindNearbyPoisAsync(start, radius * 2, cancellationToken);
 
-        var tasks = Enumerable.Range(0, BearingCount)
+        var sectors = Enumerable.Range(0, BearingCount)
             .Select(i =>
             {
                 double geometricBearing = (baseBearing + phaseOffset + angularSpacing * i) % 360;
-                double bearing = SelectBearing(start, radius, geometricBearing, angularSpacing / 2, pois) ?? geometricBearing;
+                double? nudgedBearing = SelectBearing(start, radius, geometricBearing, angularSpacing / 2, pois);
+                double bearing = nudgedBearing ?? geometricBearing;
                 var wp1 = WaypointCalculator.DestinationPoint(start, bearing, radius);
                 var wp2 = WaypointCalculator.DestinationPoint(start, (bearing + angularSpacing) % 360, radius);
                 IReadOnlyList<RouteCoordinate> waypoints = [start, wp1, wp2, start];
-                return _client.GetDirectionsAsync(waypoints, DefaultOptions, cancellationToken);
+                return (
+                    Task: _client.GetDirectionsAsync(waypoints, DefaultOptions, cancellationToken),
+                    PoiNudged: nudgedBearing.HasValue);
             })
             .ToList();
 
-        return await Task.WhenAll(tasks);
+        await Task.WhenAll(sectors.Select(s => s.Task));
+
+        return sectors
+            .Select(s => new CandidateFetch(s.Task.Result, s.PoiNudged))
+            .ToArray();
     }
+
+    private sealed record CandidateFetch(RoutingResult<RouteResult> Result, bool PoiNudged);
 
     private async Task<IReadOnlyList<OsmPoi>> FindNearbyPoisAsync(
         RouteCoordinate start, double radiusMeters, CancellationToken cancellationToken)
@@ -85,10 +94,19 @@ internal sealed class LoopRouteGenerator
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
             var result = await _overpassClient.FindPoisAsync(start, radiusMeters, linkedCts.Token);
-            return result.IsSuccess ? result.Value! : [];
+            if (!result.IsSuccess)
+            {
+                _logger.LogInformation(
+                    "POI lookup returned no data ({Code}); falling back to geometric bearings", result.Error!.Code);
+                return [];
+            }
+
+            _logger.LogInformation("POI lookup found {Count} POIs", result.Value!.Count);
+            return result.Value!;
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
+            _logger.LogInformation("POI lookup timed out; falling back to geometric bearings");
             return [];
         }
         catch (Exception ex)
@@ -107,13 +125,22 @@ internal sealed class LoopRouteGenerator
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
             var result = await _overpassClient.FindScenicWaysAsync(start, radiusMeters, linkedCts.Token);
-            return result.IsSuccess ? result.Value! : [];
+            if (!result.IsSuccess)
+            {
+                _logger.LogInformation(
+                    "Scenic way lookup returned no data ({Code}); scenic scoring skipped", result.Error!.Code);
+                return [];
+            }
+
+            _logger.LogInformation("Scenic way lookup found {Count} ways", result.Value!.Count);
+            return result.Value!;
         }
         catch (OperationCanceledException)
         {
             // Swallowed unconditionally (unlike the POI lookup) — this call runs in parallel with
             // FetchCandidatesAsync via Task.WhenAll, so it must never surface as the reason the
             // overall request looks cancelled; that meaning is reserved for Program.cs's ORS-timeout catch.
+            _logger.LogInformation("Scenic way lookup timed out; scenic scoring skipped");
             return [];
         }
         catch (Exception ex)
@@ -166,20 +193,24 @@ internal sealed class LoopRouteGenerator
     }
 
     private RoutingResult<RouteResult> SelectBestRoute(
-        RoutingResult<RouteResult>[] results, double minMeters, double maxMeters, double targetMidMeters,
+        CandidateFetch[] fetches, double minMeters, double maxMeters, double targetMidMeters,
         IReadOnlyList<OsmWay> scenicWays)
     {
-        var candidates = results
-            .Where(r => r.IsSuccess)
-            .Select(r => r.Value!)
-            .Select(route => new
+        var candidates = fetches
+            .Where(f => f.Result.IsSuccess)
+            .Select(f =>
             {
-                route,
-                distance = route.DistanceMeters,
-                overlapRatio = OverlapDetector.ComputeOverlapRatio(route.Geometry.Coordinates),
-                pavedRatio = route.PavedRatio,
-                smoothnessScore = route.SmoothnessScore,
-                scenicScore = ScenicScoreCalculator.Compute(route, scenicWays)
+                var route = f.Result.Value!;
+                return new
+                {
+                    route,
+                    distance = route.DistanceMeters,
+                    overlapRatio = OverlapDetector.ComputeOverlapRatio(route.Geometry.Coordinates),
+                    pavedRatio = route.PavedRatio,
+                    smoothnessScore = route.SmoothnessScore,
+                    scenicScore = ScenicScoreCalculator.Compute(route, scenicWays),
+                    poiNudged = f.PoiNudged
+                };
             })
             .ToList();
 
@@ -192,7 +223,13 @@ internal sealed class LoopRouteGenerator
             .FirstOrDefault();
 
         if (primary is not null)
-            return RoutingResult<RouteResult>.Success(primary.route);
+        {
+            _logger.LogInformation(
+                "Selected primary route: scenicScore={ScenicScore:F3}, poiNudged={PoiNudged}, pavedRatio={PavedRatio:F3}",
+                primary.scenicScore, primary.poiNudged, primary.pavedRatio);
+            return RoutingResult<RouteResult>.Success(
+                primary.route with { OsmEnriched = primary.scenicScore > 0 || primary.poiNudged });
+        }
 
         var fallback = candidates
             .Where(c => c.distance >= minMeters && c.distance <= maxMeters)
@@ -206,10 +243,14 @@ internal sealed class LoopRouteGenerator
             if (fallback.overlapRatio > PrimaryOverlapThreshold)
                 _logger.LogWarning("Returning route with overlap ratio {Ratio:P0} (above 10% primary threshold)", fallback.overlapRatio);
 
-            return RoutingResult<RouteResult>.Success(fallback.route);
+            _logger.LogInformation(
+                "Selected fallback route: scenicScore={ScenicScore:F3}, poiNudged={PoiNudged}, pavedRatio={PavedRatio:F3}",
+                fallback.scenicScore, fallback.poiNudged, fallback.pavedRatio);
+            return RoutingResult<RouteResult>.Success(
+                fallback.route with { OsmEnriched = fallback.scenicScore > 0 || fallback.poiNudged });
         }
 
-        var firstError = results.FirstOrDefault(r => !r.IsSuccess);
+        var firstError = fetches.Select(f => f.Result).FirstOrDefault(r => !r.IsSuccess);
         return firstError ?? RoutingResult<RouteResult>.Failure(
             new RoutingError("NO_VALID_RESULT", "No valid loop route could be generated"));
     }
