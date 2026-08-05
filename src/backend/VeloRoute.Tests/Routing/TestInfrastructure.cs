@@ -73,7 +73,6 @@ internal sealed class FakeOpenRouteServiceClient : IOpenRouteServiceClient
 {
     public ConcurrentQueue<RoutingResult<RouteResult>> Results { get; } = new();
     public TimeSpan Delay { get; set; } = TimeSpan.Zero;
-    public ConcurrentBag<IReadOnlyList<RouteCoordinate>> RequestedWaypoints { get; } = new();
 
     public Task<RoutingResult<RouteResult>> GetDirectionsAsync(
         RouteCoordinate start,
@@ -86,43 +85,12 @@ internal sealed class FakeOpenRouteServiceClient : IOpenRouteServiceClient
         OrsDirectionOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        RequestedWaypoints.Add(waypoints);
-
         if (Delay > TimeSpan.Zero)
             await Task.Delay(Delay, cancellationToken);
 
         return Results.TryDequeue(out var result)
             ? result
             : RoutingResult<RouteResult>.Failure(new RoutingError("EMPTY", "no more fake results"));
-    }
-}
-
-internal sealed class FakeOverpassClient : IOverpassClient
-{
-    public ConcurrentQueue<RoutingResult<IReadOnlyList<OsmPoi>>> PoiResults { get; } = new();
-    public ConcurrentQueue<RoutingResult<IReadOnlyList<OsmWay>>> ScenicWayResults { get; } = new();
-    public TimeSpan Delay { get; set; } = TimeSpan.Zero;
-
-    public async Task<RoutingResult<IReadOnlyList<OsmPoi>>> FindPoisAsync(
-        RouteCoordinate center, double radiusMeters, CancellationToken cancellationToken)
-    {
-        if (Delay > TimeSpan.Zero)
-            await Task.Delay(Delay, cancellationToken);
-
-        return PoiResults.TryDequeue(out var result)
-            ? result
-            : RoutingResult<IReadOnlyList<OsmPoi>>.Failure(new RoutingError("EMPTY", "no more fake results"));
-    }
-
-    public async Task<RoutingResult<IReadOnlyList<OsmWay>>> FindScenicWaysAsync(
-        RouteCoordinate center, double radiusMeters, CancellationToken cancellationToken)
-    {
-        if (Delay > TimeSpan.Zero)
-            await Task.Delay(Delay, cancellationToken);
-
-        return ScenicWayResults.TryDequeue(out var result)
-            ? result
-            : RoutingResult<IReadOnlyList<OsmWay>>.Failure(new RoutingError("EMPTY", "no more fake results"));
     }
 }
 
@@ -144,7 +112,6 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
 {
     private readonly string? _timeoutSeconds;
     private readonly string? _apiKey;
-    private readonly string? _overpassPoiLookupTimeoutSeconds;
     private readonly bool _useFakeLogging;
     private readonly bool _useTestAuth;
     private readonly string? _dbConnectionString;
@@ -152,21 +119,18 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
     public VeloRouteWebApplicationFactory(
         string? timeoutSeconds = null,
         string? apiKey = null,
-        string? overpassPoiLookupTimeoutSeconds = null,
         bool useFakeLogging = false,
         bool useTestAuth = false,
         string? dbConnectionString = null)
     {
         _timeoutSeconds = timeoutSeconds;
         _apiKey = apiKey;
-        _overpassPoiLookupTimeoutSeconds = overpassPoiLookupTimeoutSeconds;
         _useFakeLogging = useFakeLogging;
         _useTestAuth = useTestAuth;
         _dbConnectionString = dbConnectionString;
     }
 
     public FakeOpenRouteServiceClient FakeClient { get; } = new();
-    public FakeOverpassClient FakeOverpassClient { get; } = new();
     public FakeClerkClient FakeClerkClient { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -179,13 +143,6 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
                 services.Remove(descriptor);
 
             services.AddSingleton<IOpenRouteServiceClient>(FakeClient);
-
-            var overpassDescriptor = services.FirstOrDefault(
-                d => d.ServiceType == typeof(IOverpassClient));
-            if (overpassDescriptor is not null)
-                services.Remove(overpassDescriptor);
-
-            services.AddSingleton<IOverpassClient>(FakeOverpassClient);
 
             var clerkDescriptor = services.FirstOrDefault(
                 d => d.ServiceType == typeof(IClerkClient));
@@ -221,8 +178,6 @@ internal sealed class VeloRouteWebApplicationFactory : WebApplicationFactory<Pro
             inMemory["ORS:TimeoutSeconds"] = _timeoutSeconds;
         if (_apiKey is not null)
             inMemory["ORS:ApiKey"] = _apiKey;
-        if (_overpassPoiLookupTimeoutSeconds is not null)
-            inMemory["Overpass:PoiLookupTimeoutSeconds"] = _overpassPoiLookupTimeoutSeconds;
         if (_useTestAuth)
             inMemory["Clerk:AllowedAzp"] = TestJwtFactory.TestAzp;
 

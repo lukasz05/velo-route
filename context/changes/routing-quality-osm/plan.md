@@ -152,11 +152,9 @@ Before calling ORS, query Overpass once for nearby cyclist POIs and substitute e
 
 **File**: `src/backend/VeloRoute/Routing/LoopRouteGenerator.cs`
 
-**Intent**: `FetchCandidatesAsync` currently computes each sector's bearing purely geometrically (`baseBearing + phaseOffset + angularSpacing * i`). Before building the waypoint list, query `IOverpassClient.FindPoisAsync(start, radius * 2, ...)` once (not once per sector) with the `OverpassOptions.PoiLookupTimeoutSeconds` hard timeout; for each of the 3 sectors, if any returned POI's bearing-from-start falls within that sector's angular half-width **and** its distance from `start` falls within `[0.5, 1.5] * radius`, use the bearing of the POI whose distance is closest to `radius` in place of the geometric one for that sector only — same `radius` magnitude as before, so the overall loop shape/distance budget is unaffected. Sectors with no matching POI keep today's geometric bearing unchanged.
+**Intent**: `FetchCandidatesAsync` currently computes each sector's bearing purely geometrically (`baseBearing + phaseOffset + angularSpacing * i`). Before building the waypoint list, query `IOverpassClient.FindPoisAsync(start, radius * 2, ...)` once (not once per sector) with the `OverpassOptions.PoiLookupTimeoutSeconds` hard timeout; for each of the 3 sectors, if any returned POI's bearing-from-start falls within that sector's angular half-width, use the nearest such POI's bearing in place of the geometric one for that sector only — same `radius` magnitude as before, so the overall loop shape/distance budget is unaffected. Sectors with no matching POI keep today's geometric bearing unchanged.
 
-**Contract**: The Overpass call and its timeout/fallback wrapping happen inside `LoopRouteGenerator`, not in `Program.cs` — on timeout, failure, or zero results, `FetchCandidatesAsync` proceeds exactly as it does today (all 3 sectors geometric), and this must never surface as a request error. A private helper (e.g. `SelectBearing(start, radius, sector center bearing, half-width, List<OsmPoi>) -> double?`) computing bearing-from-start for each POI via the same spherical math as `WaypointCalculator` (not a planar approximation) is the natural extraction point.
-
-**Revision (found during Phase 2 manual verification)**: the original "nearest POI wins" tie-break was found live-broken for large loops — a plain nearest-by-distance pick always favors amenities within a few hundred metres of `start` (e.g. a drinking fountain 105m away) regardless of sector, because Overpass's `radius * 2` search window returns hundreds of POIs for a big loop and the closest one to `start` is essentially uncorrelated with the loop's actual scale. Manually reproduced at Wilanów (Warsaw), 80–100km range: nearest sector-matching POI was 105m away at bearing 88°, overriding the sensible 180°-south geometric bearing toward Góra Kalwaria with a degenerate near-start waypoint. Fixed by adding the `[0.5, 1.5] * radius` distance band (excludes near-start POIs entirely) and switching the tie-break from nearest-to-start to nearest-to-`radius` (favors POIs sitting close to where the geometric waypoint would already land, so the nudge only fires when a POI is meaningfully near the loop's arc).
+**Contract**: The Overpass call and its timeout/fallback wrapping happen inside `LoopRouteGenerator`, not in `Program.cs` — on timeout, failure, or zero results, `FetchCandidatesAsync` proceeds exactly as it does today (all 3 sectors geometric), and this must never surface as a request error. A private helper (e.g. `SelectBearing(sector center bearing, half-width, List<OsmPoi>) -> double`) computing bearing-from-start for each POI via the same spherical math as `WaypointCalculator` (not a planar approximation) is the natural extraction point.
 
 #### 2. Compose the widened request timeout
 
@@ -354,54 +352,54 @@ No data migration — route generation remains fully stateless/DB-free. The only
 
 #### Automated
 
-- [x] 1.1 Build succeeds: `dotnet build` — 2925574
-- [x] 1.2 Unit tests pass: `dotnet test --filter FullyQualifiedName~OverpassClientTests` — 2925574
-- [x] 1.3 Full backend test suite passes: `dotnet test` — 2925574
+- [ ] 1.1 Build succeeds: `dotnet build`
+- [ ] 1.2 Unit tests pass: `dotnet test --filter FullyQualifiedName~OverpassClientTests`
+- [ ] 1.3 Full backend test suite passes: `dotnet test`
 
 #### Manual
 
-- [x] 1.4 Manual `FindPoisAsync` call against real Overpass returns at least one POI for central Warsaw — 2925574
-- [x] 1.5 Confirm exact Overpass QL query text matches intended tag filters — 2925574
+- [ ] 1.4 Manual `FindPoisAsync` call against real Overpass returns at least one POI for central Warsaw
+- [ ] 1.5 Confirm exact Overpass QL query text matches intended tag filters
 
 ### Phase 2: POI-directed waypoint bearing nudging
 
 #### Automated
 
-- [x] 2.1 Unit tests pass: `dotnet test --filter FullyQualifiedName~LoopRouteGeneratorTests` — 5209b39
-- [x] 2.2 Integration tests pass: `dotnet test --filter FullyQualifiedName~LoopRouteIntegrationTests` — 5209b39
-- [x] 2.3 Full backend test suite passes: `dotnet test` — 5209b39
+- [ ] 2.1 Unit tests pass: `dotnet test --filter FullyQualifiedName~LoopRouteGeneratorTests`
+- [ ] 2.2 Integration tests pass: `dotnet test --filter FullyQualifiedName~LoopRouteIntegrationTests`
+- [ ] 2.3 Full backend test suite passes: `dotnet test`
 
 #### Manual
 
-- [x] 2.4 Route near real POI cluster visibly passes closer to a POI than pre-change baseline — 5209b39
-- [x] 2.5 Overpass-unavailable simulation still returns HTTP 200 with geometric fallback within combined timeout — 5209b39
-- [x] 2.6 Manual p95 latency measurement recorded for the composed timeout budget — 5209b39
+- [ ] 2.4 Route near real POI cluster visibly passes closer to a POI than pre-change baseline
+- [ ] 2.5 Overpass-unavailable simulation still returns HTTP 200 with geometric fallback within combined timeout
+- [ ] 2.6 Manual p95 latency measurement recorded for the composed timeout budget
 
 ### Phase 3: Scenic/low-traffic way-tag scoring
 
 #### Automated
 
-- [x] 3.1 Unit tests pass: `dotnet test --filter FullyQualifiedName~ScenicScoreCalculatorTests` — af5647c
-- [x] 3.2 Integration tests pass: `dotnet test --filter FullyQualifiedName~RouteQualityTests` — af5647c
-- [x] 3.3 Full backend test suite passes: `dotnet test` — af5647c
+- [ ] 3.1 Unit tests pass: `dotnet test --filter FullyQualifiedName~ScenicScoreCalculatorTests`
+- [ ] 3.2 Integration tests pass: `dotnet test --filter FullyQualifiedName~RouteQualityTests`
+- [ ] 3.3 Full backend test suite passes: `dotnet test`
 
 #### Manual
 
-- [x] 3.4 Route in well-tagged area differs from pre-change baseline, attributable to scenic scoring — af5647c
-- [x] 3.5 Route in sparsely-tagged area behaves as graceful no-op — af5647c
+- [ ] 3.4 Route in well-tagged area differs from pre-change baseline, attributable to scenic scoring
+- [ ] 3.5 Route in sparsely-tagged area behaves as graceful no-op
 
 ### Phase 4: `osmEnriched` observability flag and response contract
 
 #### Automated
 
-- [x] 4.1 Integration tests pass: `dotnet test --filter FullyQualifiedName~LoopRouteIntegrationTests`
-- [x] 4.2 Frontend type check passes: `npx tsc --noEmit` (from `src/frontend/`)
-- [x] 4.3 Full backend test suite passes: `dotnet test`
+- [ ] 4.1 Integration tests pass: `dotnet test --filter FullyQualifiedName~LoopRouteIntegrationTests`
+- [ ] 4.2 Frontend type check passes: `npx tsc --noEmit` (from `src/frontend/`)
+- [ ] 4.3 Full backend test suite passes: `dotnet test`
 
 #### Manual
 
-- [ ] 4.4 Network tab shows `osmEnriched: true` for a well-tagged area — pending: public Overpass instances unreachable during manual verification (2026-08-04), recheck when reachable, e.g. alongside Phase 5's live-smoke run
-- [x] 4.5 Network tab shows `osmEnriched: false` when Overpass is misconfigured, request still succeeds
+- [ ] 4.4 Network tab shows `osmEnriched: true` for a well-tagged area
+- [ ] 4.5 Network tab shows `osmEnriched: false` when Overpass is misconfigured, request still succeeds
 
 ### Phase 5: Testing, acceptance lock-in, and doc sync
 

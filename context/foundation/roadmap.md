@@ -3,7 +3,7 @@ project: "VeloRoute"
 version: 2
 status: draft
 created: 2026-07-04
-updated: 2026-07-26
+updated: 2026-08-05
 prd_version: 2
 main_goal: quality
 top_blocker: none
@@ -31,7 +31,7 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 |---|---|---|---|---|---|
 | F-01 | `auth-provider-scaffold` | (foundation) Microsoft Entra External ID wired; OIDC/MSAL in Next.js; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected | — | FR-001, FR-002, FR-003, FR-012, FR-013, Access Control | done |
 | F-02 | `data-layer-schema` | (foundation) Azure Database for PostgreSQL Flexible Server deployed; users + routes schema + migrations; DB client wired to backend | — | FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, NFR (account deletion) | done |
-| S-07 | `routing-quality-osm` | generate routes that prefer OSM scenic/low-traffic roads and pass near cyclist POIs (cafes, water, rest stops) — best-effort; distance constraint always wins | — | FR-010, FR-011, FR-012, FR-013 | ready |
+| S-07 | `routing-quality-osm` | generate routes that prefer OSM scenic/low-traffic roads and pass near cyclist POIs (cafes, water, rest stops) — best-effort; distance constraint always wins | — | FR-010, FR-011, FR-012, FR-013 | parked |
 | S-01 | `magic-link-auth` | sign up by entering an email (receive a magic link), log in via the link with a clear expiry error message and one-click re-send option, and log out | F-01, F-02 | FR-001, FR-002, FR-003, US-01 | done |
 | S-02 | `save-route` | save a generated route to their personal library (one-click; auto-name date + distance; optional user-editable name and tags) | S-01 | FR-004, FR-005, US-01 | done |
 | S-06 | `account-deletion` | permanently delete their account and all associated data (email + saved routes) self-serve from account settings | S-01, F-02 | FR-003, NFR (account deletion) | done |
@@ -48,7 +48,7 @@ Navigation aid — groups items that share a Prerequisites chain. Canonical orde
 | A | Auth + Library core | `F-01` → `S-01` → `S-02` → `S-03` | Main v2 pipeline; S-03 is the north star. Blocked until auth provider decided. |
 | B | Data + Account lifecycle | `F-02` → `S-06` | F-02 joins Stream A at S-01 (prerequisite alongside F-01); S-06 can run parallel to S-02 once S-01 is done. |
 | C | Route management | `S-04` / `S-05` | Both depend on S-02; parallel with S-03. No foundation prerequisite of their own. |
-| D | Routing quality | `S-07` | Standalone; no auth/data dependency. Only stream that can start before the auth/data decisions are resolved. |
+| D | Routing quality | `S-07` | Standalone; no auth/data dependency. Parked 2026-08-05 — see S-07 status. |
 
 ## Baseline
 
@@ -99,12 +99,12 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **PRD refs:** FR-010, FR-011, FR-012, FR-013
 - **Prerequisites:** —
 - **Parallel with:** F-01, F-02, S-01, S-02, S-03, S-04, S-05, S-06
-- **Blockers:** —
+- **Blockers:** public Overpass API reliability. Live-verified 2026-08-05: `overpass-api.de` and 3 of 4 checked mirrors (`overpass.kumi.systems`, `overpass.private.coffee`, `maps.mail.ru`) either 504'd or stalled on connect under real usage; only `overpass.openstreetmap.fr` responded. The PRD's OSM-only/Overpass-API data-source constraint (FR-010/FR-011) makes this a hard dependency for both mechanisms this slice needs (POI-directed bearing nudging, scenic/low-traffic way-tag scoring), not a best-effort corner of it.
 - **Unknowns:**
-  - Which OSM data source for POI and scenic-tag queries? Overpass API is the standard free option; Nominatim covers geocoding only. Self-hosting is an option but adds infrastructure scope. — Owner: TBD. Block: no (resolvable during planning; Overpass API is the default path).
-  - What is the latency impact of OSM Overpass queries on route generation time? The v1 ≤5 s NFR was not re-confirmed for v2 (PRD Open Question 1). — Owner: engineering. Block: no (measure during implementation; define threshold before shipping v2).
+  - ~~Which OSM data source for POI and scenic-tag queries?~~ — **Resolved 2026-07-26 → reopened 2026-08-05:** Overpass API was implemented (Phases 1-4 of `routing-quality-osm`, later reverted) but proved unreliable enough in practice to block shipping. Options to revisit: (a) multi-mirror fallback list tried in sequence — cheap, keeps OSM as the source; (b) self-hosted Overpass instance — reliable but adds infra scope, previously deferred; (c) drop OSM/Overpass entirely and derive the "scenic/low-traffic" signal from ORS's own `extra_info` (waytype/surface, already fetched for `pavedRatio`/`smoothnessScore`) — no external dependency, but loses OSM-specific tags (cycleway, cycle-network membership) and the POI-proximity mechanism has no ORS-only equivalent. — Owner: user. Block: yes (blocks re-opening this slice).
+  - What is the latency impact of OSM Overpass queries on route generation time? Not reached — abandoned before Phase 5's latency measurement step.
 - **Risk:** OSM scenic tag density varies widely by region — improvement may be imperceptible in areas with sparse tagging. Algorithm must fall back gracefully so route quality never regresses below v1. Acceptable-quality definition should be agreed before starting to avoid open-ended tuning (same risk that required explicit acceptance thresholds in the v1 S-03 loop-algorithm-tuning slice).
-- **Status:** ready
+- **Status:** parked
 
 ### S-01: Magic link auth
 
@@ -190,7 +190,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 |---|---|---|---|---|
 | F-01 | `auth-provider-scaffold` | Auth provider scaffold — Clerk + email OTP + .NET JWT middleware | yes | Run `/10x-plan auth-provider-scaffold`; provider decided: Clerk (superseded Entra External ID 2026-07-07, Azure region policy blocker) |
 | F-02 | `data-layer-schema` | Data layer — Azure Postgres schema + EF Core migrations (users + routes) | yes | Run `/10x-plan data-layer-schema`; host decided: Azure Database for PostgreSQL Flexible Server |
-| S-07 | `routing-quality-osm` | Routing quality — OSM scenic/low-traffic preference + cyclist POI proximity | yes | Run `/10x-plan routing-quality-osm`; no auth/data dependency |
+| S-07 | `routing-quality-osm` | Routing quality — OSM scenic/low-traffic preference + cyclist POI proximity | no | Parked 2026-08-05 — public Overpass API unreliable; needs a data-source decision (multi-mirror, self-host, or ORS-only) before re-planning, see S-07 Unknowns |
 | S-01 | `magic-link-auth` | Magic link auth — signup, login, logout (FR-001–FR-003) | yes | Run `/10x-plan magic-link-auth`; F-01 + F-02 done, unblocked |
 | S-02 | `save-route` | Save route to personal library — one-click, auto-name, optional tags (FR-004–FR-005) | yes | Run `/10x-plan save-route`; S-01 done, unblocked |
 | S-06 | `account-deletion` | Account deletion — self-serve hard delete of account + all routes (NFR) | yes | Run `/10x-plan account-deletion`; S-01 + F-02 done, unblocked; parallel with S-02 |
@@ -203,9 +203,11 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 2. ~~**Which DB + host?**~~ — **Resolved 2026-07-04:** Azure Database for PostgreSQL Flexible Server. EF Core migrations; JSONB for route geometry.
 
-3. **Route generation latency under OSM POI querying.** The v1 ≤5 s NFR was not re-confirmed after adding Overpass API queries to the route generation path. Measure during S-07 implementation and define an acceptable threshold before shipping v2. — Owner: engineering. Block: no (does not block S-07 planning; defines the done-condition).
+3. **Route generation latency under OSM POI querying.** Superseded 2026-08-05 — S-07 was reverted before this was measured; the blocking issue turned out to be Overpass API *reliability*, not latency. Re-open only if/when S-07 resumes.
 
-4. **Delivery timeline.** `delivery_weeks` is open-ended (after-hours, no hard deadline). An estimate would complete the PRD frontmatter. — Owner: user. Block: no.
+4. **OSM data-source strategy for S-07.** The public Overpass API (`overpass-api.de` + checked mirrors) proved unreliable 2026-08-05 (see S-07 Blockers). Before S-07 can be re-planned, pick one: multi-mirror fallback list, self-hosted Overpass, or drop OSM/Overpass in favor of ORS's own `extra_info` road-class data (loses OSM-specific tags and the POI-proximity mechanism). — Owner: user. Block: yes (blocks S-07 re-planning only).
+
+5. **Delivery timeline.** `delivery_weeks` is open-ended (after-hours, no hard deadline). An estimate would complete the PRD frontmatter. — Owner: user. Block: no.
 
 ## Parked
 
@@ -218,6 +220,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Strava Segments API** — Why parked: PRD §Constraints ("requires OAuth and is not free/public; OSM is the only data source for routing improvements in v2").
 - **Library pagination, search, filter** — Why parked: PRD §Non-Goals ("flat list is acceptable for v2 volume; search/filter deferred to v3").
 - **Start-point wiggle** — Why parked: captured during `routing-quality-osm` (S-07) planning (2026-07-26); shifting the actual start/end coordinate toward a higher-quality direction changes a user-visible contract (GPX/marker no longer matches the entered point exactly) and needs its own scoping (radius, opt-in vs. default, interaction with the distance constraint) before it can be planned. S-07 keeps the start/end pinned exactly to user input; see `context/foundation/route-enhancement-ideas.md` Idea #7.
+- **S-07: Routing quality — OSM scenic/low-traffic + cyclist POIs** — Why parked: implemented (Phases 1-4, `routing-quality-osm`) then reverted 2026-08-05 after the public Overpass API proved unreliable under real usage (repeated 504s / connect stalls across `overpass-api.de` and most checked mirrors — see S-07 Blockers). PRD's OSM-only data-source constraint (FR-010/FR-011) needs revisiting before this can be re-planned: multi-mirror fallback, self-hosting, or dropping OSM in favor of ORS's own `extra_info` are the live options. Code reverted via clean `git revert`, all tests green post-revert; `context/changes/routing-quality-osm/` kept (not archived) as reference for whichever direction is chosen next.
 
 ## Done
 

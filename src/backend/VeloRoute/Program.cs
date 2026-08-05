@@ -53,26 +53,6 @@ builder.Services.AddHttpClient<IOpenRouteServiceClient, OpenRouteServiceClient>(
         options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
     });
 
-builder.Services.Configure<OverpassOptions>(
-    builder.Configuration.GetSection("Overpass"));
-
-builder.Services.AddHttpClient<IOverpassClient, OverpassClient>()
-    .ConfigureHttpClient((sp, client) =>
-    {
-        var opts = sp.GetRequiredService<IOptions<OverpassOptions>>().Value;
-        client.BaseAddress = new Uri(opts.BaseUrl);
-    })
-    .AddStandardResilienceHandler(options =>
-    {
-        // Zero retries: Overpass is a best-effort call on an already-short timeout,
-        // so a retry would only spend more of that budget on a shared public service.
-        options.Retry.ShouldHandle = _ => ValueTask.FromResult(false);
-        options.CircuitBreaker.FailureRatio = 0.5;
-        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
-        options.CircuitBreaker.MinimumThroughput = 3;
-        options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(30);
-    });
-
 builder.Services.AddHttpClient<IClerkClient, ClerkClient>()
     .ConfigureHttpClient((sp, client) =>
     {
@@ -339,7 +319,7 @@ app.MapGet("/shares/{token}", async (string token, AppDbContext db, Cancellation
         new RouteGeometryResponse(coordinates), route.CreatedAt, share.Token));
 });
 
-app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen, IOptions<OpenRouteServiceOptions> orsOpts, IOptions<OverpassOptions> overpassOpts, CancellationToken requestCt) =>
+app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen, IOptions<OpenRouteServiceOptions> orsOpts, CancellationToken requestCt) =>
 {
     if (req.MinKm < 5 || req.MaxKm > 300 || req.MinKm >= req.MaxKm)
         return Results.BadRequest(new { error = "Invalid distance range", code = "INVALID_INPUT" });
@@ -347,8 +327,7 @@ app.MapPost("/routes/loop", async (LoopRouteRequest req, LoopRouteGenerator gen,
     if (req.StartLat < -90 || req.StartLat > 90 || req.StartLon < -180 || req.StartLon > 180)
         return Results.BadRequest(new { error = "Invalid coordinates", code = "INVALID_INPUT" });
 
-    using var timeoutCts = new CancellationTokenSource(
-        TimeSpan.FromSeconds(orsOpts.Value.TimeoutSeconds + overpassOpts.Value.PoiLookupTimeoutSeconds));
+    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(orsOpts.Value.TimeoutSeconds));
     using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(requestCt, timeoutCts.Token);
 
     try
