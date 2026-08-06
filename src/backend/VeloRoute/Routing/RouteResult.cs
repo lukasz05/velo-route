@@ -9,6 +9,7 @@ public sealed record RouteResult(
     public double SmoothnessScore => SmoothnessCalculator.Compute(this);
     public double OverlapRatio => OverlapDetector.ComputeOverlapRatio(Geometry.Coordinates);
     public bool QualityWarning => OverlapRatio > OverlapDetector.Ceiling;
+    public int MaxConsecutiveSharpTurns => SpikeDetector.Compute(this);
 }
 
 public sealed record RouteGeometry(IReadOnlyList<RouteCoordinate> Coordinates);

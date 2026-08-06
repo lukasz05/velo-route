@@ -587,27 +587,27 @@ migration is needed.
 
 #### Automated
 
-- [x] 2.1 Backend builds cleanly
-- [x] 2.2 Updated integration/quality tests pass
-- [x] 2.3 New unified-ordering and overlap-ceiling unit tests pass
-- [x] 2.4 Full backend test suite passes
+- [x] 2.1 Backend builds cleanly — efe514f
+- [x] 2.2 Updated integration/quality tests pass — efe514f
+- [x] 2.3 New unified-ordering and overlap-ceiling unit tests pass — efe514f
+- [x] 2.4 Full backend test suite passes — efe514f
 
 #### Manual
 
-- [x] 2.5 Live smoke test at 3 cities shows qualityWarning false for large majority; pre-compensation constant tuned if needed
-- [x] 2.6 Manually confirm high-overlap request returns 200 with qualityWarning true instead of failing
+- [x] 2.5 Live smoke test at 3 cities shows qualityWarning false for large majority; pre-compensation constant tuned if needed — efe514f
+- [x] 2.6 Manually confirm high-overlap request returns 200 with qualityWarning true instead of failing — efe514f
 
 ### Phase 3: Locality-aware spike metric
 
 #### Automated
 
-- [ ] 3.1 Backend builds cleanly
-- [ ] 3.2 New SpikeDetectorTests pass
-- [ ] 3.3 Full backend test suite passes
+- [x] 3.1 Backend builds cleanly
+- [x] 3.2 New SpikeDetectorTests pass
+- [x] 3.3 Full backend test suite passes
 
 #### Manual
 
-- [ ] 3.4 Live smoke test at 3 cities: record and compare maxConsecutiveSharpTurns vs. pre-Phase-2 baseline
+- [x] 3.4 Live smoke test at 3 cities: record and compare maxConsecutiveSharpTurns vs. pre-Phase-2 baseline
 
 ### Phase 4: Surfacing + docs sync
 

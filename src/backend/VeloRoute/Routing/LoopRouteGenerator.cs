@@ -79,7 +79,8 @@ internal sealed class LoopRouteGenerator
                 distance = route.DistanceMeters,
                 overlapRatio = route.OverlapRatio,
                 pavedRatio = route.PavedRatio,
-                smoothnessScore = route.SmoothnessScore
+                smoothnessScore = route.SmoothnessScore,
+                maxConsecutiveSharpTurns = route.MaxConsecutiveSharpTurns
             })
             .Where(c => c.distance >= minMeters && c.distance <= maxMeters)
             .ToList();
@@ -88,6 +89,7 @@ internal sealed class LoopRouteGenerator
             .Where(c => c.overlapRatio <= PrimaryOverlapThreshold)
             .OrderByDescending(c => c.pavedRatio)
             .ThenByDescending(c => c.smoothnessScore)
+            .ThenBy(c => c.maxConsecutiveSharpTurns)
             .ThenBy(c => Math.Abs(c.distance - targetMidMeters))
             .FirstOrDefault();
 
@@ -97,6 +99,7 @@ internal sealed class LoopRouteGenerator
         var best = candidates
             .OrderByDescending(c => c.pavedRatio)
             .ThenByDescending(c => c.smoothnessScore)
+            .ThenBy(c => c.maxConsecutiveSharpTurns)
             .ThenBy(c => Math.Abs(c.distance - targetMidMeters))
             .FirstOrDefault();
 
