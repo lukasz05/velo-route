@@ -1,7 +1,7 @@
 ---
 change_id: route-quality-tuning
 title: Route quality tuning
-status: implementing
+status: implemented
 created: 2026-08-05
 updated: 2026-08-06
 archived_at: null

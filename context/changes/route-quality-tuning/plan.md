@@ -613,12 +613,12 @@ migration is needed.
 
 #### Automated
 
-- [x] 4.1 Frontend type-checks
-- [x] 4.2 Frontend lints cleanly
-- [x] 4.3 Frontend unit tests pass
+- [x] 4.1 Frontend type-checks — 530ab5a
+- [x] 4.2 Frontend lints cleanly — 530ab5a
+- [x] 4.3 Frontend unit tests pass — 530ab5a
 
 #### Manual
 
-- [x] 4.4 Browser verification of quality-warning banner rendering
-- [x] 4.5 Live re-validation at 3 cities/2 ranges vs. research.md baseline
-- [x] 4.6 Confirm docs no longer describe round_trip as rejected/unused or reference stale "3 candidates"/"DIY-only" claims
+- [x] 4.4 Browser verification of quality-warning banner rendering — 530ab5a
+- [x] 4.5 Live re-validation at 3 cities/2 ranges vs. research.md baseline — 530ab5a
+- [x] 4.6 Confirm docs no longer describe round_trip as rejected/unused or reference stale "3 candidates"/"DIY-only" claims — 530ab5a
