@@ -20,6 +20,9 @@ export interface RouteResult {
   segments: RouteWaySegment[];
   pavedRatio: number;
   smoothnessScore: number;
+  overlapRatio: number;
+  qualityWarning: boolean;
+  maxConsecutiveSharpTurns: number;
 }
 
 export interface GeocodingFeature {

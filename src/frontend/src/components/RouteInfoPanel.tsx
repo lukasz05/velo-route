@@ -102,6 +102,12 @@ export default function RouteInfoPanel({ route }: { route: RouteResult }) {
       <p className="text-sm font-medium text-zinc-900">
         {route.segments.length === 0 ? 'Unknown' : `${Math.round(route.pavedRatio * 100)}% paved`}
       </p>
+      {route.qualityWarning && (
+        <p className="mt-2 text-sm text-amber-600" role="status">
+          This route has more overlap/backtracking than usual for the area — the road network
+          left few better options.
+        </p>
+      )}
       {isSignedIn && (
         <>
           <label className="mt-3 block text-sm text-zinc-500" htmlFor="route-name">

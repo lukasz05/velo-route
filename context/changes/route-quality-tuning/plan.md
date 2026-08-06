@@ -601,24 +601,24 @@ migration is needed.
 
 #### Automated
 
-- [x] 3.1 Backend builds cleanly
-- [x] 3.2 New SpikeDetectorTests pass
-- [x] 3.3 Full backend test suite passes
+- [x] 3.1 Backend builds cleanly — 854bf3b
+- [x] 3.2 New SpikeDetectorTests pass — 854bf3b
+- [x] 3.3 Full backend test suite passes — 854bf3b
 
 #### Manual
 
-- [x] 3.4 Live smoke test at 3 cities: record and compare maxConsecutiveSharpTurns vs. pre-Phase-2 baseline
+- [x] 3.4 Live smoke test at 3 cities: record and compare maxConsecutiveSharpTurns vs. pre-Phase-2 baseline — 854bf3b
 
 ### Phase 4: Surfacing + docs sync
 
 #### Automated
 
-- [ ] 4.1 Frontend type-checks
-- [ ] 4.2 Frontend lints cleanly
-- [ ] 4.3 Frontend unit tests pass
+- [x] 4.1 Frontend type-checks
+- [x] 4.2 Frontend lints cleanly
+- [x] 4.3 Frontend unit tests pass
 
 #### Manual
 
-- [ ] 4.4 Browser verification of quality-warning banner rendering
-- [ ] 4.5 Live re-validation at 3 cities/2 ranges vs. research.md baseline
-- [ ] 4.6 Confirm docs no longer describe round_trip as rejected/unused or reference stale "3 candidates"/"DIY-only" claims
+- [x] 4.4 Browser verification of quality-warning banner rendering
+- [x] 4.5 Live re-validation at 3 cities/2 ranges vs. research.md baseline
+- [x] 4.6 Confirm docs no longer describe round_trip as rejected/unused or reference stale "3 candidates"/"DIY-only" claims
