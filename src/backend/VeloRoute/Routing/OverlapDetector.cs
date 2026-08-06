@@ -6,6 +6,11 @@ namespace VeloRoute.Routing;
 
 internal static class OverlapDetector
 {
+    /// <summary>
+    /// Overlap ratio above which a route is flagged as a quality warning to the caller.
+    /// </summary>
+    public const double Ceiling = 0.40;
+
     // 15 m ≈ 0.000135° at latitude 50°N — valid for European latitudes 45–55°N
     private const double ToleranceDeg = 0.000135;
 

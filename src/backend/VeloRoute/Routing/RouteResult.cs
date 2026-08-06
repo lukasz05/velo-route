@@ -7,6 +7,8 @@ public sealed record RouteResult(
 {
     public double PavedRatio => PavedRatioCalculator.Compute(this);
     public double SmoothnessScore => SmoothnessCalculator.Compute(this);
+    public double OverlapRatio => OverlapDetector.ComputeOverlapRatio(Geometry.Coordinates);
+    public bool QualityWarning => OverlapRatio > OverlapDetector.Ceiling;
 }
 
 public sealed record RouteGeometry(IReadOnlyList<RouteCoordinate> Coordinates);

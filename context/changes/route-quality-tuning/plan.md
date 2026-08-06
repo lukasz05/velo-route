@@ -575,27 +575,27 @@ migration is needed.
 
 #### Automated
 
-- [x] 1.1 Backend builds cleanly
-- [x] 1.2 New request-shape unit tests pass
-- [x] 1.3 Full backend test suite passes
+- [x] 1.1 Backend builds cleanly — 0bf1fa0
+- [x] 1.2 New request-shape unit tests pass — 0bf1fa0
+- [x] 1.3 Full backend test suite passes — 0bf1fa0
 
 #### Manual
 
-- [x] 1.4 One-off manual live round_trip call via new client method succeeds
+- [x] 1.4 One-off manual live round_trip call via new client method succeeds — 0bf1fa0
 
 ### Phase 2: Combined-batch generation + fixed selection + real overlap ceiling
 
 #### Automated
 
-- [ ] 2.1 Backend builds cleanly
-- [ ] 2.2 Updated integration/quality tests pass
-- [ ] 2.3 New unified-ordering and overlap-ceiling unit tests pass
-- [ ] 2.4 Full backend test suite passes
+- [x] 2.1 Backend builds cleanly
+- [x] 2.2 Updated integration/quality tests pass
+- [x] 2.3 New unified-ordering and overlap-ceiling unit tests pass
+- [x] 2.4 Full backend test suite passes
 
 #### Manual
 
-- [ ] 2.5 Live smoke test at 3 cities shows qualityWarning false for large majority; pre-compensation constant tuned if needed
-- [ ] 2.6 Manually confirm high-overlap request returns 200 with qualityWarning true instead of failing
+- [x] 2.5 Live smoke test at 3 cities shows qualityWarning false for large majority; pre-compensation constant tuned if needed
+- [x] 2.6 Manually confirm high-overlap request returns 200 with qualityWarning true instead of failing
 
 ### Phase 3: Locality-aware spike metric
 
