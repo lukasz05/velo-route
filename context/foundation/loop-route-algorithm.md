@@ -46,3 +46,25 @@ created: 2026-05-30
 - ORS call: `POST /v2/directions/cycling-road` with `coordinates: [[start], [wp1], [wp2], [start]]`.
 - Distance validation: sum segment distances from ORS response; if outside [min_km, max_km], adjust radius and retry (max 3 attempts).
 - Repetition check: can be approximated by checking bounding-box overlap of segments; full polyline intersection is a stretch goal.
+
+## Addendum (2026-08-06): `round_trip` added as a second candidate source
+
+`route-quality-tuning` supersedes the "too unpredictable" rejection of ORS
+`round_trip` above. Live measurement showed `round_trip` has dramatically
+better overlap than the DIY waypoint-stitching approach (0.001-0.039 vs.
+0.028-0.384) but overshoots requested distance on every sample — so it is
+no longer rejected outright, but combined with the existing DIY sectors
+rather than replacing them.
+
+Each `/routes/loop` request now fires one parallel batch of 3 `round_trip`
+candidates (length pre-compensated to `targetMidMeters * 0.70`) alongside
+the existing 3 DIY-sector candidates (6 ORS calls total, no retries — a
+sequential retry-until-in-range strategy was measured to trigger ORS
+`429` rate-limiting). Selection uses one consistent paved → smooth →
+spike-freedom → distance ordering across both sources, and every response
+now carries `overlapRatio`, `qualityWarning` (the former log-only 0.40
+overlap ceiling, now response-visible), and `maxConsecutiveSharpTurns` (a
+locality-aware spike metric that a single severe local out-and-back cannot
+hide inside, unlike the aggregate `smoothnessScore`).
+
+See `context/changes/route-quality-tuning/` for the full plan and research.
