@@ -2,9 +2,10 @@ namespace VeloRoute.Routing;
 
 internal static class SmoothnessCalculator
 {
-    public static double Compute(RouteResult route)
+    public static double Compute(RouteResult route) => ComputeFromFlags(ComputeSharpTurnFlags(route));
+
+    internal static double ComputeFromFlags(bool[] flags)
     {
-        var flags = ComputeSharpTurnFlags(route);
         if (flags.Length == 0) return 1.0;
 
         return 1.0 - (double)flags.Count(f => f) / flags.Length;

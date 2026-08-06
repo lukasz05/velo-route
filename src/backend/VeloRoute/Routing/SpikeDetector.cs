@@ -7,10 +7,11 @@ namespace VeloRoute.Routing;
 /// </summary>
 internal static class SpikeDetector
 {
-    public static int Compute(RouteResult route)
-    {
-        var flags = SmoothnessCalculator.ComputeSharpTurnFlags(route);
+    public static int Compute(RouteResult route) =>
+        ComputeFromFlags(SmoothnessCalculator.ComputeSharpTurnFlags(route));
 
+    internal static int ComputeFromFlags(bool[] flags)
+    {
         int longest = 0;
         int current = 0;
         foreach (bool flag in flags)

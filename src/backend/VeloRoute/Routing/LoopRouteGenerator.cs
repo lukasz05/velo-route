@@ -67,50 +67,62 @@ internal sealed class LoopRouteGenerator
         return Task.WhenAll(tasks);
     }
 
+    private readonly record struct CandidateMetrics(
+        RouteResult Route,
+        double Distance,
+        double OverlapRatio,
+        double PavedRatio,
+        double SmoothnessScore,
+        int MaxConsecutiveSharpTurns);
+
+    private static CandidateMetrics ToMetrics(RouteResult route)
+    {
+        var sharpTurnFlags = SmoothnessCalculator.ComputeSharpTurnFlags(route);
+        return new CandidateMetrics(
+            route,
+            route.DistanceMeters,
+            route.OverlapRatio,
+            route.PavedRatio,
+            SmoothnessCalculator.ComputeFromFlags(sharpTurnFlags),
+            SpikeDetector.ComputeFromFlags(sharpTurnFlags));
+    }
+
     private RoutingResult<RouteResult> SelectBestRoute(
         RoutingResult<RouteResult>[] results, double minMeters, double maxMeters, double targetMidMeters)
     {
         var candidates = results
             .Where(r => r.IsSuccess)
             .Select(r => r.Value!)
-            .Select(route => new
-            {
-                route,
-                distance = route.DistanceMeters,
-                overlapRatio = route.OverlapRatio,
-                pavedRatio = route.PavedRatio,
-                smoothnessScore = route.SmoothnessScore,
-                maxConsecutiveSharpTurns = route.MaxConsecutiveSharpTurns
-            })
-            .Where(c => c.distance >= minMeters && c.distance <= maxMeters)
+            .Select(ToMetrics)
+            .Where(c => c.Distance >= minMeters && c.Distance <= maxMeters)
             .ToList();
 
         var strict = candidates
-            .Where(c => c.overlapRatio <= PrimaryOverlapThreshold)
-            .OrderByDescending(c => c.pavedRatio)
-            .ThenByDescending(c => c.smoothnessScore)
-            .ThenBy(c => c.maxConsecutiveSharpTurns)
-            .ThenBy(c => Math.Abs(c.distance - targetMidMeters))
+            .Where(c => c.OverlapRatio <= PrimaryOverlapThreshold)
+            .OrderByDescending(c => c.PavedRatio)
+            .ThenByDescending(c => c.SmoothnessScore)
+            .ThenBy(c => c.MaxConsecutiveSharpTurns)
+            .ThenBy(c => Math.Abs(c.Distance - targetMidMeters))
             .FirstOrDefault();
 
-        if (strict is not null)
-            return RoutingResult<RouteResult>.Success(strict.route);
+        if (strict.Route is not null)
+            return RoutingResult<RouteResult>.Success(strict.Route);
 
         var best = candidates
-            .OrderByDescending(c => c.pavedRatio)
-            .ThenByDescending(c => c.smoothnessScore)
-            .ThenBy(c => c.maxConsecutiveSharpTurns)
-            .ThenBy(c => Math.Abs(c.distance - targetMidMeters))
+            .OrderByDescending(c => c.PavedRatio)
+            .ThenByDescending(c => c.SmoothnessScore)
+            .ThenBy(c => c.MaxConsecutiveSharpTurns)
+            .ThenBy(c => Math.Abs(c.Distance - targetMidMeters))
             .FirstOrDefault();
 
-        if (best is not null)
+        if (best.Route is not null)
         {
-            if (best.overlapRatio > OverlapDetector.Ceiling)
+            if (best.OverlapRatio > OverlapDetector.Ceiling)
                 _logger.LogWarning(
                     "Returning route with overlap ratio {Ratio:P0} (above {Ceiling:P0} quality ceiling)",
-                    best.overlapRatio, OverlapDetector.Ceiling);
+                    best.OverlapRatio, OverlapDetector.Ceiling);
 
-            return RoutingResult<RouteResult>.Success(best.route);
+            return RoutingResult<RouteResult>.Success(best.Route);
         }
 
         var failures = results.Where(r => !r.IsSuccess).ToList();
