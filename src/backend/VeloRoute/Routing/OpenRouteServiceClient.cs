@@ -27,29 +27,75 @@ internal sealed class OpenRouteServiceClient : IOpenRouteServiceClient
         OrsDirectionOptions? options = null,
         CancellationToken cancellationToken = default)
     {
+        var requestBody = OrsRequestFactory.BuildWaypointsRequest(waypoints, options);
+        return await OrsHttpExecutor.PostAsync(_httpClient, _logger, requestBody, cancellationToken);
+    }
+
+    public async Task<RoutingResult<RouteResult>> GetRoundTripDirectionsAsync(
+        RouteCoordinate start,
+        OrsRoundTripOptions roundTrip,
+        OrsDirectionOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        var requestBody = OrsRequestFactory.BuildRoundTripRequest(start, roundTrip, options);
+        return await OrsHttpExecutor.PostAsync(_httpClient, _logger, requestBody, cancellationToken);
+    }
+}
+
+// Builds ORS request DTOs — file-scoped, so it may take/return the file-scoped DTOs below
+// directly instead of duplicating avoid_features/profile_params handling per overload.
+file static class OrsRequestFactory
+{
+    public static OrsDirectionsRequest BuildWaypointsRequest(
+        IReadOnlyList<RouteCoordinate> waypoints, OrsDirectionOptions? options) => new()
+    {
+        Coordinates = waypoints.Select(w => new[] { w.Longitude, w.Latitude }).ToArray(),
+        ExtraInfo = ["surface", "waytype"],
+        Instructions = false,
+        Options = BuildOptions(options, roundTrip: null)
+    };
+
+    public static OrsDirectionsRequest BuildRoundTripRequest(
+        RouteCoordinate start, OrsRoundTripOptions roundTrip, OrsDirectionOptions? options) => new()
+    {
+        Coordinates = [[start.Longitude, start.Latitude]],
+        ExtraInfo = ["surface", "waytype"],
+        Instructions = false,
+        Options = BuildOptions(options, roundTrip)
+    };
+
+    private static OrsOptions? BuildOptions(OrsDirectionOptions? options, OrsRoundTripOptions? roundTrip)
+    {
+        if (options is null && roundTrip is null)
+            return null;
+
+        OrsProfileParams? profileParams = null;
+        if (options?.SteepnessDifficulty.HasValue == true)
+        {
+            profileParams = new OrsProfileParams(
+                new OrsWeightings(options.SteepnessDifficulty.Value));
+        }
+
+        OrsRoundTrip? orsRoundTrip = roundTrip is null
+            ? null
+            : new OrsRoundTrip(roundTrip.LengthMeters, roundTrip.Points, roundTrip.Seed);
+
+        return new OrsOptions(options?.AvoidFeatures, profileParams, orsRoundTrip);
+    }
+}
+
+// Executes a built request against ORS and maps the response — file-scoped for the same reason.
+file static class OrsHttpExecutor
+{
+    public static async Task<RoutingResult<RouteResult>> PostAsync(
+        HttpClient httpClient,
+        ILogger logger,
+        OrsDirectionsRequest requestBody,
+        CancellationToken cancellationToken)
+    {
         try
         {
-            OrsOptions? orsOptions = null;
-            if (options is not null)
-            {
-                OrsProfileParams? profileParams = null;
-                if (options.SteepnessDifficulty.HasValue)
-                {
-                    profileParams = new OrsProfileParams(
-                        new OrsWeightings(options.SteepnessDifficulty.Value));
-                }
-                orsOptions = new OrsOptions(options.AvoidFeatures, profileParams);
-            }
-
-            var requestBody = new OrsDirectionsRequest
-            {
-                Coordinates = waypoints.Select(w => new[] { w.Longitude, w.Latitude }).ToArray(),
-                ExtraInfo = ["surface", "waytype"],
-                Instructions = false,
-                Options = orsOptions
-            };
-
-            using var response = await _httpClient.PostAsJsonAsync(
+            using var response = await httpClient.PostAsJsonAsync(
                 "/v2/directions/cycling-road/geojson",
                 requestBody,
                 cancellationToken);
@@ -92,27 +138,26 @@ internal sealed class OpenRouteServiceClient : IOpenRouteServiceClient
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error calling ORS");
+            logger.LogError(ex, "Unexpected error calling ORS");
             return RoutingResult<RouteResult>.Failure(
                 new RoutingError("PROVIDER_ERROR", "Routing provider unavailable"));
         }
+    }
 
-        // Local function — can reference file-scoped OrsFeature without exposing it as a member signature
-        static RouteResult MapToRouteResult(OrsFeature feature)
-        {
-            var coordinates = (feature.Geometry?.Coordinates ?? [])
-                .Select(c => new RouteCoordinate(c[0], c[1]))
-                .ToList();
+    private static RouteResult MapToRouteResult(OrsFeature feature)
+    {
+        var coordinates = (feature.Geometry?.Coordinates ?? [])
+            .Select(c => new RouteCoordinate(c[0], c[1]))
+            .ToList();
 
-            var distanceMeters = feature.Properties?.Summary?.Distance ?? 0;
+        var distanceMeters = feature.Properties?.Summary?.Distance ?? 0;
 
-            var surfaceSpans = feature.Properties?.Extras?.Surface?.Values ?? [];
-            var waytypeSpans = feature.Properties?.Extras?.Waytypes?.Values ?? [];
+        var surfaceSpans = feature.Properties?.Extras?.Surface?.Values ?? [];
+        var waytypeSpans = feature.Properties?.Extras?.Waytypes?.Values ?? [];
 
-            var segments = OrsMapper.BuildSegments(surfaceSpans, waytypeSpans);
+        var segments = OrsMapper.BuildSegments(surfaceSpans, waytypeSpans);
 
-            return new RouteResult(new RouteGeometry(coordinates), distanceMeters, segments);
-        }
+        return new RouteResult(new RouteGeometry(coordinates), distanceMeters, segments);
     }
 }
 
@@ -135,10 +180,14 @@ file sealed class OrsDirectionsRequest
 
 file sealed class OrsOptions
 {
-    public OrsOptions(IReadOnlyList<string>? avoidFeatures, OrsProfileParams? profileParams)
+    public OrsOptions(
+        IReadOnlyList<string>? avoidFeatures,
+        OrsProfileParams? profileParams,
+        OrsRoundTrip? roundTrip = null)
     {
         AvoidFeatures = avoidFeatures;
         ProfileParams = profileParams;
+        RoundTrip = roundTrip;
     }
 
     [JsonPropertyName("avoid_features")]
@@ -148,6 +197,29 @@ file sealed class OrsOptions
     [JsonPropertyName("profile_params")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OrsProfileParams? ProfileParams { get; }
+
+    [JsonPropertyName("round_trip")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrsRoundTrip? RoundTrip { get; }
+}
+
+file sealed class OrsRoundTrip
+{
+    public OrsRoundTrip(int length, int points, int seed)
+    {
+        Length = length;
+        Points = points;
+        Seed = seed;
+    }
+
+    [JsonPropertyName("length")]
+    public int Length { get; }
+
+    [JsonPropertyName("points")]
+    public int Points { get; }
+
+    [JsonPropertyName("seed")]
+    public int Seed { get; }
 }
 
 file sealed class OrsProfileParams

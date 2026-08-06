@@ -11,4 +11,10 @@ public interface IOpenRouteServiceClient
         IReadOnlyList<RouteCoordinate> waypoints,
         OrsDirectionOptions? options = null,
         CancellationToken cancellationToken = default);
+
+    Task<RoutingResult<RouteResult>> GetRoundTripDirectionsAsync(
+        RouteCoordinate start,
+        OrsRoundTripOptions roundTrip,
+        OrsDirectionOptions? options = null,
+        CancellationToken cancellationToken = default);
 }
