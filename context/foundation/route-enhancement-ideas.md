@@ -69,6 +69,27 @@ ORS `waytype` already returned in `RouteWaySegment.RoadClass`.
 
 ---
 
+## 7. Start-Point Wiggle
+
+Captured 2026-07-26 during `routing-quality-osm` (S-07) planning. Distinct from #3
+(POI-directed bearings), which only re-aims the intermediate waypoints (`wp1`/`wp2`) —
+the literal start/end coordinate the user entered stays fixed as both loop endpoints.
+
+Idea: let the actual start/end coordinate used for route generation (and therefore
+the GPX start point and map marker) shift within a small bounded radius toward a
+nearby higher-quality direction (scenic road, cluster of POIs), instead of being
+pinned exactly to the user-entered point.
+
+Deliberately deferred from S-07: changes a user-visible contract (the returned route
+no longer necessarily starts exactly where the user clicked/typed), which needs its
+own scoping before implementation — open questions: wiggle radius, whether the shifted
+point is shown/confirmed to the user before generation, opt-in vs. default-on, and
+how it interacts with the min–max km distance constraint (does the wiggle count
+against the distance budget?). S-07 keeps the start/end pinned exactly to the input
+coordinate; only the road chosen leaving/returning to it may bend (via #3's mechanism).
+
+---
+
 ## Priority Order
 
 1. **Smoothness** — zero new dependencies, cheapest to add
@@ -77,3 +98,4 @@ ORS `waytype` already returned in `RouteWaySegment.RoadClass`.
 4. **Elevation scoring** — user-configurable in v2 UI
 5. **Iterative nudging** — amplifier, works best on top of #2/#3
 6. **Road type scoring** — marginal gain over paved ratio
+7. **Start-point wiggle** — needs its own scoping (radius, UX contract) before estimation; not yet a roadmap slice

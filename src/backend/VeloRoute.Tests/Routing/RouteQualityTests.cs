@@ -29,6 +29,27 @@ public sealed class RouteQualityTests
         new RouteCoordinate(21.20, 52.30),
     ];
 
+    // 13-coord out-and-back — overlap ratio ≈0.33 (above PrimaryOverlapThreshold, below
+    // OverlapDetector.Ceiling), forcing candidates out of the strict bucket into the unified
+    // in-range bucket, which must still respect paved/smoothness ordering (Phase 2 fix).
+    private static IReadOnlyList<RouteCoordinate> HighOverlapOutAndBack() =>
+        OutAndBackLoop(legPoints: 6);
+
+    // 31-coord out-and-back — overlap ratio ≈0.43 (above OverlapDetector.Ceiling), for exercising
+    // the qualityWarning boundary.
+    private static IReadOnlyList<RouteCoordinate> VeryHighOverlapOutAndBack() =>
+        OutAndBackLoop(legPoints: 15);
+
+    private static IReadOnlyList<RouteCoordinate> OutAndBackLoop(int legPoints)
+    {
+        var coords = new List<RouteCoordinate>();
+        for (int i = 0; i <= legPoints; i++)
+            coords.Add(new RouteCoordinate(21.05 + i * 0.01, 52.33));
+        for (int i = legPoints - 1; i >= 0; i--)
+            coords.Add(new RouteCoordinate(21.05 + i * 0.01, 52.33));
+        return coords;
+    }
+
     private static RouteResult MakeRouteWithSegments(
         double distanceMeters,
         IReadOnlyList<RouteCoordinate> coords,
@@ -204,5 +225,84 @@ public sealed class RouteQualityTests
         double smoothnessScore = doc.RootElement.GetProperty("smoothnessScore").GetDouble();
         Assert.True(smoothnessScore >= 0.90,
             $"Expected smooth candidate (smoothnessScore ≥ 0.90), got {smoothnessScore:F4}");
+    }
+
+    [Fact]
+    public async Task FallbackBucketStillPrefersMorePavedCandidateAboveOverlapThreshold()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory();
+        var coords = HighOverlapOutAndBack();
+
+        var highPaved = MakeRouteWithSegments(25_000, coords,
+        [
+            new RouteWaySegment(0, coords.Count - 1, SurfaceType.Asphalt, RoadClass.Road),
+        ]);
+        var lowPaved = MakeRouteWithSegments(25_000, coords,
+        [
+            new RouteWaySegment(0, 1, SurfaceType.Asphalt, RoadClass.Road),
+            new RouteWaySegment(1, coords.Count - 1, SurfaceType.Unpaved, RoadClass.Path),
+        ]);
+
+        // lowPaved enqueued first — pre-fix, the fallback path ordered by overlapRatio alone and
+        // would have no reason to prefer highPaved over an equally-overlapping lowPaved candidate.
+        factory.FakeClient.Results.Enqueue(RoutingResult<RouteResult>.Success(lowPaved));
+        factory.FakeClient.Results.Enqueue(RoutingResult<RouteResult>.Success(highPaved));
+
+        var response = await factory.CreateClient().PostAsync("/routes/loop", JsonBody(RequestBody));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = doc.RootElement;
+        double pavedRatio = root.GetProperty("pavedRatio").GetDouble();
+        double overlapRatio = root.GetProperty("overlapRatio").GetDouble();
+        bool qualityWarning = root.GetProperty("qualityWarning").GetBoolean();
+
+        Assert.True(overlapRatio is > 0.10 and <= OverlapDetector.Ceiling,
+            $"Fixture must exceed the strict overlap bucket but stay within the quality ceiling, got {overlapRatio:P1}");
+        Assert.True(pavedRatio >= 0.80,
+            $"Expected the fallback bucket to still prefer the more-paved candidate (≥0.80), got {pavedRatio:F4}");
+        Assert.False(qualityWarning,
+            $"Expected qualityWarning false for overlapRatio {overlapRatio:P1} within the quality ceiling");
+    }
+
+    [Fact]
+    public async Task QualityWarningTrueWhenOverlapExceedsCeiling()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory();
+
+        factory.FakeClient.Results.Enqueue(RoutingResult<RouteResult>.Success(
+            MakeRouteWithSegments(25_000, VeryHighOverlapOutAndBack(), [])));
+
+        var response = await factory.CreateClient().PostAsync("/routes/loop", JsonBody(RequestBody));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = doc.RootElement;
+        double overlapRatio = root.GetProperty("overlapRatio").GetDouble();
+        bool qualityWarning = root.GetProperty("qualityWarning").GetBoolean();
+
+        Assert.True(overlapRatio > OverlapDetector.Ceiling,
+            $"Fixture must exceed the quality ceiling, got {overlapRatio:P1}");
+        Assert.True(qualityWarning, $"Expected qualityWarning true for overlapRatio {overlapRatio:P1}");
+    }
+
+    [Fact]
+    public async Task QualityWarningFalseWhenOverlapWithinCeiling()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory();
+
+        factory.FakeClient.Results.Enqueue(RoutingResult<RouteResult>.Success(
+            MakeRouteWithSegments(25_000, DiamondLoop(), [])));
+
+        var response = await factory.CreateClient().PostAsync("/routes/loop", JsonBody(RequestBody));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var root = doc.RootElement;
+        double overlapRatio = root.GetProperty("overlapRatio").GetDouble();
+        bool qualityWarning = root.GetProperty("qualityWarning").GetBoolean();
+
+        Assert.True(overlapRatio <= 0.10, $"DiamondLoop is expected to have near-zero overlap, got {overlapRatio:P1}");
+        Assert.False(qualityWarning, $"Expected qualityWarning false for low overlapRatio {overlapRatio:P1}");
     }
 }

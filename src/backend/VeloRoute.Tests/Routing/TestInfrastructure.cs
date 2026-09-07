@@ -92,6 +92,20 @@ internal sealed class FakeOpenRouteServiceClient : IOpenRouteServiceClient
             ? result
             : RoutingResult<RouteResult>.Failure(new RoutingError("EMPTY", "no more fake results"));
     }
+
+    public async Task<RoutingResult<RouteResult>> GetRoundTripDirectionsAsync(
+        RouteCoordinate start,
+        OrsRoundTripOptions roundTrip,
+        OrsDirectionOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (Delay > TimeSpan.Zero)
+            await Task.Delay(Delay, cancellationToken);
+
+        return Results.TryDequeue(out var result)
+            ? result
+            : RoutingResult<RouteResult>.Failure(new RoutingError("EMPTY", "no more fake results"));
+    }
 }
 
 internal sealed class FakeClerkClient : IClerkClient

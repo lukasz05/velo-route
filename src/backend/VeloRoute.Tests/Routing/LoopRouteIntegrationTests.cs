@@ -35,7 +35,7 @@ public sealed class LoopRouteIntegrationTests
     {
         await using var factory = new VeloRouteWebApplicationFactory();
         var coords = SimplePolygon();
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 6; i++)
             factory.FakeClient.Results.Enqueue(
                 RoutingResult<RouteResult>.Success(MakeRoute(20_000, coords)));
 
@@ -54,7 +54,7 @@ public sealed class LoopRouteIntegrationTests
     {
         await using var factory = new VeloRouteWebApplicationFactory();
         var coords = SimplePolygon();
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 6; i++)
             factory.FakeClient.Results.Enqueue(
                 RoutingResult<RouteResult>.Success(MakeRoute(5_000, coords)));
 
@@ -72,7 +72,7 @@ public sealed class LoopRouteIntegrationTests
     public async Task PostRoutesLoop_WhenAllCallsFailWithProviderError_Returns502()
     {
         await using var factory = new VeloRouteWebApplicationFactory();
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 6; i++)
             factory.FakeClient.Results.Enqueue(
                 RoutingResult<RouteResult>.Failure(new RoutingError("500", "ORS down")));
 
@@ -89,7 +89,7 @@ public sealed class LoopRouteIntegrationTests
     {
         await using var factory = new VeloRouteWebApplicationFactory();
         var coords = OutAndBackGeometry();
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 6; i++)
             factory.FakeClient.Results.Enqueue(
                 RoutingResult<RouteResult>.Success(MakeRoute(20_000, coords)));
 
@@ -106,7 +106,7 @@ public sealed class LoopRouteIntegrationTests
     {
         await using var factory = new VeloRouteWebApplicationFactory(timeoutSeconds: "0.1");
         factory.FakeClient.Delay = TimeSpan.FromMilliseconds(500);
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 6; i++)
             factory.FakeClient.Results.Enqueue(
                 RoutingResult<RouteResult>.Failure(new RoutingError("UNREACHABLE", "should not dequeue")));
 
