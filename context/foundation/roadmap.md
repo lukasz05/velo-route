@@ -3,7 +3,7 @@ project: "VeloRoute"
 version: 2
 status: draft
 created: 2026-07-04
-updated: 2026-08-05
+updated: 2026-09-07
 prd_version: 2
 main_goal: quality
 top_blocker: none
@@ -220,7 +220,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Strava Segments API** — Why parked: PRD §Constraints ("requires OAuth and is not free/public; OSM is the only data source for routing improvements in v2").
 - **Library pagination, search, filter** — Why parked: PRD §Non-Goals ("flat list is acceptable for v2 volume; search/filter deferred to v3").
 - **Start-point wiggle** — Why parked: captured during `routing-quality-osm` (S-07) planning (2026-07-26); shifting the actual start/end coordinate toward a higher-quality direction changes a user-visible contract (GPX/marker no longer matches the entered point exactly) and needs its own scoping (radius, opt-in vs. default, interaction with the distance constraint) before it can be planned. S-07 keeps the start/end pinned exactly to user input; see `context/foundation/route-enhancement-ideas.md` Idea #7.
-- **S-07: Routing quality — OSM scenic/low-traffic + cyclist POIs** — Why parked: implemented (Phases 1-4, `routing-quality-osm`) then reverted 2026-08-05 after the public Overpass API proved unreliable under real usage (repeated 504s / connect stalls across `overpass-api.de` and most checked mirrors — see S-07 Blockers). PRD's OSM-only data-source constraint (FR-010/FR-011) needs revisiting before this can be re-planned: multi-mirror fallback, self-hosting, or dropping OSM in favor of ORS's own `extra_info` are the live options. Code reverted via clean `git revert`, all tests green post-revert; `context/changes/routing-quality-osm/` kept (not archived) as reference for whichever direction is chosen next.
+- **S-07: Routing quality — OSM scenic/low-traffic + cyclist POIs** — Why parked: implemented (Phases 1-4, `routing-quality-osm`) then reverted 2026-08-05 after the public Overpass API proved unreliable under real usage (repeated 504s / connect stalls across `overpass-api.de` and most checked mirrors — see S-07 Blockers). PRD's OSM-only data-source constraint (FR-010/FR-011) needs revisiting before this can be re-planned: multi-mirror fallback, self-hosting, or dropping OSM in favor of ORS's own `extra_info` are the live options. Code reverted via clean `git revert`, all tests green post-revert; planning artifacts archived 2026-09-07 to `context/archive/2026-07-26-routing-quality-osm/` — read them for reference before re-planning in whichever direction is chosen.
 
 ## Done
 
