@@ -17,6 +17,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new OptionalJsonConverterFactory()));
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -225,6 +228,39 @@ app.MapGet("/routes/{id:guid}", async (Guid id, ClaimsPrincipal user, AppDbConte
 })
 .RequireAuthorization();
 
+app.MapPatch("/routes/{id:guid}", async (Guid id, UpdateRouteRequest req, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
+{
+    var sub = user.GetSub();
+    if (sub is null) return Results.Unauthorized();
+
+    var route = await db.Routes.SingleOrDefaultAsync(r => r.Id == id && r.UserId == sub, ct);
+    if (route is null)
+        return Results.NotFound(new { error = "Route not found", code = "NOT_FOUND" });
+
+    if (!req.Name.HasValue && !req.Tags.HasValue)
+        return Results.NoContent();
+
+    var name = req.Name.HasValue ? req.Name.Value : route.Name;
+    var tags = req.Tags.HasValue ? req.Tags.Value : route.Tags;
+
+    var validationError = RouteMetadataValidation.Validate(name, tags);
+    if (validationError is not null)
+        return Results.BadRequest(new { error = validationError, code = "INVALID_INPUT" });
+
+    // Route is a positional record with init-only properties, so the materialised
+    // entity above cannot be mutated and re-saved through the change tracker.
+    await db.Routes
+        .Where(r => r.Id == id && r.UserId == sub)
+        .ExecuteUpdateAsync(setters =>
+        {
+            if (req.Name.HasValue) setters.SetProperty(r => r.Name, name!);
+            if (req.Tags.HasValue) setters.SetProperty(r => r.Tags, tags);
+        }, ct);
+
+    return Results.NoContent();
+})
+.RequireAuthorization();
+
 app.MapDelete("/routes/{id:guid}", async (Guid id, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
 {
     var sub = user.GetSub();
@@ -386,6 +422,10 @@ record SaveRouteRequest(
     string[]? Tags,
     double DistanceKm,
     IReadOnlyList<RouteCoordinate> Coordinates);
+
+record UpdateRouteRequest(
+    Optional<string> Name,
+    Optional<string[]?> Tags);
 
 record RouteSummaryResponse(
     Guid Id,

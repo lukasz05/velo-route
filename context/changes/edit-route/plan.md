@@ -271,26 +271,26 @@ No schema change and no migration. The new length limits are validated at the AP
 
 #### Automated
 
-- [x] 1.1 Backend builds cleanly
-- [x] 1.2 New validation tests pass
-- [x] 1.3 Full backend suite passes
+- [x] 1.1 Backend builds cleanly — 88ae903
+- [x] 1.2 New validation tests pass — 88ae903
+- [x] 1.3 Full backend suite passes — 88ae903
 
 #### Manual
 
-- [x] 1.4 Saving a route from the UI still works unchanged
+- [x] 1.4 Saving a route from the UI still works unchanged — 88ae903
 
 ### Phase 2: Optional<T> + PATCH endpoint
 
 #### Automated
 
-- [ ] 2.1 Backend builds cleanly
-- [ ] 2.2 New endpoint tests pass
-- [ ] 2.3 Full backend suite passes
+- [x] 2.1 Backend builds cleanly
+- [x] 2.2 New endpoint tests pass
+- [x] 2.3 Full backend suite passes
 
 #### Manual
 
-- [ ] 2.4 curl PATCH partial semantics verified (name-only, tags-null)
-- [ ] 2.5 PATCH against another user's route returns 404, not 403
+- [x] 2.4 curl PATCH partial semantics verified (name-only, tags-null)
+- [x] 2.5 PATCH against another user's route returns 404, not 403
 
 ### Phase 3: Frontend edit surface
 
