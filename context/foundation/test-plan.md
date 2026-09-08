@@ -6,7 +6,8 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-06-20 (Phase 3 → shipped; §6.3 cookbook filled)
+> Last updated: 2026-09-08 (refresh to the shipped v2 state; risk map extended to ten;
+> §4 stack replaced with what is actually installed; §6.4 frontend cookbook added)
 
 ---
 
@@ -29,8 +30,22 @@ Tests follow three non-negotiable principles for this project:
    research disagree about where the failure lives, research is the
    ground truth.
 
-Hot-spot scope used for likelihood weighting: `src/backend/Routing` (33 commits/30d),
-`src/frontend/src` (27 commits/30d), `src/backend/Program.cs` (9 commits/30d).
+Hot-spot scope used for likelihood weighting, scanned across `src/backend/VeloRoute`,
+`src/backend/VeloRoute.Tests` and `src/frontend/src`:
+
+| Path | Commits / 90d |
+|------|---------------|
+| `src/frontend/src/app` | 31 |
+| `src/backend/VeloRoute.Tests/Routing` | 29 |
+| `src/backend/VeloRoute/Routing` | 27 |
+| `src/frontend/src/components` | 19 |
+| `src/backend/VeloRoute/Program.cs` | 13 |
+
+**Window choice.** Earlier revisions of this plan weighted likelihood over a 30-day
+window. That window no longer carries signal — `git log --since="30 days ago"` returns
+8 commits against 48 for 90 days, so a 30-day sample would rank directories by which
+week the work happened to land in. All figures above use 90 days
+(`git log --since="90 days ago" --name-only --pretty=format: -- src/`).
 
 ---
 
@@ -42,14 +57,24 @@ terms, not test names. The Source column cites the *evidence that surfaced
 this risk* — never a specific file as "where the failure lives" (that is
 research's job, see §1 principle #3).
 
+**The `#` column is an identifier, not a rank.** IDs 1–6 predate the v2 feature set and
+are preserved verbatim because §3's shipped phase rows cite them ("Risks covered: #1, #3");
+renumbering would retroactively falsify that history. Risks 7–10 were appended by the
+2026-09-08 refresh. Read the Impact × Likelihood columns for ordering — row order carries
+no priority meaning.
+
 | # | Risk (failure scenario) | Impact | Likelihood | Source (evidence — not anchor) |
 |---|-------------------------|--------|------------|--------------------------------|
 | 1 | ORS response codes map to wrong internal enum values (SurfaceType / RoadClass); route data silently incorrect, user rides wrong surface | High | High | interview Q2 (SurfaceType bug shipped); hot-spot dir `src/backend/Routing` (33 commits/30d); tech-stack custom HTTP client (no SDK) |
-| 2 | Waypoint geometry change produces routes outside the user's distance bounds or with >10% repetition; user downloads a bad loop | High | High | interview Q1 + Q3 (LoopRouteGenerator tweaks feel like roulette); hot-spot dir `src/backend/Routing` (33 commits/30d); roadmap S-03 |
+| 2 | Waypoint geometry change produces routes outside the user's distance bounds or with >10% repetition; user downloads a bad loop | High | High | interview Q1 + Q3 (LoopRouteGenerator tweaks feel like roulette); hot-spot dir `src/backend/Routing` (33 commits/30d); roadmap S-03; re-confirmed by the 2026-09-08 interview (Q3) |
 | 3 | GpxSerializer emits locale-specific decimal separators or wrong GPX element type (`<rte>` instead of `<trk>`); Strava / Garmin / Komoot import fails | High | Medium | roadmap S-02; PRD guardrail ("must import without modification"); tech-stack C# serialisation with locale-sensitive doubles |
 | 4 | Start-point coordinates appear in backend logs after the request completes; privacy NFR violated | Medium | Medium | PRD NFR ("location inputs leave no trace in operator-accessible storage after the request"); tech-stack .NET logging configured in appsettings.json |
 | 5 | Three parallel ORS calls are slow or retry; 4.5s deadline fires before any result is ready; timeout not surfaced gracefully to the user | Medium | Medium | PRD NFR (5s response); loop-route-algorithm.md (retry logic + 3 parallel calls); hot-spot `src/backend/Program.cs` (9 commits/30d) |
 | 6 | ORS API key value appears in the error response body forwarded to the caller | High | Low | abuse/security lens (product accepts user input; custom HTTP client with no SDK-level key scrubbing; error paths exist) |
+| 7 | v2 auth/library work regresses the anonymous generate → map → GPX flow; a stranger hits a broken core product | High | High | interview Q1 + Q4; hot-spot dir `src/frontend/src/app` (31 commits/90d); PRD-v2 Constraints ("anonymous route generation must continue to work without an account in v2") |
+| 8 | A third-party token (ORS, Clerk) is absent or misconfigured and the failure is silent rather than loud; the product looks broken with no diagnosable signal | High | Medium | interview Q2 (lived incident); PRD-v2 dependency on ORS + Clerk |
+| 9 | A route or share endpoint verifies "logged in" but not "owns this"; one user reads or mutates another's route | High | Medium | abuse/security lens (auth + user input both present); PRD-v2 flat user model, Access Control section |
+| 10 | Account deletion leaves user data behind in Postgres or Clerk | High | Medium | PRD-v2 NFR ("all associated data — email address, saved routes — is permanently deleted") |
 
 ### Risk Response Guidance
 
@@ -61,6 +86,15 @@ research's job, see §1 principle #3).
 | #4 | No log entries produced by a completed route-generation request contain the input coordinate values | "We don't log user data" — .NET's HTTP client may log request bodies at Debug level by default | Logging configuration in appsettings.json and appsettings.Development.json; whether the ORS HTTP client emits structured log entries that include the request body | integration (capture ILogger output during a request; assert no coordinate values present) | Asserting that a log level is set rather than asserting that coordinates do not appear at any level |
 | #5 | A request where the ORS mock responds slowly returns a timeout error (not a hang) within the 4.5s deadline | "Fast against a local mock = fast in production" — mocks introduce zero latency; the deadline path may never fire in dev | How the CancellationToken deadline is threaded into parallel calls and into the retry handler; whether a cancelled call returns promptly or blocks | integration (inject a slow-responding ORS mock; assert deadline error returned within budget) | Only testing the happy-path timing; never exercising the cancellation path |
 | #6 | An ORS HTTP error (401, 429, 500) forwarded to the caller contains no string matching the API key value | "Error handling strips sensitive data because we wrote it carefully" — exception messages and serialised HttpRequestException often include request headers or URI fragments | How ORS exceptions are caught and translated to HTTP response bodies; whether the key value appears in exception messages | integration (trigger an ORS mock error; inspect the response body string) | Asserting only the HTTP status code without inspecting the response body |
+| #7 | A signed-out visitor completes generate → map render → GPX download end-to-end, with no Clerk session present at any step | "The signed-in flow works, so the signed-out one does" — `ClerkProvider` wraps the whole app in `src/frontend/src/app/layout.tsx`, so an auth-shaped failure can reach a page that has no account features on it | Which components on the anonymous path read Clerk state; how the GPX download is triggered from `RouteInfoPanel`; what env vars the anonymous page still requires | e2e (real browser, no session) plus an integration test for `POST /routes/gpx`, which has none today | Testing the anonymous path while logged in — the session masks exactly the failure being hunted |
+| #8 | With a token absent or wrong, the system produces a diagnosable failure (clear status + message naming the misconfigured dependency) rather than a generic 500 or a silently empty result | "It fails, so we'll notice" — a silent failure is one that looks like an ordinary empty or slow response; the noticing is the thing under test | How ORS and Clerk config is read at startup and per request; what the response looks like when the key is missing versus rejected; whether startup validation exists | integration (start the app with the key unset / wrong; assert the observable failure shape) | Asserting only that the request failed, without asserting the failure names the misconfigured dependency |
+| #9 | A request authenticated as user B against user A's route or share token is rejected (404/403, never a leak), including the token lifecycle case: a revoked or deleted share token returns 404 | "Auth middleware runs, therefore ownership is enforced" — authentication answers *who*, not *whose* | — already grounded: `EditRouteTests` cross-user rejection, `ShareRouteTests`, `DeleteRouteTests`, `RouteLibraryTests` | integration | Asserting only that an anonymous request is rejected; the interesting case is a *valid* session belonging to the wrong user |
+| #10 | After account deletion, no rows for that user remain in Postgres (user, routes, shares) and the Clerk identity is gone | "The endpoint returned 204" — the cascade is the behaviour, not the status code | — already grounded: `AccountDeletionTests` | integration | Checking only the users table and not the dependent routes/shares rows |
+
+**Risks 9 and 10 arrived covered.** Both were defended by tests written during the v2
+slices that introduced them (`EditRouteTests`, `ShareRouteTests`, `AccountDeletionTests`).
+They are recorded here so the map is complete, not because work is outstanding — do not
+open a rollout phase for either.
 
 ---
 
@@ -75,27 +109,61 @@ orchestrator updates Status as artifacts appear on disk.
 | 1 | Backend test bootstrap + critical coverage | Bootstrap xUnit; defend Risk #1 + #3 at unit level — the cheapest layer that catches the bugs already known to have shipped | #1, #3 | unit (xUnit) | shipped | context/changes/testing-backend-bootstrap |
 | 2 | Route generation integration | Integration tests prove distance / overlap constraints hold and the deadline fires correctly under slow ORS conditions | #2, #5 | integration (ORS HTTP mock) | shipped | context/changes/route-generation-integration-tests |
 | 3 | Security + privacy guards | Integration tests assert that error responses contain no API key and that logs contain no input coordinates | #4, #6 | integration | shipped | context/changes/security-privacy-guards |
-| 4 | Quality-gates wiring | CI runs `dotnet test` on every PR; lint + typecheck already present; lock the floor | cross-cutting | CI gate (GitHub Actions) | not started | — |
+| 4 | Quality-gates wiring (frontend half) | CI runs `npm test` before the Azure SWA deploy, so the 47 Vitest cases actually gate something | cross-cutting | CI gate (GitHub Actions) | in progress | context/changes/test-plan-refresh-2026-09-08 |
+| 5 | Core anonymous flow end-to-end | Prove generate → map → GPX download survives in a real browser with no session, and add the missing `POST /routes/gpx` endpoint test | #7 | e2e + integration | not started | — |
+| 6 | Config-failure loudness | An absent or misconfigured ORS/Clerk token produces a loud, diagnosable failure rather than a silent one | #8 | integration | not started | — |
+
+**Phase 4 scope note.** The backend half of this phase has been live since 2026-07-01:
+`.github/workflows/backend.yml` runs `dotnet test` on every push and PR touching
+`src/backend/**`, and its `deploy` job carries `needs: test`. Only the frontend half
+remained, which is what this phase now covers.
+
+**Phase 5 scope note.** `POST /routes/gpx` (`src/backend/VeloRoute/Program.cs:407`) has no
+test at all, yet the frontend calls it from three places (`RouteInfoPanel.tsx`,
+`my-routes/[id]/page.tsx`, `r/[token]/page.tsx`) — it is the last hop of the anonymous
+flow. The integration half of this phase covers its three untested validation branches
+(empty coordinates, non-finite values, out-of-range values) plus the success case's
+`application/gpx+xml` content type. The e2e half drives the browser flow with no session.
+
+**Order rationale.** Phase 4 locks the floor cheaply and is a prerequisite for trusting
+any later phase's result in CI. Phase 5 carries the highest-risk scenario (#7, High ×
+High) and is the priority if only one phase lands before the 2026-09-14 deadline. Phase 6
+is narrow and can follow.
+
+**Phase 5 prerequisites** (both must be handled inside phase 5's own change, not assumed):
+
+- `src/frontend/vitest.config.ts` sets no `include`/`exclude`. Vitest 4's defaults sweep
+  `**/*.spec.*`, so the first Playwright spec file added without an exclude would be
+  collected by Vitest and fail there. Add the exclude in the same change that adds the
+  first spec — not before, since nothing in the repo currently needs it.
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is required even to render anonymous pages, because
+  `ClerkProvider` wraps the whole app in `src/frontend/src/app/layout.tsx`. An e2e run
+  against the anonymous flow still needs the key present.
 
 ---
 
 ## 4. Stack
 
-The classic test base for this project. No test runner is configured in
-either project yet — Phase 1 bootstraps the backend runner.
+The classic test base for this project. Both runners are installed and green.
 
 | Layer | Tool | Version | Notes |
 |-------|------|---------|-------|
-| unit + integration (.NET) | xUnit | 2.9.3 | Bootstrapped in Phase 1; `dotnet test` from `src/backend/`; alongside `Microsoft.AspNetCore.Mvc.Testing` for future integration phases |
-| HTTP mocking (.NET) | none yet — see §3 Phase 2 | — | Phase 2 plan should evaluate WireMock.Net or a custom `IOpenRouteServiceClient` fake at the interface boundary |
-| frontend unit + integration | none yet | — | All primary risks are backend; frontend test runner bootstrapped in a future phase or `--refresh` |
-| e2e | none yet | — | Not required until frontend risks rise to top-3 |
+| unit + integration (.NET) | xUnit | 2.9.3 | `dotnet test` from `src/backend/`; runner `xunit.runner.visualstudio` 3.1.4; `Microsoft.NET.Test.Sdk` 17.14.1 |
+| integration host (.NET) | `Microsoft.AspNetCore.Mvc.Testing` | 10.0.7 | `VeloRouteWebApplicationFactory` in `Routing/TestInfrastructure.cs` — see §6.2 |
+| database (.NET) | `Testcontainers.PostgreSql` | 4.13.0 | `Data/PostgresFixture.cs`; **`dotnet test` needs a running Docker daemon** (`docker compose up -d` or Docker Desktop) |
+| log capture (.NET) | `Microsoft.Extensions.Diagnostics.Testing` | 10.7.0 | `FakeLogCollector` for the Risk #4 privacy guard — see §6.3 |
+| HTTP mocking (.NET) | custom `FakeOpenRouteServiceClient` | — | A hand-written fake at the `IOpenRouteServiceClient` boundary. The WireMock.Net option floated by the original plan was **not** taken — the interface seam was cheaper and needs no HTTP listener |
+| frontend unit + component | Vitest | 4.1.9 | `npm test` from `src/frontend/`; jsdom 29.1.1; global setup at `src/frontend/src/test-setup.ts`; config `src/frontend/vitest.config.ts` |
+| frontend component | `@testing-library/react` | 16.3.2 | With `@testing-library/jest-dom` 6.9.1 and `@testing-library/user-event` 14.6.1 |
+| e2e | Playwright — **candidate, not installed** | — | Absent from `src/frontend/package.json`. §3 Phase 5 evaluates and pins the version; do not cite a version until it does |
+
+Current frontend suite: 47 cases across 8 files — four route-handler tests under
+`src/frontend/src/app/api/` and four component tests under `src/frontend/src/components/`.
 
 **Stack grounding tools (current session):**
-- Docs: Context7 — available in session; not queried (local manifests sufficient for risk identification at this stage); checked: 2026-06-05
-- Search: Exa.ai — available in session; not queried; checked: 2026-06-05
-- Runtime/browser: no Playwright MCP detected — not available in current session; checked: 2026-06-05
-- Provider/platform: GitHub MCP — available; relevant for Phase 4 CI gate verification; checked: 2026-06-05
+- MCP servers: none exposed in this session — this replaces the earlier "GitHub MCP — available" claim, which was stale; checked: 2026-09-08
+- Provider/platform: GitHub reachable through the `gh` CLI in the shell only, not via MCP; sufficient for CI verification (`gh workflow view`, `gh run list`); checked: 2026-09-08
+- Runtime/browser: no Playwright MCP; phase 5 will drive a browser through the Playwright test runner directly, not through a tool server; checked: 2026-09-08
 
 ---
 
@@ -109,6 +177,7 @@ The full set of gates that must pass before a change reaches production.
 | lint + build (.NET) | local + CI | required (already wired) | compilation errors, nullable violations |
 | unit + integration (.NET) | local + CI | required after §3 Phase 1 | logic regressions in route generation and GPX serialisation |
 | integration (security + privacy) | local + CI | required after §3 Phase 3 | key leakage, coordinate persistence in logs |
+| unit + component (Vitest) | local + CI | required after §3 Phase 4 | regressions in route-handler proxying and component rendering |
 | pre-prod smoke | between merge + prod | optional | environment-specific failures (ORS key rotation, Azure config) |
 
 ---
@@ -257,7 +326,105 @@ whose error message contains the sentinel — simulates an ORS error body that e
 back. The assertion verifies that `Program.cs` error mapping strips the ORS message before it
 reaches the HTTP response.
 
-### 6.4 Per-rollout-phase notes
+### 6.4 Adding a frontend test (Vitest + RTL)
+
+Tests are co-located with their source as `*.test.ts(x)` and run with `npm test` from
+`src/frontend/`. The `@/*` alias works in tests (mapped in `vitest.config.ts`).
+
+**Route-handler proxy test** — source pattern `src/frontend/src/app/api/routes/route.test.ts`
+
+Import the exported `GET` / `POST` directly from `./route` and call them with a plain
+`Request`; there is no server to start. Stub `fetch` with `vi.stubGlobal` and assert
+**both directions** — what was forwarded to the backend (URL, `Authorization` header,
+body) and what was relayed back (status, JSON). Restore with `vi.unstubAllGlobals()` in
+`afterEach`.
+
+```ts
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+it('forwards the Authorization header and body, and relays a 201', async () => {
+  const fetchMock = vi.fn().mockResolvedValue(
+    new Response(JSON.stringify({ id: 'abc-123' }), { status: 201 }),
+  );
+  vi.stubGlobal('fetch', fetchMock);
+
+  const payload = { name: 'My Loop', distanceKm: 42, coordinates: [{ longitude: 1, latitude: 2 }] };
+  const request = new Request('http://localhost/api/routes', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer test-token' },
+    body: JSON.stringify(payload),
+  });
+
+  const res = await POST(request);
+
+  expect(fetchMock).toHaveBeenCalledWith(
+    'http://localhost:5098/routes',
+    expect.objectContaining({
+      method: 'POST',
+      headers: expect.objectContaining({
+        Authorization: 'Bearer test-token',
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify(payload),
+    }),
+  );
+  expect(res.status).toBe(201);
+});
+```
+
+Also cover the no-header case — the handler must return 401 with `code: 'UNAUTHORIZED'`
+without calling `fetch` at all.
+
+Anti-pattern to avoid: asserting only the relayed status. A handler that drops the
+`Authorization` header still returns whatever the stubbed `fetch` was told to return, so
+the test passes while every authenticated request 401s in production. Assert the
+forwarded call.
+
+**Component test** — source pattern `src/frontend/src/components/RouteInfoPanel.test.tsx`
+
+`ClerkProvider` wraps the whole app, so any component reading auth state needs
+`vi.mock('@clerk/nextjs', …)` at module scope. Use a local factory taking
+`Partial<T>` overrides so each case states only the field under test, and query by ARIA
+role.
+
+```tsx
+vi.mock('@clerk/nextjs', () => ({
+  useAuth: () => ({ getToken: vi.fn() }),
+  useUser: () => ({ isSignedIn: false }),
+}))
+
+function makeRoute(overrides: Partial<RouteResult> = {}): RouteResult {
+  return {
+    geometry: { coordinates: [{ longitude: 0, latitude: 0 }] },
+    distanceMeters: 30000,
+    segments: [],
+    pavedRatio: 0.8,
+    smoothnessScore: 0.9,
+    overlapRatio: 0.1,
+    qualityWarning: false,
+    maxConsecutiveSharpTurns: 0,
+    ...overrides,
+  }
+}
+
+it('shows a non-blocking quality notice when qualityWarning is true', () => {
+  render(<RouteInfoPanel route={makeRoute({ qualityWarning: true })} />)
+  expect(screen.getByRole('status')).toHaveTextContent(/overlap|backtracking/i)
+})
+```
+
+Anti-pattern to avoid: querying by CSS class or DOM position. Those break on every
+Tailwind edit while the behaviour is unchanged, and they pass when the behaviour breaks
+but the markup survives. `getByRole('status')` asserts the thing the user (and a screen
+reader) actually perceives.
+
+### 6.5 Adding an e2e test
+
+TBD — see §3 Phase 5.
+
+### 6.6 Per-rollout-phase notes
 
 (Filled in by `/10x-implement` as phases ship.)
 
@@ -269,19 +436,22 @@ Exclusions agreed during the rollout (Phase 2 interview, Q5).
 
 - **Dev / preview page (`/dev`)** — debug tool, not user-facing; no user data flows through it exclusively; blast radius is zero. Re-evaluate if it is ever exposed in production. (Source: Phase 2 interview Q5.)
 - **ORS external API responses** — we do not control ORS; mock only at the HTTP boundary. Never test live ORS behaviour in an automated suite. (Source: tech-stack constraint; abuse/security lens.)
-- **MapLibre map rendering** — renders differ by browser / GPU; snapshot or visual tests on the map canvas produce only noise. Re-evaluate if a deterministic tile mock layer becomes available. (Source: Phase 2 interview Q5, implied from tool selection.)
+- **MapLibre canvas pixels** — snapshot or visual-diff assertions against the rendered map canvas differ by browser / GPU and produce only noise. This exclusion is about *canvas contents specifically*: asserting that the map container mounted, that a route layer was added, or that the surrounding DOM reacted, is in scope and §3 Phase 5 depends on that distinction. Re-evaluate the canvas case if a deterministic tile mock layer becomes available. (Source: Phase 2 interview Q5, narrowed 2026-09-08.)
+- **Clerk's own UI** — sign-in / sign-up / user-button components are the vendor's code. Test our reaction to a session state, never the vendor's widget internals. (Source: 2026-09-08 refresh.)
+- **Anonymous rate-limit abuse** — the PRD explicitly defers app-level throttling ("ORS free-tier rate limits are the de-facto ceiling"). Testing it would require building the safeguard first, so a test today would assert speculative behaviour. Re-evaluate if throttling enters scope. (Source: 2026-09-08 refresh; PRD-v2 Non-Goals.)
 
 ---
 
 ## 8. Freshness Ledger
 
-- Strategy (§1–§5) last reviewed: 2026-06-05
-- Stack versions last verified: 2026-06-15 (xUnit 2.9.3, runner 3.1.4)
-- AI-native tool references last verified: 2026-06-05 (no AI-native layer included; no `checked:` dates to expire)
+- Strategy (§1–§5) last reviewed: 2026-09-08
+- Stack versions last verified: 2026-09-08 (xUnit 2.9.3 / runner 3.1.4, Mvc.Testing 10.0.7, Testcontainers.PostgreSql 4.13.0, Vitest 4.1.9, jsdom 29.1.1, RTL 16.3.2)
+- AI-native tool references last verified: 2026-09-08 (no AI-native layer included; no MCP servers exposed in session)
 
 Refresh (`/10x-test-plan --refresh`) when:
 
 - a new top-3 risk surfaces from the roadmap or archive,
 - a recommended tool's `checked:` date is older than three months,
 - the project's tech stack changes (new framework, new test runner),
-- §7 negative-space no longer matches what the team believes.
+- §7 negative-space no longer matches what the team believes,
+- a rollout phase's recorded status disagrees with CI.
