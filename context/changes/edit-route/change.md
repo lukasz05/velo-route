@@ -1,7 +1,7 @@
 ---
 change_id: edit-route
 title: Edit saved route
-status: implementing
+status: implemented
 created: 2026-09-08
 updated: 2026-09-08
 archived_at: null

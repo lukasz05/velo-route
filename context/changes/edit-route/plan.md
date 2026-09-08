@@ -296,13 +296,13 @@ No schema change and no migration. The new length limits are validated at the AP
 
 #### Automated
 
-- [x] 3.1 Frontend type-checks
-- [x] 3.2 Frontend lints cleanly
-- [x] 3.3 Frontend tests pass
+- [x] 3.1 Frontend type-checks — 5abbbb0
+- [x] 3.2 Frontend lints cleanly — 5abbbb0
+- [x] 3.3 Frontend tests pass — 5abbbb0
 
 #### Manual
 
-- [x] 3.4 Rename persists across reload and shows in the library list
-- [x] 3.5 Clearing and re-adding tags persists
-- [x] 3.6 Edited name appears on an active public share link
-- [x] 3.7 Blank name shows the validation error and does not persist
+- [x] 3.4 Rename persists across reload and shows in the library list — 5abbbb0
+- [x] 3.5 Clearing and re-adding tags persists — 5abbbb0
+- [x] 3.6 Edited name appears on an active public share link — 5abbbb0
+- [x] 3.7 Blank name shows the validation error and does not persist — 5abbbb0
