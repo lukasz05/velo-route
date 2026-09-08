@@ -25,7 +25,7 @@ function makeRoute(overrides: Partial<RouteResult> = {}): RouteResult {
 describe('RouteInfoPanel', () => {
   it('shows no quality notice when qualityWarning is false', () => {
     render(<RouteInfoPanel route={makeRoute({ qualityWarning: false })} />)
-    expect(screen.queryByRole('status')).not.toBeNull()
+    expect(screen.queryByRole('status')).toBeNull()
   })
 
   it('shows a non-blocking quality notice when qualityWarning is true', () => {
