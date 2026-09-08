@@ -1,10 +1,10 @@
 ---
 change_id: edit-route
 title: Edit saved route
-status: impl_reviewed
+status: archived
 created: 2026-09-08
 updated: 2026-09-08
-archived_at: null
+archived_at: 2026-09-08T12:43:08Z
 ---
 
 ## Notes

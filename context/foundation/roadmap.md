@@ -211,7 +211,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-06 | `account-deletion` | Account deletion — self-serve hard delete of account + all routes (NFR) | shipped | Archived → `context/archive/2026-07-26-account-deletion/` |
 | S-04 | `delete-route` | Delete route — confirmation prompt + hard delete (FR-006) | shipped | Archived → `context/archive/2026-07-18-delete-route/` |
 | S-05 | `public-route-sharing` | Public route sharing — shareable link, live read-through, no login required (FR-009) | shipped | Archived → `context/archive/2026-07-26-public-route-sharing/` |
-| S-08 | `edit-route` | Edit saved route — rename + retag after saving (FR-005) | shipped | Implemented 2026-09-08 → `context/changes/edit-route/`; archive pending. Closed the post-save editing gap S-02 left open |
+| S-08 | `edit-route` | Edit saved route — rename + retag after saving (FR-005) | shipped | Archived → `context/archive/2026-09-08-edit-route/`. Closed the post-save editing gap S-02 left open |
 
 ## Open Roadmap Questions
 
@@ -247,4 +247,5 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-03: authenticated user can view their route library as a flat list sorted by date (no search or filter); open any saved route to see it on an interactive map; and download its GPX file.** — Archived 2026-07-18 → `context/archive/2026-07-18-route-library/`. Lesson: —.
 - **S-04: authenticated user can delete a saved route from their library after confirming a prompt; the deletion is immediate and irreversible (hard delete, no recovery).** — Archived 2026-07-22 → `context/archive/2026-07-18-delete-route/`. Lesson: —.
 - **S-06: authenticated user can permanently delete their account and all associated data (email address + all saved routes) self-serve from account settings, with no support contact required; the deletion is immediate and irreversible.** — Archived 2026-09-08 → `context/archive/2026-07-26-account-deletion/`. Lesson: —.
+- **S-08: authenticated user can rename a saved route and change its tags from the library, after it has been saved; the change persists and is reflected in the library list, the route detail view, and any active public share.** — Archived 2026-09-08 → `context/archive/2026-09-08-edit-route/`. Lesson: —.
 - **S-05: authenticated user can generate a public shareable link for a saved route, and later revoke ("stop sharing") it; anyone with an active link can view the route (live geometry read from the owner's saved route, not a re-generation) on an interactive map, without logging in. The link is tied to the source route's lifetime — deleting the route also removes the share.** — Archived 2026-09-08 → `context/archive/2026-07-26-public-route-sharing/`. Lesson: —.
