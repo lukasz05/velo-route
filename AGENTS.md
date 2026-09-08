@@ -24,7 +24,7 @@ Each project manages its own dependencies independently. See `@.github/copilot-i
 
 - `npm run dev` — dev server at http://localhost:3000
 - `npm run lint` — ESLint via `eslint.config.mjs` (`next/core-web-vitals` + `next/typescript`)
-- `npm test` — Vitest single-run; `npm run coverage` for coverage report
+- `npm test` — Vitest single-run; **must pass before deploy runs in CI**; `npm run coverage` for coverage report
 
 **Backend** (run from `src/backend/`):
 
@@ -49,4 +49,4 @@ Each project manages its own dependencies independently. See `@.github/copilot-i
 
 Conventional Commits: `<type>(<scope>): <subject>` — types `feat|fix|docs|style|refactor|test|chore|perf`, subject ≤50 chars, imperative mood, no period. One logical change per commit.
 
-CI: backend `dotnet test` must pass before Azure App Service deploy triggers. Frontend builds and deploys to Azure Static Web Apps on push to `main`; PRs get a preview environment.
+CI: backend `dotnet test` must pass before Azure App Service deploy triggers. Frontend `npm test` must pass before the Azure Static Web Apps deploy runs; the frontend then builds and deploys on push to `main`, and PRs get a preview environment (a failing test means no preview).

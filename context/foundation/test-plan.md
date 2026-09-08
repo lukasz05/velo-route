@@ -109,14 +109,18 @@ orchestrator updates Status as artifacts appear on disk.
 | 1 | Backend test bootstrap + critical coverage | Bootstrap xUnit; defend Risk #1 + #3 at unit level — the cheapest layer that catches the bugs already known to have shipped | #1, #3 | unit (xUnit) | shipped | context/changes/testing-backend-bootstrap |
 | 2 | Route generation integration | Integration tests prove distance / overlap constraints hold and the deadline fires correctly under slow ORS conditions | #2, #5 | integration (ORS HTTP mock) | shipped | context/changes/route-generation-integration-tests |
 | 3 | Security + privacy guards | Integration tests assert that error responses contain no API key and that logs contain no input coordinates | #4, #6 | integration | shipped | context/changes/security-privacy-guards |
-| 4 | Quality-gates wiring (frontend half) | CI runs `npm test` before the Azure SWA deploy, so the 47 Vitest cases actually gate something | cross-cutting | CI gate (GitHub Actions) | in progress | context/changes/test-plan-refresh-2026-09-08 |
+| 4 | Quality-gates wiring (frontend half) | CI runs `npm test` before the Azure SWA deploy, so the 47 Vitest cases actually gate something | cross-cutting | CI gate (GitHub Actions) | shipped | context/changes/test-plan-refresh-2026-09-08 |
 | 5 | Core anonymous flow end-to-end | Prove generate → map → GPX download survives in a real browser with no session, and add the missing `POST /routes/gpx` endpoint test | #7 | e2e + integration | not started | — |
 | 6 | Config-failure loudness | An absent or misconfigured ORS/Clerk token produces a loud, diagnosable failure rather than a silent one | #8 | integration | not started | — |
 
 **Phase 4 scope note.** The backend half of this phase has been live since 2026-07-01:
 `.github/workflows/backend.yml` runs `dotnet test` on every push and PR touching
 `src/backend/**`, and its `deploy` job carries `needs: test`. Only the frontend half
-remained, which is what this phase now covers.
+remained; it landed 2026-09-08 as a `test` job in
+`.github/workflows/azure-static-web-apps-purple-sky-08f4fb710.yml`, with
+`build_and_deploy_job` carrying `needs: test`. `close_pull_request_job` deliberately does
+**not** take the dependency — closing a PR must not wait on a test run against a branch
+that may already be deleted.
 
 **Phase 5 scope note.** `POST /routes/gpx` (`src/backend/VeloRoute/Program.cs:407`) has no
 test at all, yet the frontend calls it from three places (`RouteInfoPanel.tsx`,

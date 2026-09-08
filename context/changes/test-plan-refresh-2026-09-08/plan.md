@@ -258,26 +258,26 @@ The one operational consequence: after phase 2, a frontend PR with a failing tes
 
 #### Automated
 
-- [x] 1.1 Every hot-spot figure in §1 reproduces from the 90-day git log command
-- [x] 1.2 Every version in §4 matches its manifest
-- [x] 1.3 Frontend case count in §4 matches the grep (47)
-- [x] 1.4 No TODO or TBD remains in §1–§5 (TBD permitted only in §6.5)
-- [x] 1.5 Markdown tables parse — no ragged column counts
+- [x] 1.1 Every hot-spot figure in §1 reproduces from the 90-day git log command — b6658fb
+- [x] 1.2 Every version in §4 matches its manifest — b6658fb
+- [x] 1.3 Frontend case count in §4 matches the grep (47) — b6658fb
+- [x] 1.4 No TODO or TBD remains in §1–§5 (TBD permitted only in §6.5) — b6658fb
+- [x] 1.5 Markdown tables parse — no ragged column counts — b6658fb
 
 #### Manual
 
-- [x] 1.6 Every "Current State Analysis" row now describes the right-hand column
-- [x] 1.7 Risk IDs 1–6 unchanged except risk 2's Source addition
-- [x] 1.8 Phases 5 and 6 read as scoped, openable goals
-- [x] 1.9 §6.4 snippets copied from real test files, not invented
+- [x] 1.6 Every "Current State Analysis" row now describes the right-hand column — b6658fb
+- [x] 1.7 Risk IDs 1–6 unchanged except risk 2's Source addition — b6658fb
+- [x] 1.8 Phases 5 and 6 read as scoped, openable goals — b6658fb
+- [x] 1.9 §6.4 snippets copied from real test files, not invented — b6658fb
 
 ### Phase 2: Frontend CI gate
 
 #### Automated
 
-- [ ] 2.1 Workflow YAML parses and the job graph is valid
-- [ ] 2.2 `npm test` passes locally from `src/frontend/` — 47 cases green
-- [ ] 2.3 `npm ci` succeeds from a clean `node_modules`
+- [x] 2.1 Workflow YAML parses and the job graph is valid
+- [x] 2.2 `npm test` passes locally from `src/frontend/` — 47 cases green
+- [x] 2.3 `npm ci` succeeds from a clean `node_modules`
 
 #### Manual
 
