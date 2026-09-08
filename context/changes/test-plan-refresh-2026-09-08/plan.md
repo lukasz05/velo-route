@@ -275,13 +275,28 @@ The one operational consequence: after phase 2, a frontend PR with a failing tes
 
 #### Automated
 
-- [x] 2.1 Workflow YAML parses and the job graph is valid
-- [x] 2.2 `npm test` passes locally from `src/frontend/` — 47 cases green
-- [x] 2.3 `npm ci` succeeds from a clean `node_modules`
+- [x] 2.1 Workflow YAML parses and the job graph is valid — e310114
+- [x] 2.2 `npm test` passes locally from `src/frontend/` — 47 cases green — e310114
+- [x] 2.3 `npm ci` succeeds from a clean `node_modules` — e310114
 
 #### Manual
 
-- [ ] 2.4 `test` job appears on a frontend PR and deploy waits for it
-- [ ] 2.5 A failing frontend test skips `build_and_deploy_job` — no preview deploys
-- [ ] 2.6 `close_pull_request_job` still runs on PR close
-- [ ] 2.7 Reverting the failure lets deploy proceed normally
+- [x] 2.4 `test` job appears on a frontend PR and deploy waits for it — e310114
+- [x] 2.5 A failing frontend test skips `build_and_deploy_job` — no preview deploys — e310114
+- [x] 2.6 `close_pull_request_job` still runs on PR close — e310114
+- [x] 2.7 Reverting the failure lets deploy proceed normally — e310114
+
+#### Phase 2 CI verification evidence
+
+Run against PR #21 (closed after verification; the two throwaway commits were dropped
+from the branch afterwards, so the net diff is zero):
+
+| Item | Run | Head | Result |
+|---|---|---|---|
+| 2.4 | 34282700196 | e310114 | `Frontend Tests` success 21:50:14 → `Build and Deploy Job` started 21:50:16, success |
+| 2.5 | 34283695813 | e80f4e6 (inverted assertion) | `Frontend Tests` **failure** → `Build and Deploy Job` **skipped**, no preview |
+| 2.7 | 34284003681 | e9b4553 (revert) | both jobs success; deploy completed 22:07:52 |
+| 2.6 | 34284311902 | close event | `Close Pull Request Job` **success** while `Frontend Tests` and deploy were skipped |
+
+2.6 is the decisive one: the close job ran green *while its would-be dependency was
+skipped*. Had it inherited `needs: test`, the skipped dependency would have skipped it too.
