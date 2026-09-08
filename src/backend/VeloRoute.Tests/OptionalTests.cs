@@ -1,4 +1,5 @@
 using System.Text.Json;
+using VeloRoute.Json;
 
 namespace VeloRoute.Tests;
 
@@ -40,6 +41,7 @@ public sealed class OptionalTests
         Assert.True(payload.Name.HasValue);
         Assert.Equal("Ring road", payload.Name.Value);
         Assert.True(payload.Tags.HasValue);
+        Assert.NotNull(payload.Tags.Value);
         Assert.Equal(["scenic"], payload.Tags.Value);
     }
 
@@ -60,5 +62,13 @@ public sealed class OptionalTests
             new Payload(new Optional<string>("Ring road"), new Optional<string[]?>(null)), Options);
 
         Assert.Equal("""{"name":"Ring road","tags":null}""", json);
+    }
+
+    [Fact]
+    public void Write_AbsentValue_Throws()
+    {
+        var payload = new Payload(new Optional<string>("Ring road"), default);
+
+        Assert.Throws<JsonException>(() => JsonSerializer.Serialize(payload, Options));
     }
 }

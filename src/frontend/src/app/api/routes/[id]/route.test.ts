@@ -144,6 +144,42 @@ describe('PATCH /api/routes/[id]', () => {
     expect(res.status).toBe(204);
   });
 
+  it('returns 400 for a malformed body instead of forwarding it to the backend', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const request = new Request('http://localhost/api/routes/11111111-1111-1111-1111-111111111111', {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer test-token' },
+      body: '{not json',
+    });
+
+    const res = await PATCH(request, makeParams('11111111-1111-1111-1111-111111111111'));
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.code).toBe('INVALID_REQUEST');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('treats an empty body as a no-op object so the backend still returns 204', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const request = new Request('http://localhost/api/routes/11111111-1111-1111-1111-111111111111', {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer test-token' },
+    });
+
+    const res = await PATCH(request, makeParams('11111111-1111-1111-1111-111111111111'));
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:5098/routes/11111111-1111-1111-1111-111111111111',
+      expect.objectContaining({ method: 'PATCH', body: '{}' }),
+    );
+    expect(res.status).toBe(204);
+  });
+
   it('relays a 400 from the backend with its error message', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ error: 'Name is required', code: 'INVALID_INPUT' }), { status: 400 }),

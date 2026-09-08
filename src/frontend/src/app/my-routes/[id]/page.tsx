@@ -134,6 +134,10 @@ export default function RouteDetailPage() {
         },
         body: JSON.stringify(payload),
       });
+      if (res.status === 404) {
+        router.replace('/my-routes');
+        return;
+      }
       if (res.status === 400) {
         const body = await res.json() as { error?: string };
         setEditError(body.error ?? 'Please check the name and tags.');

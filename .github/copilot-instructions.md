@@ -27,7 +27,7 @@ Free road-cycling loop-route planner. User enters a start point and km range; th
 ```
 src/
   frontend/   Next.js 15 (React 19, TypeScript, Tailwind v4, App Router)
-  backend/    ASP.NET Core (.NET 10, minimal API) — Program.cs, Routing/, Data/, Migrations/, Auth/
+  backend/    ASP.NET Core (.NET 10, minimal API) — Program.cs, Routing/, Data/, Migrations/, Auth/, Json/
 context/
   foundation/
     frontend/tech-stack.md
@@ -66,7 +66,7 @@ Backend test runner: xUnit 2.9.3, bootstrapped in `src/backend/VeloRoute.Tests/`
 The two projects are independently runnable. In production, the Next.js frontend calls the .NET backend API over HTTP; no shared runtime or in-process communication.
 
 - **Frontend** (`src/frontend/src/app/`): Next.js App Router. All routes are under `src/app/`. Client components are opted in with `"use client"`. `@/app/api/**/route.ts` files proxy to the backend, relaying the Clerk-issued bearer token where the underlying endpoint requires auth.
-- **Backend** (`src/backend/`): .NET 10 minimal API style (`Program.cs`, no controllers folder). OpenAPI/Swagger is registered via `builder.Services.AddOpenApi()` and mapped at `/openapi/v1.json` in development. `Data/` holds EF Core entities + `AppDbContext`; `Migrations/` the generated EF Core migrations; `Auth/` shared auth helpers (e.g. `ClaimsPrincipalExtensions.GetSub()`).
+- **Backend** (`src/backend/`): .NET 10 minimal API style (`Program.cs`, no controllers folder). OpenAPI/Swagger is registered via `builder.Services.AddOpenApi()` and mapped at `/openapi/v1.json` in development. `Data/` holds EF Core entities + `AppDbContext`; `Migrations/` the generated EF Core migrations; `Auth/` shared auth helpers (e.g. `ClaimsPrincipalExtensions.GetSub()`); `Json/` shared JSON converters (e.g. `Optional<T>`, which distinguishes an absent JSON property from an explicit null on PATCH bodies).
 - **Data flow**: frontend → HTTP → backend → OpenRouteService (ORS) HTTP API for route generation (still fully anonymous, nothing persisted). For account-gated features (save/library/delete/share), the backend also validates the Clerk-issued JWT and reads/writes Postgres via EF Core.
 
 ## Workflow conventions

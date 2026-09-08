@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using VeloRoute.Data;
+using VeloRoute.Routing;
 using VeloRoute.Tests.Data;
 
 namespace VeloRoute.Tests.Routing;

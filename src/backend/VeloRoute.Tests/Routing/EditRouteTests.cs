@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using Microsoft.EntityFrameworkCore;
 using VeloRoute.Data;
+using VeloRoute.Routing;
 using VeloRoute.Tests.Data;
 
 namespace VeloRoute.Tests.Routing;
@@ -140,6 +141,7 @@ public sealed class EditRouteTests(PostgresFixture fixture)
 
         var updated = await Reload(route.Id);
         Assert.Equal("Original name", updated.Name);
+        Assert.NotNull(updated.Tags);
         Assert.Equal(["hilly", "gravel"], updated.Tags);
     }
 
@@ -160,7 +162,7 @@ public sealed class EditRouteTests(PostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Patch_TagsEmptyArray_ClearsTags()
+    public async Task Patch_TagsEmptyArray_PersistsEmptyArray()
     {
         await using var factory = new VeloRouteWebApplicationFactory(
             useTestAuth: true, dbConnectionString: fixture.ConnectionString);
@@ -170,8 +172,11 @@ public sealed class EditRouteTests(PostgresFixture fixture)
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
+        // An empty array is stored as an empty array, not collapsed to SQL NULL:
+        // the column distinguishes NULL, {} and populated. Both render as "no tags".
         var updated = await Reload(route.Id);
-        Assert.Empty(updated.Tags!);
+        Assert.NotNull(updated.Tags);
+        Assert.Empty(updated.Tags);
     }
 
     [Fact]
@@ -269,6 +274,24 @@ public sealed class EditRouteTests(PostgresFixture fixture)
 
         var updated = await Reload(route.Id);
         Assert.Equal("Both changed", updated.Name);
+        Assert.NotNull(updated.Tags);
         Assert.Equal(["flat"], updated.Tags);
+    }
+
+    [Fact]
+    public async Task Patch_TagOverMaxLength_Returns400()
+    {
+        await using var factory = new VeloRouteWebApplicationFactory(
+            useTestAuth: true, dbConnectionString: fixture.ConnectionString);
+        var (client, route) = await SeedOwnedRoute(factory);
+
+        var tag = new string('t', RouteMetadataValidation.MaxTagLength + 1);
+        var response = await client.PatchAsync(
+            $"/routes/{route.Id}", JsonBody($$"""{"tags":["{{tag}}"]}"""));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var updated = await Reload(route.Id);
+        Assert.Equal(route.Tags, updated.Tags);
     }
 }

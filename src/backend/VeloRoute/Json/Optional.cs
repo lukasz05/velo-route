@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace VeloRoute;
+namespace VeloRoute.Json;
 
 /// <summary>
 /// Carries the absent / null / value distinction from JSON into a request handler,
@@ -53,6 +53,12 @@ public sealed class OptionalJsonConverterFactory : JsonConverterFactory
 
         public override void Write(Utf8JsonWriter writer, Optional<T> value, JsonSerializerOptions options)
         {
+            // Emitting null for an absent value would read back as an explicit null —
+            // "clear this field" — which is the very collapse Optional<T> exists to prevent.
+            if (!value.HasValue)
+                throw new JsonException(
+                    $"Cannot serialise an absent Optional<{typeof(T).Name}>; it has no value to write.");
+
             if (value.Value is null)
                 writer.WriteNullValue();
             else

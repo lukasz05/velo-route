@@ -29,11 +29,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return Response.json({ error: 'Invalid route id', code: 'INVALID_ID' }, { status: 400 });
   }
 
-  const body = await request.text();
+  const rawBody = await request.text();
+  let body: unknown = {};
+  if (rawBody.trim() !== '') {
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      return Response.json({ error: 'Invalid request body', code: 'INVALID_REQUEST' }, { status: 400 });
+    }
+  }
+
   const res = await proxyFetch(`/routes/${id}`, {
     method: 'PATCH',
     headers: { Authorization: authHeader, 'Content-Type': 'application/json' },
-    body,
+    body: JSON.stringify(body),
   });
   if (!res.ok) return res;
 

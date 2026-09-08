@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
-using VeloRoute;
 using VeloRoute.Auth;
 using VeloRoute.Data;
+using VeloRoute.Json;
 using VeloRoute.Routing;
 using Microsoft.Extensions.Options;
 
@@ -173,7 +173,8 @@ app.MapPost("/routes", async (SaveRouteRequest req, ClaimsPrincipal user, AppDbC
     var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
-    var validationError = RouteMetadataValidation.Validate(req.Name, req.Tags);
+    var validationError = RouteMetadataValidation.Validate(
+        req.Name, req.Tags, out var normalizedName, out var normalizedTags);
     if (validationError is not null)
         return Results.BadRequest(new { error = validationError, code = "INVALID_INPUT" });
 
@@ -183,8 +184,8 @@ app.MapPost("/routes", async (SaveRouteRequest req, ClaimsPrincipal user, AppDbC
     var route = new VeloRoute.Data.Route(
         Id: Guid.NewGuid(),
         UserId: sub,
-        Name: req.Name,
-        Tags: req.Tags,
+        Name: normalizedName,
+        Tags: normalizedTags,
         DistanceKm: req.DistanceKm,
         Geometry: new GeoJsonLineString("LineString", req.Coordinates.Select(c => new[] { c.Longitude, c.Latitude }).ToArray()),
         CreatedAt: DateTimeOffset.UtcNow);
@@ -233,29 +234,39 @@ app.MapPatch("/routes/{id:guid}", async (Guid id, UpdateRouteRequest req, Claims
     var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
-    var route = await db.Routes.SingleOrDefaultAsync(r => r.Id == id && r.UserId == sub, ct);
-    if (route is null)
+    // Only the metadata is needed here — projecting keeps the jsonb geometry column,
+    // which can hold thousands of coordinate pairs, out of the round-trip.
+    var current = await db.Routes
+        .Where(r => r.Id == id && r.UserId == sub)
+        .Select(r => new { r.Name, r.Tags })
+        .SingleOrDefaultAsync(ct);
+    if (current is null)
         return Results.NotFound(new { error = "Route not found", code = "NOT_FOUND" });
 
     if (!req.Name.HasValue && !req.Tags.HasValue)
         return Results.NoContent();
 
-    var name = req.Name.HasValue ? req.Name.Value : route.Name;
-    var tags = req.Tags.HasValue ? req.Tags.Value : route.Tags;
+    var name = req.Name.HasValue ? req.Name.Value : current.Name;
+    var tags = req.Tags.HasValue ? req.Tags.Value : current.Tags;
 
-    var validationError = RouteMetadataValidation.Validate(name, tags);
+    var validationError = RouteMetadataValidation.Validate(
+        name, tags, out var normalizedName, out var normalizedTags);
     if (validationError is not null)
         return Results.BadRequest(new { error = validationError, code = "INVALID_INPUT" });
 
-    // Route is a positional record with init-only properties, so the materialised
-    // entity above cannot be mutated and re-saved through the change tracker.
-    await db.Routes
+    // Route is a positional record with init-only properties, so a materialised
+    // entity cannot be mutated and re-saved through the change tracker.
+    var updated = await db.Routes
         .Where(r => r.Id == id && r.UserId == sub)
         .ExecuteUpdateAsync(setters =>
         {
-            if (req.Name.HasValue) setters.SetProperty(r => r.Name, name!);
-            if (req.Tags.HasValue) setters.SetProperty(r => r.Tags, tags);
+            if (req.Name.HasValue) setters.SetProperty(r => r.Name, normalizedName);
+            if (req.Tags.HasValue) setters.SetProperty(r => r.Tags, normalizedTags);
         }, ct);
+
+    // Zero rows means the route was deleted between the ownership check and the write.
+    if (updated == 0)
+        return Results.NotFound(new { error = "Route not found", code = "NOT_FOUND" });
 
     return Results.NoContent();
 })
