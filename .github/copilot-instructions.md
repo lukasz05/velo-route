@@ -20,7 +20,7 @@
 
 ---
 
-Free road-cycling loop-route planner. User enters a start point and km range; the app returns a loop route on an interactive map with GPX export — no account needed for that core flow. v2 layers on optional accounts (Clerk email magic link) for a personal route library: save, view, delete, and share a route via a public unauthenticated link. Full PRD (current, v2): `context/foundation/prd-v2.md` (`prd.md` is the frozen v1 doc — do not treat it as current scope).
+Free road-cycling loop-route planner. User enters a start point and km range; the app returns a loop route on an interactive map with GPX export — no account needed for that core flow. v2 layers on optional accounts (Clerk email verification code) for a personal route library: save, view, delete, and share a route via a public unauthenticated link. Full PRD (current, v2): `context/foundation/prd-v2.md` (`prd.md` is the frozen v1 doc — do not treat it as current scope).
 
 ## Repository layout
 
@@ -78,7 +78,7 @@ The two projects are independently runnable. In production, the Next.js frontend
 
 **v1 (shipped)**: anonymous start-point search, km range input, single loop-route proposal, interactive map display, GPX export, mobile-responsive UI. Still fully unauthenticated — no v2 feature gates this path.
 
-**v2 done**: Clerk email-magic-link auth (sign up/in/out); save a generated route to a personal library; view the library and open a saved route (map + GPX); delete a saved route; share a saved route via a public unauthenticated link (live read-through, revocable, dies if the route is deleted); account self-serve deletion (Postgres user/routes/shares cascade + Clerk identity removal).
+**v2 done**: Clerk email-verification-code auth (sign up/in/out); save a generated route to a personal library; view the library and open a saved route (map + GPX); delete a saved route; share a saved route via a public unauthenticated link (live read-through, revocable, dies if the route is deleted); account self-serve deletion (Postgres user/routes/shares cascade + Clerk identity removal).
 
 **v2 remaining** (see `context/foundation/roadmap.md` for current status): OSM-driven routing quality improvements (scenic/low-traffic preference, cyclist POIs).
 

@@ -1,6 +1,6 @@
 # VeloRoute
 
-Free road-cycling loop-route planner. Enter a start point and a distance range (km), get a loop route tailored for road bikes — paved roads, low traffic — displayed on an interactive map, with GPX export. Route generation and GPX export need no account; signing in (email magic link) unlocks a personal route library — save, view, delete, and share routes via a public link.
+Free road-cycling loop-route planner. Enter a start point and a distance range (km), get a loop route tailored for road bikes — paved roads, low traffic — displayed on an interactive map, with GPX export. Route generation and GPX export need no account; signing in (email verification code) unlocks a personal route library — save, view, delete, and share routes via a public link.
 
 ## Monorepo layout
 

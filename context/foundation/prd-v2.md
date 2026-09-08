@@ -47,7 +47,7 @@ Pain category: persistence gap (routes lost) + workflow friction (route quality 
 
 ### Primary
 
-A user can create an account via magic link, generate a loop route (start point + km range), save it to their personal library, navigate to their library, and download the GPX from there — without the anonymous route generation or GPX export flows breaking for unauthenticated users.
+A user can create an account via an emailed verification code, generate a loop route (start point + km range), save it to their personal library, navigate to their library, and download the GPX from there — without the anonymous route generation or GPX export flows breaking for unauthenticated users.
 
 ### Secondary
 
@@ -63,12 +63,12 @@ The "My Routes" library page renders within 2 seconds.
 ### US-01: User creates account, saves route, and downloads GPX from library
 
 - **Given** an unauthenticated user on the VeloRoute route planner page
-- **When** they sign up via magic link, generate a loop route, click "Save", navigate to "My Routes", open the saved route, and click "Download GPX"
+- **When** they sign up via an emailed verification code, generate a loop route, click "Save", navigate to "My Routes", open the saved route, and click "Download GPX"
 - **Then** they see the route displayed on an interactive map with its auto-generated name and can download the GPX file — and unauthenticated users on the same site can still generate routes and download GPX without logging in
 
 #### Acceptance Criteria
 
-- Magic link signup and login work end-to-end
+- Email-code signup and login work end-to-end
 - Generated route can be saved with one click; auto-name (date + distance) is applied
 - "My Routes" library shows the saved route in a flat list
 - Opening a saved route shows the interactive map view and a GPX download button
@@ -79,10 +79,20 @@ The "My Routes" library page renders within 2 seconds.
 
 ### Authentication (new)
 
-- [new] User can sign up by entering an email address and receiving a magic link. Priority: must-have.
+> **Superseded 2026-09-08:** the delivery mechanism below changed from magic link to
+> emailed verification code (Clerk `email_code` strategy). Magic links proved fragile
+> against `client_mismatch` — on a Clerk development instance the client is tracked by
+> the `__clerk_db_jwt` dev-browser token, so mail-gateway link prefetch, third-party
+> cookie blocking, or `localhost`/`127.0.0.1` origin drift each break verification. A
+> code carries no client binding and no cross-tab handshake. Passwordless, self-serve,
+> no-password-stored properties are unchanged; only the delivery mechanism differs. The
+> statements below are updated in place; the Socratic notes record the original
+> deliberation as it happened.
+
+- [new] User can sign up by entering an email address and receiving a verification code. Priority: must-have.
   > Socrates: Counter-argument considered: "email delivery failure leaves user unable to create account." Resolution: magic link only; email delivery is a solved infrastructure problem. No fallback auth in v2.
 
-- [new] User can log in to an existing account via magic link; a stale or expired link shows a clear error with a one-click re-send option. Priority: must-have.
+- [new] User can log in to an existing account via an emailed verification code; a stale or expired code shows a clear error with a one-click re-send option. Priority: must-have.
   > Socrates: Counter-argument considered: "stale link produces confusing error with no recovery." Resolution: updated to require clear expiry messaging and re-request flow as part of the capability.
 
 - [new] Authenticated user can log out. Priority: must-have.
@@ -159,7 +169,7 @@ v1: no authentication. All routes generated anonymously. Anonymous generation is
 
 v2 adds:
 
-- Magic link (passwordless email): user enters email address, receives a time-limited login link. No password stored.
+- Email verification code (passwordless): user enters an email address, receives a time-limited one-time code. No password stored. (Superseded 2026-09-08 — was a magic link; see the note under Scope of Change → Authentication.)
 - Self-serve signup: providing an email address is the full signup flow. No admin approval.
 - Flat user model: all authenticated users have identical capabilities (save, name/tag, delete, share routes). No admin role in v2.
 - Unauthenticated users retain full access to route generation and GPX export. Authentication is required only to save routes to the library and to share routes publicly.

@@ -17,13 +17,13 @@ top_blocker: none
 
 ## Vision recap
 
-VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GPX — no account required. Two gaps remain: routes vanish when the session ends (no persistence), and the routing algorithm doesn't leverage OSM scenic or low-traffic road tags or route near cyclist POIs (cafes, water, rest stops). v2 closes both: a personal route library tied to a magic-link account, and an improved algorithm that draws on OSM data. Anonymous route generation is preserved without login.
+VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GPX — no account required. Two gaps remain: routes vanish when the session ends (no persistence), and the routing algorithm doesn't leverage OSM scenic or low-traffic road tags or route near cyclist POIs (cafes, water, rest stops). v2 closes both: a personal route library tied to a passwordless email-code account, and an improved algorithm that draws on OSM data. Anonymous route generation is preserved without login.
 
 ## North star
 
 **S-03: route-library** — the smallest complete proof that the core v2 loop works.
 
-> "North star" here means the smallest end-to-end slice whose successful delivery proves the core product hypothesis — placed as early as its Prerequisites allow because everything else only matters if this works. The v2 hypothesis is that authenticated users will save routes and access them from a personal library. Nothing is validated until the full cycle is closed: sign up via magic link → save a generated route → navigate to My Routes → open the saved route → download GPX.
+> "North star" here means the smallest end-to-end slice whose successful delivery proves the core product hypothesis — placed as early as its Prerequisites allow because everything else only matters if this works. The v2 hypothesis is that authenticated users will save routes and access them from a personal library. Nothing is validated until the full cycle is closed: sign up via emailed verification code → save a generated route → navigate to My Routes → open the saved route → download GPX.
 
 ## At a glance
 
@@ -109,15 +109,15 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-01: Magic link auth
 
-- **Outcome:** user can sign up by entering their email address and receiving a magic link; log in to an existing account by clicking the link, with a clear expiry error message and one-click re-send option; and log out.
+- **Outcome:** user can sign up by entering their email address and receiving a magic link; log in to an existing account by clicking the link, with a clear expiry error message and one-click re-send option; and log out. (As shipped 2026-07-15; the link was replaced by an emailed code on 2026-09-08 — see Unknowns below.)
 - **Change ID:** `magic-link-auth`
 - **PRD refs:** FR-001, FR-002, FR-003, US-01
 - **Prerequisites:** F-01, F-02
 - **Parallel with:** —
 - **Blockers:** —
 - **Unknowns:**
-  - ~~Email code (OTP) vs magic link?~~ — **Resolved 2026-07-15:** magic link (Clerk `email_link` strategy), prebuilt components in modal mode. Matches the change-id and the PRD's Access Control section; the roadmap's earlier "6-digit one-time code" wording was an unresolved carry-over from F-01 planning and has been corrected here.
-  - Link expiry window — Clerk default expiry is provider-configured; confirm exact value in Clerk dashboard during implementation. Block: no.
+  - ~~Email code (OTP) vs magic link?~~ — **Resolved 2026-07-15:** magic link (Clerk `email_link` strategy), prebuilt components in modal mode. Matches the change-id and the PRD's Access Control section; the roadmap's earlier "6-digit one-time code" wording was an unresolved carry-over from F-01 planning and has been corrected here. **Superseded 2026-09-08:** switched to email code (Clerk `email_code` strategy) after repeated `client_mismatch` failures — a development instance tracks the client via the `__clerk_db_jwt` dev-browser token, which link prefetch by a mail gateway, third-party cookie blocking, and `localhost`/`127.0.0.1` origin drift each defeat. Dashboard-only change; `openSignIn()` renders whatever the instance is configured for, so no code moved. The `magic-link-auth` change-id and this slice's shipped record are left as historical fact.
+  - Code expiry window — Clerk default expiry is provider-configured; confirm exact value in Clerk dashboard during implementation. Block: no.
 - **Risk:** Email delivery reliability is a dependency outside the app's control; deliverability must be verified with Clerk's free-tier email sending limits before shipping.
 - **Status:** done
 
