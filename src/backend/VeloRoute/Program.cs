@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Npgsql;
+using VeloRoute;
 using VeloRoute.Auth;
 using VeloRoute.Data;
 using VeloRoute.Routing;
@@ -169,8 +170,9 @@ app.MapPost("/routes", async (SaveRouteRequest req, ClaimsPrincipal user, AppDbC
     var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
-    if (string.IsNullOrWhiteSpace(req.Name))
-        return Results.BadRequest(new { error = "Name is required", code = "INVALID_INPUT" });
+    var validationError = RouteMetadataValidation.Validate(req.Name, req.Tags);
+    if (validationError is not null)
+        return Results.BadRequest(new { error = validationError, code = "INVALID_INPUT" });
 
     if (req.Coordinates is null || req.Coordinates.Count < 2)
         return Results.BadRequest(new { error = "At least 2 coordinates are required", code = "INVALID_INPUT" });
