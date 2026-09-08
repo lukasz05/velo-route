@@ -1,9 +1,9 @@
 ---
 project: "VeloRoute"
 version: 2
-status: draft
+status: active
 created: 2026-07-04
-updated: 2026-09-07
+updated: 2026-09-08
 prd_version: 2
 main_goal: quality
 top_blocker: none
@@ -29,7 +29,7 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 
 | ID | Change ID | Outcome (user can …) | Prerequisites | PRD refs | Status |
 |---|---|---|---|---|---|
-| F-01 | `auth-provider-scaffold` | (foundation) Microsoft Entra External ID wired; OIDC/MSAL in Next.js; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected | — | FR-001, FR-002, FR-003, FR-012, FR-013, Access Control | done |
+| F-01 | `auth-provider-scaffold` | (foundation) Clerk wired with email OTP; `@clerk/nextjs` in Next.js App Router; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected | — | FR-001, FR-002, FR-003, FR-012, FR-013, Access Control | done |
 | F-02 | `data-layer-schema` | (foundation) Azure Database for PostgreSQL Flexible Server deployed; users + routes schema + migrations; DB client wired to backend | — | FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, NFR (account deletion) | done |
 | S-07 | `routing-quality-osm` | generate routes that prefer OSM scenic/low-traffic roads and pass near cyclist POIs (cafes, water, rest stops) — best-effort; distance constraint always wins | — | FR-010, FR-011, FR-012, FR-013 | parked |
 | S-01 | `magic-link-auth` | sign up by entering an email (receive a magic link), log in via the link with a clear expiry error message and one-click re-send option, and log out | F-01, F-02 | FR-001, FR-002, FR-003, US-01 | done |
@@ -122,7 +122,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-02: Save route
 
-- **Outcome:** authenticated user can save a generated route to their personal library with one click; the route is auto-named with date + distance (e.g. "2026-07-04 • 42 km"); the user can optionally edit the name and optionally add tags before or after saving.
+- **Outcome:** authenticated user can save a generated route to their personal library with one click; the route is auto-named with date + distance (e.g. "2026-07-04 • 42 km"); the user can optionally edit the name and optionally add tags before saving. (Editing a route's name or tags *after* it is saved was in the original outcome text but never shipped — no update endpoint exists.)
 - **Change ID:** `save-route`
 - **PRD refs:** FR-004, FR-005, US-01
 - **Prerequisites:** S-01
@@ -188,14 +188,15 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 | Roadmap ID | Change ID | Suggested issue title | Ready for `/10x-plan` | Notes |
 |---|---|---|---|---|
-| F-01 | `auth-provider-scaffold` | Auth provider scaffold — Clerk + email OTP + .NET JWT middleware | yes | Run `/10x-plan auth-provider-scaffold`; provider decided: Clerk (superseded Entra External ID 2026-07-07, Azure region policy blocker) |
-| F-02 | `data-layer-schema` | Data layer — Azure Postgres schema + EF Core migrations (users + routes) | yes | Run `/10x-plan data-layer-schema`; host decided: Azure Database for PostgreSQL Flexible Server |
+| F-01 | `auth-provider-scaffold` | Auth provider scaffold — Clerk + email OTP + .NET JWT middleware | shipped | Archived → `context/archive/2026-07-04-auth-provider-scaffold/` |
+| F-02 | `data-layer-schema` | Data layer — Azure Postgres schema + EF Core migrations (users + routes) | shipped | Archived → `context/archive/2026-07-10-data-layer-schema/` |
 | S-07 | `routing-quality-osm` | Routing quality — OSM scenic/low-traffic preference + cyclist POI proximity | no | Parked 2026-08-05 — public Overpass API unreliable; needs a data-source decision (multi-mirror, self-host, or ORS-only) before re-planning, see S-07 Unknowns |
-| S-01 | `magic-link-auth` | Magic link auth — signup, login, logout (FR-001–FR-003) | yes | Run `/10x-plan magic-link-auth`; F-01 + F-02 done, unblocked |
-| S-02 | `save-route` | Save route to personal library — one-click, auto-name, optional tags (FR-004–FR-005) | yes | Run `/10x-plan save-route`; S-01 done, unblocked |
-| S-06 | `account-deletion` | Account deletion — self-serve hard delete of account + all routes (NFR) | yes | Run `/10x-plan account-deletion`; S-01 + F-02 done, unblocked; parallel with S-02 |
-| S-04 | `delete-route` | Delete route — confirmation prompt + hard delete (FR-006) | yes | Run `/10x-plan delete-route`; S-02 done, unblocked; parallel with S-05 |
-| S-05 | `public-route-sharing` | Public route sharing — shareable link, snapshot, no login required (FR-009) | yes | Run `/10x-plan public-route-sharing`; S-02 done, unblocked; parallel with S-04 |
+| S-01 | `magic-link-auth` | Magic link auth — signup, login, logout (FR-001–FR-003) | shipped | Archived → `context/archive/2026-07-15-magic-link-auth/` |
+| S-02 | `save-route` | Save route to personal library — one-click, auto-name, optional tags (FR-004–FR-005) | shipped | Archived → `context/archive/2026-07-18-save-route/`. Post-save name/tag editing was in the outcome text but never shipped |
+| S-03 | `route-library` | Route library — flat list, open on map, GPX download (FR-007–FR-008) | shipped | Archived → `context/archive/2026-07-18-route-library/` |
+| S-06 | `account-deletion` | Account deletion — self-serve hard delete of account + all routes (NFR) | shipped | Archived → `context/archive/2026-07-26-account-deletion/` |
+| S-04 | `delete-route` | Delete route — confirmation prompt + hard delete (FR-006) | shipped | Archived → `context/archive/2026-07-18-delete-route/` |
+| S-05 | `public-route-sharing` | Public route sharing — shareable link, live read-through, no login required (FR-009) | shipped | Archived → `context/archive/2026-07-26-public-route-sharing/` |
 
 ## Open Roadmap Questions
 
@@ -224,10 +225,10 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Done
 
-- **F-01: (foundation) Microsoft Entra External ID wired; OIDC/MSAL in Next.js; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected** — Archived 2026-07-10 → `context/archive/2026-07-04-auth-provider-scaffold/`. Lesson: —.
+- **F-01: (foundation) Clerk wired with email OTP; `@clerk/nextjs` in Next.js App Router; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected** — Archived 2026-07-10 → `context/archive/2026-07-04-auth-provider-scaffold/`. Lesson: Entra External ID was the 2026-07-04 decision; the "Azure for Students" region policy blocked CIAM tenant creation and forced the switch to Clerk on 2026-07-07 — verify provider tenant provisioning against the actual subscription before committing a foundation slice to it.
 - **F-02: (foundation) Postgres DB deployed and reachable from the .NET backend; schema with `users` and `routes` tables plus migrations; DB client wired and connection-tested; account hard-delete cascade configured (deleting a user row removes all associated route rows).** — Archived 2026-07-11 → `context/archive/2026-07-10-data-layer-schema/`. Lesson: —.
 - **S-01: user can sign up by entering their email address and receiving a magic link; log in to an existing account by clicking the link, with a clear expiry error message and one-click re-send option; and log out.** — Archived 2026-07-18 → `context/archive/2026-07-15-magic-link-auth/`. Lesson: —.
-- **S-02: authenticated user can save a generated route to their personal library with one click; the route is auto-named with date + distance (e.g. "2026-07-04 • 42 km"); the user can optionally edit the name and optionally add tags before or after saving.** — Archived 2026-07-18 → `context/archive/2026-07-18-save-route/`. Lesson: —.
+- **S-02: authenticated user can save a generated route to their personal library with one click; the route is auto-named with date + distance (e.g. "2026-07-04 • 42 km"); the user can optionally edit the name and optionally add tags before saving. (Editing a route's name or tags *after* it is saved was in the original outcome text but never shipped — no update endpoint exists.)** — Archived 2026-07-18 → `context/archive/2026-07-18-save-route/`. Lesson: —.
 - **S-03: authenticated user can view their route library as a flat list sorted by date (no search or filter); open any saved route to see it on an interactive map; and download its GPX file.** — Archived 2026-07-18 → `context/archive/2026-07-18-route-library/`. Lesson: —.
 - **S-04: authenticated user can delete a saved route from their library after confirming a prompt; the deletion is immediate and irreversible (hard delete, no recovery).** — Archived 2026-07-22 → `context/archive/2026-07-18-delete-route/`. Lesson: —.
 - **S-06: authenticated user can permanently delete their account and all associated data (email address + all saved routes) self-serve from account settings, with no support contact required; the deletion is immediate and irreversible.** — Archived 2026-09-08 → `context/archive/2026-07-26-account-deletion/`. Lesson: —.
