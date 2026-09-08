@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { GET, DELETE } from './route';
+import { GET, PATCH, DELETE } from './route';
 
 function makeParams(id: string) {
   return { params: Promise.resolve({ id }) };
@@ -74,6 +74,112 @@ describe('GET /api/routes/[id]', () => {
     const body = await res.json();
     expect(body.code).toBe('INVALID_ID');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('PATCH /api/routes/[id]', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns 401 when Authorization header is missing', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const request = new Request('http://localhost/api/routes/11111111-1111-1111-1111-111111111111', {
+      method: 'PATCH',
+      body: JSON.stringify({ name: 'Renamed' }),
+    });
+
+    const res = await PATCH(request, makeParams('11111111-1111-1111-1111-111111111111'));
+
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.code).toBe('UNAUTHORIZED');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 for a malformed id instead of forwarding it to the backend', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const request = new Request('http://localhost/api/routes/not-a-guid', {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer test-token' },
+      body: JSON.stringify({ name: 'Renamed' }),
+    });
+
+    const res = await PATCH(request, makeParams('not-a-guid'));
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.code).toBe('INVALID_ID');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('forwards PATCH with the Authorization header and JSON body, relaying a 204', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const request = new Request('http://localhost/api/routes/11111111-1111-1111-1111-111111111111', {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer test-token', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Renamed', tags: ['scenic'] }),
+    });
+
+    const res = await PATCH(request, makeParams('11111111-1111-1111-1111-111111111111'));
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:5098/routes/11111111-1111-1111-1111-111111111111',
+      expect.objectContaining({
+        method: 'PATCH',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer test-token',
+          'Content-Type': 'application/json',
+        }),
+        body: JSON.stringify({ name: 'Renamed', tags: ['scenic'] }),
+      }),
+    );
+    expect(res.status).toBe(204);
+  });
+
+  it('relays a 400 from the backend with its error message', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: 'Name is required', code: 'INVALID_INPUT' }), { status: 400 }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const request = new Request('http://localhost/api/routes/11111111-1111-1111-1111-111111111111', {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer test-token' },
+      body: JSON.stringify({ name: '  ' }),
+    });
+
+    const res = await PATCH(request, makeParams('11111111-1111-1111-1111-111111111111'));
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toEqual({ error: 'Name is required', code: 'INVALID_INPUT' });
+  });
+
+  it('relays a 404 from the backend', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: 'Route not found', code: 'NOT_FOUND' }), { status: 404 }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const request = new Request('http://localhost/api/routes/22222222-2222-2222-2222-222222222222', {
+      method: 'PATCH',
+      headers: { Authorization: 'Bearer test-token' },
+      body: JSON.stringify({ name: 'Renamed' }),
+    });
+
+    const res = await PATCH(request, makeParams('22222222-2222-2222-2222-222222222222'));
+
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body).toEqual({ error: 'Route not found', code: 'NOT_FOUND' });
   });
 });
 

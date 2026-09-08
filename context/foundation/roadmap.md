@@ -38,7 +38,7 @@ VeloRoute v1 lets anonymous cyclists generate a loop route and download it as GP
 | S-03 | `route-library` | view My Routes as a flat list sorted by date, open a saved route on an interactive map, and download its GPX | S-02 | FR-007, FR-008, US-01 | done |
 | S-04 | `delete-route` | delete a saved route after confirming a prompt (hard delete, no recovery) | S-02 | FR-006 | done |
 | S-05 | `public-route-sharing` | share a saved route via a public link viewable without login; link is a live read-through to the owner's saved route (not a snapshot) and dies if the route is deleted or unshared | S-02 | FR-009 | done |
-| S-08 | `edit-route` | rename a saved route and change its tags after saving, from the library | S-02, S-03 | FR-005 | planned |
+| S-08 | `edit-route` | rename a saved route and change its tags after saving, from the library | S-02, S-03 | FR-005 | done |
 
 ## Streams
 
@@ -123,7 +123,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ### S-02: Save route
 
-- **Outcome:** authenticated user can save a generated route to their personal library with one click; the route is auto-named with date + distance (e.g. "2026-07-04 • 42 km"); the user can optionally edit the name and optionally add tags before saving. (Editing a route's name or tags *after* it is saved was in the original outcome text but never shipped — no update endpoint exists. Tracked as S-08.)
+- **Outcome:** authenticated user can save a generated route to their personal library with one click; the route is auto-named with date + distance (e.g. "2026-07-04 • 42 km"); the user can optionally edit the name and optionally add tags before saving. (Editing a route's name or tags *after* it is saved was in the original outcome text but shipped separately as S-08 on 2026-09-08 via `PATCH /routes/{id}`.)
 - **Change ID:** `save-route`
 - **PRD refs:** FR-004, FR-005, US-01
 - **Prerequisites:** S-01
@@ -194,9 +194,9 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-04, S-05
 - **Blockers:** —
 - **Unknowns:**
-  - Whether editing is inline in the library list or on the route detail view. Both are cheap; pick during planning based on where the existing delete affordance lives.
+  - ~~Whether editing is inline in the library list or on the route detail view.~~ — **Resolved 2026-09-08 (planning):** route detail view only, alongside the existing delete/share affordances; the library list gets no edit control.
 - **Risk:** Low. The write path mirrors the existing owner-scoped `DELETE /routes/{id}` — same auth check, same 404-on-foreign-id semantics, no cascade or share-lifetime interaction (a share reads the route live, so an edit propagates for free). The one thing to get right is that a foreign `PATCH` returns 404 rather than 403, matching delete, so the endpoint doesn't leak which ids exist.
-- **Status:** planned
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -206,12 +206,12 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | F-02 | `data-layer-schema` | Data layer — Azure Postgres schema + EF Core migrations (users + routes) | shipped | Archived → `context/archive/2026-07-10-data-layer-schema/` |
 | S-07 | `routing-quality-osm` | Routing quality — OSM scenic/low-traffic preference + cyclist POI proximity | no | Parked 2026-08-05 — public Overpass API unreliable; needs a data-source decision (multi-mirror, self-host, or ORS-only) before re-planning, see S-07 Unknowns |
 | S-01 | `magic-link-auth` | Magic link auth — signup, login, logout (FR-001–FR-003) | shipped | Archived → `context/archive/2026-07-15-magic-link-auth/` |
-| S-02 | `save-route` | Save route to personal library — one-click, auto-name, optional tags (FR-004–FR-005) | shipped | Archived → `context/archive/2026-07-18-save-route/`. Post-save name/tag editing was in the outcome text but never shipped |
+| S-02 | `save-route` | Save route to personal library — one-click, auto-name, optional tags (FR-004–FR-005) | shipped | Archived → `context/archive/2026-07-18-save-route/`. Post-save name/tag editing was in the outcome text but shipped later, in S-08 |
 | S-03 | `route-library` | Route library — flat list, open on map, GPX download (FR-007–FR-008) | shipped | Archived → `context/archive/2026-07-18-route-library/` |
 | S-06 | `account-deletion` | Account deletion — self-serve hard delete of account + all routes (NFR) | shipped | Archived → `context/archive/2026-07-26-account-deletion/` |
 | S-04 | `delete-route` | Delete route — confirmation prompt + hard delete (FR-006) | shipped | Archived → `context/archive/2026-07-18-delete-route/` |
 | S-05 | `public-route-sharing` | Public route sharing — shareable link, live read-through, no login required (FR-009) | shipped | Archived → `context/archive/2026-07-26-public-route-sharing/` |
-| S-08 | `edit-route` | Edit saved route — rename + retag after saving (FR-005) | yes | Run `/10x-plan edit-route`; S-02 + S-03 done, unblocked. Closes the post-save editing gap S-02 left open |
+| S-08 | `edit-route` | Edit saved route — rename + retag after saving (FR-005) | shipped | Implemented 2026-09-08 → `context/changes/edit-route/`; archive pending. Closed the post-save editing gap S-02 left open |
 
 ## Open Roadmap Questions
 
@@ -243,7 +243,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **F-01: (foundation) Clerk wired with email OTP; `@clerk/nextjs` in Next.js App Router; JWT validation via JWKS in .NET backend; auth middleware configured so anonymous route endpoints stay unprotected** — Archived 2026-07-10 → `context/archive/2026-07-04-auth-provider-scaffold/`. Lesson: Entra External ID was the 2026-07-04 decision; the "Azure for Students" region policy blocked CIAM tenant creation and forced the switch to Clerk on 2026-07-07 — verify provider tenant provisioning against the actual subscription before committing a foundation slice to it.
 - **F-02: (foundation) Postgres DB deployed and reachable from the .NET backend; schema with `users` and `routes` tables plus migrations; DB client wired and connection-tested; account hard-delete cascade configured (deleting a user row removes all associated route rows).** — Archived 2026-07-11 → `context/archive/2026-07-10-data-layer-schema/`. Lesson: —.
 - **S-01: user can sign up by entering their email address and receiving a magic link; log in to an existing account by clicking the link, with a clear expiry error message and one-click re-send option; and log out.** — Archived 2026-07-18 → `context/archive/2026-07-15-magic-link-auth/`. Lesson: —.
-- **S-02: authenticated user can save a generated route to their personal library with one click; the route is auto-named with date + distance (e.g. "2026-07-04 • 42 km"); the user can optionally edit the name and optionally add tags before saving. (Editing a route's name or tags *after* it is saved was in the original outcome text but never shipped — no update endpoint exists. Tracked as S-08.)** — Archived 2026-07-18 → `context/archive/2026-07-18-save-route/`. Lesson: —.
+- **S-02: authenticated user can save a generated route to their personal library with one click; the route is auto-named with date + distance (e.g. "2026-07-04 • 42 km"); the user can optionally edit the name and optionally add tags before saving. (Editing a route's name or tags *after* it is saved was in the original outcome text but shipped separately as S-08 on 2026-09-08 via `PATCH /routes/{id}`.)** — Archived 2026-07-18 → `context/archive/2026-07-18-save-route/`. Lesson: —.
 - **S-03: authenticated user can view their route library as a flat list sorted by date (no search or filter); open any saved route to see it on an interactive map; and download its GPX file.** — Archived 2026-07-18 → `context/archive/2026-07-18-route-library/`. Lesson: —.
 - **S-04: authenticated user can delete a saved route from their library after confirming a prompt; the deletion is immediate and irreversible (hard delete, no recovery).** — Archived 2026-07-22 → `context/archive/2026-07-18-delete-route/`. Lesson: —.
 - **S-06: authenticated user can permanently delete their account and all associated data (email address + all saved routes) self-serve from account settings, with no support contact required; the deletion is immediate and irreversible.** — Archived 2026-09-08 → `context/archive/2026-07-26-account-deletion/`. Lesson: —.

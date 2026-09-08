@@ -283,26 +283,26 @@ No schema change and no migration. The new length limits are validated at the AP
 
 #### Automated
 
-- [x] 2.1 Backend builds cleanly
-- [x] 2.2 New endpoint tests pass
-- [x] 2.3 Full backend suite passes
+- [x] 2.1 Backend builds cleanly — 320078c
+- [x] 2.2 New endpoint tests pass — 320078c
+- [x] 2.3 Full backend suite passes — 320078c
 
 #### Manual
 
-- [x] 2.4 curl PATCH partial semantics verified (name-only, tags-null)
-- [x] 2.5 PATCH against another user's route returns 404, not 403
+- [x] 2.4 curl PATCH partial semantics verified (name-only, tags-null) — 320078c
+- [x] 2.5 PATCH against another user's route returns 404, not 403 — 320078c
 
 ### Phase 3: Frontend edit surface
 
 #### Automated
 
-- [ ] 3.1 Frontend type-checks
-- [ ] 3.2 Frontend lints cleanly
-- [ ] 3.3 Frontend tests pass
+- [x] 3.1 Frontend type-checks
+- [x] 3.2 Frontend lints cleanly
+- [x] 3.3 Frontend tests pass
 
 #### Manual
 
-- [ ] 3.4 Rename persists across reload and shows in the library list
-- [ ] 3.5 Clearing and re-adding tags persists
-- [ ] 3.6 Edited name appears on an active public share link
-- [ ] 3.7 Blank name shows the validation error and does not persist
+- [x] 3.4 Rename persists across reload and shows in the library list
+- [x] 3.5 Clearing and re-adding tags persists
+- [x] 3.6 Edited name appears on an active public share link
+- [x] 3.7 Blank name shows the validation error and does not persist

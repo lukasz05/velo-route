@@ -5,8 +5,9 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth, useClerk, useUser } from '@clerk/nextjs';
-import type { SavedRouteDetail } from '@/types/route';
+import type { SavedRouteDetail, UpdateRoutePayload } from '@/types/route';
 import ConfirmModal from '@/components/ConfirmModal';
+import { formatTags, parseTags } from '@/lib/tags';
 
 const RouteMap = dynamic(() => import('@/components/RouteMap'), { ssr: false });
 
@@ -34,6 +35,11 @@ export default function RouteDetailPage() {
   const [isSharing, setIsSharing] = useState(false);
   const [shareError, setShareError] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -93,6 +99,53 @@ export default function RouteDetailPage() {
       setDownloadError('GPX export failed. Please try again.');
     } finally {
       setIsDownloading(false);
+    }
+  }
+
+  function handleStartEdit() {
+    if (!route) return;
+    setEditName(route.name);
+    setEditTags(formatTags(route.tags));
+    setEditError(null);
+    setIsEditing(true);
+  }
+
+  function handleCancelEdit() {
+    if (route) {
+      setEditName(route.name);
+      setEditTags(formatTags(route.tags));
+    }
+    setEditError(null);
+    setIsEditing(false);
+  }
+
+  async function handleSaveEdit() {
+    if (!route) return;
+    setIsSaving(true);
+    setEditError(null);
+    try {
+      const token = await getToken();
+      const payload: UpdateRoutePayload = { name: editName, tags: parseTags(editTags) };
+      const res = await fetch(`/api/routes/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      if (res.status === 400) {
+        const body = await res.json() as { error?: string };
+        setEditError(body.error ?? 'Please check the name and tags.');
+        return;
+      }
+      if (!res.ok) throw new Error(`Update failed: ${res.status}`);
+      setRoute({ ...route, name: editName, tags: payload.tags ?? null });
+      setIsEditing(false);
+    } catch {
+      setEditError('Could not save changes. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -207,6 +260,57 @@ export default function RouteDetailPage() {
         <p className="text-2xl font-semibold text-zinc-900">{route.distanceKm.toFixed(1)} km</p>
         {route.tags && route.tags.length > 0 && (
           <p className="text-sm text-zinc-500">Tags: {route.tags.join(', ')}</p>
+        )}
+        {isEditing ? (
+          <div className="mt-3 flex flex-col gap-2">
+            <label className="block text-sm text-zinc-500" htmlFor="edit-route-name">
+              Name
+            </label>
+            <input
+              id="edit-route-name"
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
+            />
+            <label className="block text-sm text-zinc-500" htmlFor="edit-route-tags">
+              Tags
+            </label>
+            <input
+              id="edit-route-tags"
+              type="text"
+              placeholder="scenic, hilly"
+              value={editTags}
+              onChange={(e) => setEditTags(e.target.value)}
+              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-900"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveEdit}
+                disabled={isSaving}
+                className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isSaving ? 'Saving…' : 'Save'}
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                disabled={isSaving}
+                className="rounded-md px-3 py-2 text-sm font-medium text-zinc-600 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={handleStartEdit}
+            className="mt-3 self-start rounded-md px-2 py-1 text-sm font-medium text-blue-600 hover:bg-blue-50"
+          >
+            Edit
+          </button>
+        )}
+        {editError && (
+          <p className="mt-2 text-sm text-red-600">{editError}</p>
         )}
         <button
           onClick={handleDownload}
