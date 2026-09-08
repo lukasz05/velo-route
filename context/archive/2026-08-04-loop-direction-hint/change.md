@@ -1,10 +1,10 @@
 ---
 change_id: loop-direction-hint
 title: User-facing direction/destination hint for loop route generation
-status: preparing
+status: archived
 created: 2026-08-04
-updated: 2026-08-04
-archived_at: null
+updated: 2026-09-09
+archived_at: 2026-09-08T22:25:20Z
 ---
 
 ## Notes
