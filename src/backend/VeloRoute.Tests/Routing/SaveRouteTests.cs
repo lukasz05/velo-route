@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using VeloRoute.Data;
+using VeloRoute.Routing;
 using VeloRoute.Tests.Data;
 
 namespace VeloRoute.Tests.Routing;
@@ -17,6 +19,34 @@ public sealed class SaveRouteTests(PostgresFixture fixture)
 
     private static StringContent JsonBody(string json) =>
         new(json, System.Text.Encoding.UTF8, "application/json");
+
+    private static string BodyWith(string name, string[]? tags) =>
+        $$"""
+          {"name":{{JsonSerializer.Serialize(name)}},"tags":{{JsonSerializer.Serialize(tags)}},"distanceKm":12.3,"coordinates":[{"longitude":16.37,"latitude":48.20},{"longitude":16.38,"latitude":48.21}]}
+          """;
+
+    /// <summary>
+    /// Posts as a freshly seeded user, so requests that get far enough to insert a
+    /// route satisfy the Routes → Users foreign key.
+    /// </summary>
+    private async Task<HttpResponseMessage> PostAsAuthenticatedUser(string body)
+    {
+        await using var factory = new VeloRouteWebApplicationFactory(
+            useTestAuth: true, dbConnectionString: fixture.ConnectionString);
+        var client = factory.CreateClient();
+        var sub = Guid.NewGuid().ToString();
+
+        await using (var seedContext = NewContext())
+        {
+            seedContext.Users.Add(new User(sub, DateTimeOffset.UtcNow));
+            await seedContext.SaveChangesAsync();
+        }
+
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", TestJwtFactory.CreateToken(sub));
+
+        return await client.PostAsync("/routes", JsonBody(body));
+    }
 
     [Fact]
     public async Task Save_NoToken_Returns401()
@@ -60,6 +90,55 @@ public sealed class SaveRouteTests(PostgresFixture fixture)
         var response = await client.PostAsync("/routes", JsonBody(body));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Save_NameOverMaxLength_Returns400()
+    {
+        var name = new string('n', RouteMetadataValidation.MaxNameLength + 1);
+        var response = await PostAsAuthenticatedUser(BodyWith(name, tags: null));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Save_TooManyTags_Returns400()
+    {
+        var tags = Enumerable.Range(0, RouteMetadataValidation.MaxTagCount + 1)
+            .Select(i => $"tag{i}")
+            .ToArray();
+        var response = await PostAsAuthenticatedUser(BodyWith("Test route", tags));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Save_TagOverMaxLength_Returns400()
+    {
+        var tags = new[] { new string('t', RouteMetadataValidation.MaxTagLength + 1) };
+        var response = await PostAsAuthenticatedUser(BodyWith("Test route", tags));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Save_BlankTag_Returns400()
+    {
+        var response = await PostAsAuthenticatedUser(BodyWith("Test route", [" "]));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Save_ValuesExactlyAtLimits_Returns201()
+    {
+        var name = new string('n', RouteMetadataValidation.MaxNameLength);
+        var tags = Enumerable.Range(0, RouteMetadataValidation.MaxTagCount)
+            .Select(_ => new string('t', RouteMetadataValidation.MaxTagLength))
+            .ToArray();
+        var response = await PostAsAuthenticatedUser(BodyWith(name, tags));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
     [Fact]

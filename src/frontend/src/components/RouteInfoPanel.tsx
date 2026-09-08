@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth, useUser } from '@clerk/nextjs';
 import type { RouteResult } from '@/types/route';
+import { parseTags } from '@/lib/tags';
 
 function formatTimestamp(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -50,7 +51,7 @@ export default function RouteInfoPanel({ route }: { route: RouteResult }) {
         },
         body: JSON.stringify({
           name,
-          tags: tags.split(',').map((t) => t.trim()).filter(Boolean) || undefined,
+          tags: parseTags(tags),
           distanceKm: route.distanceMeters / 1000,
           coordinates: route.geometry.coordinates,
         }),

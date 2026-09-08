@@ -56,6 +56,12 @@ export interface SavedRouteDetail {
   shareToken: string | null;
 }
 
+/** Absent keys mirror the backend's absent-means-leave-alone PATCH semantics. */
+export interface UpdateRoutePayload {
+  name?: string;
+  tags?: string[] | null;
+}
+
 export class RouteGenerationError extends Error {
   constructor(public readonly code: string, message: string) {
     super(message);

@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using Npgsql;
 using VeloRoute.Auth;
 using VeloRoute.Data;
+using VeloRoute.Json;
 using VeloRoute.Routing;
 using Microsoft.Extensions.Options;
 
@@ -15,6 +16,9 @@ using Microsoft.Extensions.Options;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+    options.SerializerOptions.Converters.Add(new OptionalJsonConverterFactory()));
 
 builder.Services.AddCors(options =>
 {
@@ -169,8 +173,10 @@ app.MapPost("/routes", async (SaveRouteRequest req, ClaimsPrincipal user, AppDbC
     var sub = user.GetSub();
     if (sub is null) return Results.Unauthorized();
 
-    if (string.IsNullOrWhiteSpace(req.Name))
-        return Results.BadRequest(new { error = "Name is required", code = "INVALID_INPUT" });
+    var validationError = RouteMetadataValidation.Validate(
+        req.Name, req.Tags, out var normalizedName, out var normalizedTags);
+    if (validationError is not null)
+        return Results.BadRequest(new { error = validationError, code = "INVALID_INPUT" });
 
     if (req.Coordinates is null || req.Coordinates.Count < 2)
         return Results.BadRequest(new { error = "At least 2 coordinates are required", code = "INVALID_INPUT" });
@@ -178,8 +184,8 @@ app.MapPost("/routes", async (SaveRouteRequest req, ClaimsPrincipal user, AppDbC
     var route = new VeloRoute.Data.Route(
         Id: Guid.NewGuid(),
         UserId: sub,
-        Name: req.Name,
-        Tags: req.Tags,
+        Name: normalizedName,
+        Tags: normalizedTags,
         DistanceKm: req.DistanceKm,
         Geometry: new GeoJsonLineString("LineString", req.Coordinates.Select(c => new[] { c.Longitude, c.Latitude }).ToArray()),
         CreatedAt: DateTimeOffset.UtcNow);
@@ -220,6 +226,49 @@ app.MapGet("/routes/{id:guid}", async (Guid id, ClaimsPrincipal user, AppDbConte
     return Results.Ok(new RouteDetailResponse(
         route.Id, route.Name, route.Tags, route.DistanceKm,
         new RouteGeometryResponse(coordinates), route.CreatedAt, share?.Token));
+})
+.RequireAuthorization();
+
+app.MapPatch("/routes/{id:guid}", async (Guid id, UpdateRouteRequest req, ClaimsPrincipal user, AppDbContext db, CancellationToken ct) =>
+{
+    var sub = user.GetSub();
+    if (sub is null) return Results.Unauthorized();
+
+    // Only the metadata is needed here — projecting keeps the jsonb geometry column,
+    // which can hold thousands of coordinate pairs, out of the round-trip.
+    var current = await db.Routes
+        .Where(r => r.Id == id && r.UserId == sub)
+        .Select(r => new { r.Name, r.Tags })
+        .SingleOrDefaultAsync(ct);
+    if (current is null)
+        return Results.NotFound(new { error = "Route not found", code = "NOT_FOUND" });
+
+    if (!req.Name.HasValue && !req.Tags.HasValue)
+        return Results.NoContent();
+
+    var name = req.Name.HasValue ? req.Name.Value : current.Name;
+    var tags = req.Tags.HasValue ? req.Tags.Value : current.Tags;
+
+    var validationError = RouteMetadataValidation.Validate(
+        name, tags, out var normalizedName, out var normalizedTags);
+    if (validationError is not null)
+        return Results.BadRequest(new { error = validationError, code = "INVALID_INPUT" });
+
+    // Route is a positional record with init-only properties, so a materialised
+    // entity cannot be mutated and re-saved through the change tracker.
+    var updated = await db.Routes
+        .Where(r => r.Id == id && r.UserId == sub)
+        .ExecuteUpdateAsync(setters =>
+        {
+            if (req.Name.HasValue) setters.SetProperty(r => r.Name, normalizedName);
+            if (req.Tags.HasValue) setters.SetProperty(r => r.Tags, normalizedTags);
+        }, ct);
+
+    // Zero rows means the route was deleted between the ownership check and the write.
+    if (updated == 0)
+        return Results.NotFound(new { error = "Route not found", code = "NOT_FOUND" });
+
+    return Results.NoContent();
 })
 .RequireAuthorization();
 
@@ -384,6 +433,10 @@ record SaveRouteRequest(
     string[]? Tags,
     double DistanceKm,
     IReadOnlyList<RouteCoordinate> Coordinates);
+
+record UpdateRouteRequest(
+    Optional<string> Name,
+    Optional<string[]?> Tags);
 
 record RouteSummaryResponse(
     Guid Id,

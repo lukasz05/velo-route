@@ -20,14 +20,14 @@
 
 ---
 
-Free road-cycling loop-route planner. User enters a start point and km range; the app returns a loop route on an interactive map with GPX export — no account needed for that core flow. v2 layers on optional accounts (Clerk email magic link) for a personal route library: save, view, delete, and share a route via a public unauthenticated link. Full PRD (current, v2): `context/foundation/prd-v2.md` (`prd.md` is the frozen v1 doc — do not treat it as current scope).
+Free road-cycling loop-route planner. User enters a start point and km range; the app returns a loop route on an interactive map with GPX export — no account needed for that core flow. v2 layers on optional accounts (Clerk email verification code) for a personal route library: save, view, delete, and share a route via a public unauthenticated link. Full PRD (current, v2): `context/foundation/prd-v2.md` (`prd.md` is the frozen v1 doc — do not treat it as current scope).
 
 ## Repository layout
 
 ```
 src/
   frontend/   Next.js 15 (React 19, TypeScript, Tailwind v4, App Router)
-  backend/    ASP.NET Core (.NET 10, minimal API) — Program.cs, Routing/, Data/, Migrations/, Auth/
+  backend/    ASP.NET Core (.NET 10, minimal API) — Program.cs, Routing/, Data/, Migrations/, Auth/, Json/
 context/
   foundation/
     frontend/tech-stack.md
@@ -66,7 +66,7 @@ Backend test runner: xUnit 2.9.3, bootstrapped in `src/backend/VeloRoute.Tests/`
 The two projects are independently runnable. In production, the Next.js frontend calls the .NET backend API over HTTP; no shared runtime or in-process communication.
 
 - **Frontend** (`src/frontend/src/app/`): Next.js App Router. All routes are under `src/app/`. Client components are opted in with `"use client"`. `@/app/api/**/route.ts` files proxy to the backend, relaying the Clerk-issued bearer token where the underlying endpoint requires auth.
-- **Backend** (`src/backend/`): .NET 10 minimal API style (`Program.cs`, no controllers folder). OpenAPI/Swagger is registered via `builder.Services.AddOpenApi()` and mapped at `/openapi/v1.json` in development. `Data/` holds EF Core entities + `AppDbContext`; `Migrations/` the generated EF Core migrations; `Auth/` shared auth helpers (e.g. `ClaimsPrincipalExtensions.GetSub()`).
+- **Backend** (`src/backend/`): .NET 10 minimal API style (`Program.cs`, no controllers folder). OpenAPI/Swagger is registered via `builder.Services.AddOpenApi()` and mapped at `/openapi/v1.json` in development. `Data/` holds EF Core entities + `AppDbContext`; `Migrations/` the generated EF Core migrations; `Auth/` shared auth helpers (e.g. `ClaimsPrincipalExtensions.GetSub()`); `Json/` shared JSON converters (e.g. `Optional<T>`, which distinguishes an absent JSON property from an explicit null on PATCH bodies).
 - **Data flow**: frontend → HTTP → backend → OpenRouteService (ORS) HTTP API for route generation (still fully anonymous, nothing persisted). For account-gated features (save/library/delete/share), the backend also validates the Clerk-issued JWT and reads/writes Postgres via EF Core.
 
 ## Workflow conventions
@@ -78,7 +78,7 @@ The two projects are independently runnable. In production, the Next.js frontend
 
 **v1 (shipped)**: anonymous start-point search, km range input, single loop-route proposal, interactive map display, GPX export, mobile-responsive UI. Still fully unauthenticated — no v2 feature gates this path.
 
-**v2 done**: Clerk email-magic-link auth (sign up/in/out); save a generated route to a personal library; view the library and open a saved route (map + GPX); delete a saved route; share a saved route via a public unauthenticated link (live read-through, revocable, dies if the route is deleted); account self-serve deletion (Postgres user/routes/shares cascade + Clerk identity removal).
+**v2 done**: Clerk email-verification-code auth (sign up/in/out); save a generated route to a personal library; view the library and open a saved route (map + GPX); edit a saved route's name and tags after saving (`PATCH /routes/{id}`, true-partial semantics); delete a saved route; share a saved route via a public unauthenticated link (live read-through, revocable, dies if the route is deleted); account self-serve deletion (Postgres user/routes/shares cascade + Clerk identity removal).
 
 **v2 remaining** (see `context/foundation/roadmap.md` for current status): OSM-driven routing quality improvements (scenic/low-traffic preference, cyclist POIs).
 
