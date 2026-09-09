@@ -33,7 +33,7 @@ export default function RouteApp() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/routes/loops', {
+      const res = await fetch('/api/routes/loop', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params),
