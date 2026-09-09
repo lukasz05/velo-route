@@ -672,13 +672,13 @@ jobs before deploying.
 
 #### Automated
 
-- [x] 4.1 Workflow parses: `gh workflow view "Azure Static Web Apps CI/CD"`
-- [ ] 4.2 `test` and `e2e` run with `build_and_deploy_job` queued behind both
-- [ ] 4.3 e2e job passes on a clean CI runner (no `.env.local`, no Docker, no secrets)
-- [x] 4.4 Full local suites green: `dotnet test`; `npm test` and `npx playwright test`
+- [x] 4.1 Workflow parses: `gh workflow view "Azure Static Web Apps CI/CD"` — 66e2a58
+- [x] 4.2 `test` and `e2e` run with `build_and_deploy_job` queued behind both — 66e2a58
+- [x] 4.3 e2e job passes on a clean CI runner (no `.env.local`, no Docker, no secrets) — 66e2a58
+- [x] 4.4 Full local suites green: `dotnet test`; `npm test` and `npx playwright test` — 66e2a58
 
 #### Manual
 
-- [ ] 4.5 A backend-only commit triggers the SWA workflow and runs the e2e
-- [ ] 4.6 A deliberately broken anonymous path blocks `build_and_deploy_job`
-- [ ] 4.7 No doc still describes Playwright as absent, the gate as single-job, or the dead Next docs path
+- [ ] 4.5 A backend-only commit triggers the SWA workflow and runs the e2e — **not verifiable pre-merge**: for `pull_request` events GitHub reads the path filters from the PR head, so a probe branch cut from `main` still carries the old frontend-only filter (false negative), while a probe cut from this branch cannot produce a backend-only diff. Verify with the first backend-only PR after this change lands on `main`.
+- [x] 4.6 A deliberately broken anonymous path blocks `build_and_deploy_job` — 66e2a58 (proven on 5577d37, reverted by 46cf5b9)
+- [x] 4.7 No doc still describes Playwright as absent, the gate as single-job, or the dead Next docs path — also fixed `context/foundation/stack-assessment.md` (3 dead-path references) and the §3 phase-4 scope note, both outside the plan's listed set — 4c16d84
