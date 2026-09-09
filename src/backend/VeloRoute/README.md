@@ -30,7 +30,7 @@ Postgres via `docker compose up -d` (repo root `docker-compose.yml`; `veloroute`
 dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Database=veloroute;Username=veloroute;Password=veloroute"
 ```
 
-EF Core migrations apply automatically on startup in Development.
+EF Core migrations apply automatically on startup in Development. In production, migrations no longer need a manual `dotnet ef database update` — CI applies any pending migration against Postgres via Kudu (`/api/command` on the App Service's SCM site) as part of the `deploy` job, before the new binary ships. See `.github/workflows/backend.yml`'s `deploy` job for the exact steps. If the Kudu path ever fails, the fallback is the manual runbook: temporarily allowlist an operator IP on the Postgres firewall, run `dotnet ef database update --connection "<prod-connection-string>"` locally, then remove the rule.
 
 ### Clerk auth (required for account-gated endpoints)
 
@@ -42,6 +42,8 @@ dotnet user-secrets set "Clerk:SecretKey" "<your-clerk-backend-api-secret-key>"
 ```
 
 Route generation and GPX export (`POST /routes/loop`, `POST /routes/gpx`) stay unauthenticated; the route-library endpoints (`/routes`, `/routes/{id}`, `/routes/{id}/share`) require a valid Clerk-issued JWT. `GET /shares/{token}` is public by design (the token is the access control). `DELETE /account` additionally uses `Clerk:SecretKey` to call Clerk's Backend API and delete the caller's identity there too.
+
+Outside Development, the app refuses to start if `Clerk:Authority`, `Clerk:AllowedAzp`, or `Clerk:SecretKey` is unset — a misconfigured deploy fails its health probe immediately (`InvalidOperationException: Missing required configuration: ...`) instead of 401ing every request indefinitely. The check is skipped during `dotnet ef` design-time invocations (`EF.IsDesignTime`), so migration commands still work locally without Clerk secrets present.
 
 ### ORS API key (required for route generation)
 

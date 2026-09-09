@@ -27,6 +27,8 @@ cp .env.example .env.local
 | `CLERK_SECRET_KEY` | Yes | Clerk secret key (`sk_test_...`), server-only, never `NEXT_PUBLIC` |
 | `ORS_API_KEY` | No | OpenRouteService API key — only needed if the frontend calls ORS directly (currently handled by the backend) |
 
+`npm run build` fails fast if `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is empty (`scripts/check-required-env.mjs`, run before `next build`) — an empty key can no longer silently ship in a build.
+
 ### Corporate SSL proxy
 
 If you're behind a corporate SSL proxy, export its CA certificate to `local-ca.pem` in this directory (it's gitignored). Node will pick it up via `NODE_EXTRA_CA_CERTS` — see `.env.example` for the note.
