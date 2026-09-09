@@ -1,7 +1,7 @@
 ---
 change_id: anonymous-flow-e2e
 title: Core anonymous flow end-to-end (test-plan phase 5, risk #7)
-status: implemented
+status: impl_reviewed
 created: 2026-09-09
 updated: 2026-09-09
 archived_at: null
