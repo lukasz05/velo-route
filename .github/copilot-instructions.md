@@ -3,7 +3,7 @@
 ## Key conventions
 
 ### Next.js (this is Next.js 15 / React 19)
-`src/frontend/AGENTS.md` warns that this version has breaking changes from older training data. Before writing any Next.js code, check `node_modules/next/dist/docs/` for current API behaviour.
+`src/frontend/AGENTS.md` warns that this version has breaking changes from older training data. `next` ships no markdown docs inside `node_modules`, so verify current API behaviour against the installed package's own types and source under `node_modules/next/`, or the official Next.js 15 docs.
 
 - Import alias `@/*` maps to `src/frontend/src/*`.
 - Tailwind v4 — config is in `postcss.config.mjs` (no `tailwind.config.js`); utility classes work the same but the config surface changed.
@@ -47,6 +47,8 @@ docker-compose.yml   local Postgres (`docker compose up -d`)
 npm run dev        # http://localhost:3000
 npm run build
 npm run lint       # eslint
+npm test           # vitest
+npm run e2e        # playwright (starts the backend + a production build itself)
 ```
 
 **Backend** (`src/backend/`)
@@ -59,7 +61,7 @@ dotnet test
 
 Swagger UI (development only): `http://localhost:5098/swagger`
 
-Backend test runner: xUnit 2.9.3, bootstrapped in `src/backend/VeloRoute.Tests/`. Run with `dotnet test` from `src/backend/` (needs Postgres — Testcontainers-backed; `docker compose up -d` or a running Docker daemon). Frontend test runner: Vitest 4 + React Testing Library, co-located `*.test.ts(x)`. Run with `npm test` from `src/frontend/`.
+Backend test runner: xUnit 2.9.3, bootstrapped in `src/backend/VeloRoute.Tests/`. Run with `dotnet test` from `src/backend/` (needs Postgres — Testcontainers-backed; `docker compose up -d` or a running Docker daemon). Frontend test runners: Vitest 4 + React Testing Library for unit/component tests, co-located `*.test.ts(x)`, run with `npm test`; Playwright 1.63.0 (chromium) for end-to-end, specs in `src/frontend/e2e/` as `*.spec.ts`, run with `npm run e2e` after a one-time `npx playwright install chromium`. Both run from `src/frontend/`; Vitest excludes `e2e/`.
 
 ## Architecture
 

@@ -8,7 +8,20 @@ const __dirname = dirname(__filename);
 const compat = new FlatCompat({ baseDirectory: __dirname });
 
 const eslintConfig = [
-  { ignores: [".next/**", "out/**", "build/**", "node_modules/**", "next-env.d.ts"] },
+  {
+    ignores: [
+      ".next/**",
+      "out/**",
+      "build/**",
+      "node_modules/**",
+      "next-env.d.ts",
+      // Playwright run output — gitignored, but ESLint has its own ignore list and would
+      // otherwise lint the report's bundled JS.
+      "playwright-report/**",
+      "test-results/**",
+      "blob-report/**",
+    ],
+  },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
 ];
 

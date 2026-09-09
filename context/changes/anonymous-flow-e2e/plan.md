@@ -657,25 +657,25 @@ jobs before deploying.
 
 #### Automated
 
-- [x] 3.1 Spec passes: `npx playwright test`
-- [x] 3.2 No flake: `npx playwright test --repeat-each=3`
-- [x] 3.3 Vitest unaffected: `npm test`
-- [x] 3.4 Lint passes: `npm run lint`
+- [x] 3.1 Spec passes: `npx playwright test` — 76f2986
+- [x] 3.2 No flake: `npx playwright test --repeat-each=3` — 76f2986
+- [x] 3.3 Vitest unaffected: `npm test` — 76f2986
+- [x] 3.4 Lint passes: `npm run lint` — 76f2986
 
 #### Manual
 
-- [x] 3.5 Spec still passes with the clerk-js block removed, then block restored
-- [x] 3.6 With the backend stopped, the spec fails at the download step
-- [x] 3.7 `npx playwright show-report` renders a trace for a failed run
+- [x] 3.5 Spec still passes with the clerk-js block removed, then block restored — 76f2986
+- [x] 3.6 With the backend stopped, the spec fails at the download step — 76f2986
+- [x] 3.7 `npx playwright show-report` renders a trace for a failed run — 76f2986
 
 ### Phase 4: CI Gate + Documentation Sync
 
 #### Automated
 
-- [ ] 4.1 Workflow parses: `gh workflow view "Azure Static Web Apps CI/CD"`
+- [x] 4.1 Workflow parses: `gh workflow view "Azure Static Web Apps CI/CD"`
 - [ ] 4.2 `test` and `e2e` run with `build_and_deploy_job` queued behind both
 - [ ] 4.3 e2e job passes on a clean CI runner (no `.env.local`, no Docker, no secrets)
-- [ ] 4.4 Full local suites green: `dotnet test`; `npm test` and `npx playwright test`
+- [x] 4.4 Full local suites green: `dotnet test`; `npm test` and `npx playwright test`
 
 #### Manual
 

@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - 'src/frontend/**'
+      # The e2e job drives the anonymous flow's GPX hop against a real backend, so a
+      # backend change can break this workflow with no frontend diff.
+      - 'src/backend/**'
       - '.github/workflows/azure-static-web-apps-purple-sky-08f4fb710.yml'
   pull_request:
     types: [opened, synchronize, reopened, closed]
@@ -13,6 +16,7 @@ on:
       - main
     paths:
       - 'src/frontend/**'
+      - 'src/backend/**'
       - '.github/workflows/azure-static-web-apps-purple-sky-08f4fb710.yml'
 
 jobs:
@@ -32,8 +36,36 @@ jobs:
       - run: npm test
         working-directory: src/frontend
 
+  e2e:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Anonymous Flow E2E
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          cache-dependency-path: src/frontend/package-lock.json
+      # Playwright starts the .NET backend itself, so the runner needs the SDK.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+      - run: npm ci
+        working-directory: src/frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: src/frontend
+      - run: npx playwright test
+        working-directory: src/frontend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: src/frontend/playwright-report/
+          retention-days: 7
+
   build_and_deploy_job:
-    needs: test
+    needs: [test, e2e]
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job

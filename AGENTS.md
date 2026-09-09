@@ -8,7 +8,7 @@ VeloRoute is a free road-cycling loop-route planner: Next.js 15 / React 19 / Typ
 - **Docs stay current**: update `context/` and `CLAUDE.md` in the same commit as any code that makes them stale.
 - **Never add `#nullable disable`** in .NET code.
 - **Never auto-modify `context/`** — it is the human/agent knowledge base, modified by hand only.
-- **Next.js 15 / React 19 breaking changes**: check `node_modules/next/dist/docs/` before writing Next.js code — training data may reflect older APIs.
+- **Next.js 15 / React 19 breaking changes**: training data may reflect older APIs. `next` ships no markdown docs inside `node_modules`, so verify against the installed package's types and source under `node_modules/next/`, or the official Next.js 15 docs.
 
 ## Project Structure
 
@@ -25,6 +25,7 @@ Each project manages its own dependencies independently. See `@.github/copilot-i
 - `npm run dev` — dev server at http://localhost:3000
 - `npm run lint` — ESLint via `eslint.config.mjs` (`next/core-web-vitals` + `next/typescript`)
 - `npm test` — Vitest single-run; **must pass before deploy runs in CI**; `npm run coverage` for coverage report
+- `npm run e2e` — Playwright (chromium); **must pass before deploy runs in CI**; starts the .NET backend and a production build itself. One-time: `npx playwright install chromium`
 
 **Backend** (run from `src/backend/`):
 
@@ -42,6 +43,7 @@ Each project manages its own dependencies independently. See `@.github/copilot-i
 ## Testing
 
 - **Frontend**: Vitest 4 + React Testing Library; tests co-located as `*.test.tsx`; global setup in `src/frontend/src/test-setup.ts`.
+- **Frontend e2e**: Playwright 1.63.0; specs in `src/frontend/e2e/` as `*.spec.ts` (excluded from Vitest); conventions in `context/foundation/test-plan.md` §6.5.
 - **Backend**: xUnit 2.9.3; test files named `*Tests.cs` under `src/backend/VeloRoute.Tests/Routing/`.
 - Run focused test: `npm test -- <pattern>` (frontend) or `dotnet test --filter <name>` (backend).
 
@@ -49,4 +51,4 @@ Each project manages its own dependencies independently. See `@.github/copilot-i
 
 Conventional Commits: `<type>(<scope>): <subject>` — types `feat|fix|docs|style|refactor|test|chore|perf`, subject ≤50 chars, imperative mood, no period. One logical change per commit.
 
-CI: backend `dotnet test` must pass before Azure App Service deploy triggers. Frontend `npm test` must pass before the Azure Static Web Apps deploy runs; the frontend then builds and deploys on push to `main`, and PRs get a preview environment (a failing test means no preview).
+CI: backend `dotnet test` must pass before Azure App Service deploy triggers. The Azure Static Web Apps deploy is gated on **two** jobs — `build_and_deploy_job` carries `needs: [test, e2e]`, so both `npm test` (Vitest) and `npx playwright test` must pass; the frontend then builds and deploys on push to `main`, and PRs get a preview environment (a failing job means no preview). That workflow now triggers on `src/backend/**` as well as `src/frontend/**`, because the e2e drives the GPX hop against a real backend — a backend-only change therefore also re-runs the deploy.
