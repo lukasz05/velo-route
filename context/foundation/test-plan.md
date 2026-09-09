@@ -122,6 +122,10 @@ remained; it landed 2026-09-08 as a `test` job in
 **not** take the dependency — closing a PR must not wait on a test run against a branch
 that may already be deleted.
 
+Phase 5 widened that gate: `build_and_deploy_job` now carries `needs: [test, e2e]`, and the
+SWA workflow's path filters include `src/backend/**`. `close_pull_request_job` still takes
+no dependency.
+
 **Phase 5 scope note.** `POST /routes/gpx` (`src/backend/VeloRoute/Program.cs:407`) has no
 test at all, yet the frontend calls it from three places (`RouteInfoPanel.tsx`,
 `my-routes/[id]/page.tsx`, `r/[token]/page.tsx`) — it is the last hop of the anonymous

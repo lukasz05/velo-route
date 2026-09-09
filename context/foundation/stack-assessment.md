@@ -28,7 +28,7 @@ gates_failed: 0
 
 **CI/CD + Deployment.** Two GitHub Actions workflows: `backend.yml` runs xUnit tests and deploys to Azure Web Apps (`velo-route-api`) on push to main; the SWA workflow deploys the frontend to Azure Static Web Apps. Both workflows are path-scoped to their respective source trees.
 
-**Instruction files.** The project has layered instruction coverage: root `CLAUDE.md` (via `@.github/copilot-instructions.md`) documents conventions, dev commands, and architecture; `src/frontend/AGENTS.md` warns agents that Next.js 15 + React 19 has breaking changes from training data and directs them to `node_modules/next/dist/docs/`; `src/backend/VeloRoute/README.md` documents running, configuration, and project structure.
+**Instruction files.** The project has layered instruction coverage: root `CLAUDE.md` (via `@.github/copilot-instructions.md`) documents conventions, dev commands, and architecture; `src/frontend/AGENTS.md` warns agents that Next.js 15 + React 19 has breaking changes from training data and directs them to the installed package's own types and source under `node_modules/next/`, or the official docs; `src/backend/VeloRoute/README.md` documents running, configuration, and project structure.
 
 ## Quality Gate Assessment
 
@@ -59,7 +59,7 @@ ASP.NET Core: strong conventions for the DI container, middleware pipeline regis
 
 **Training data representation**
 
-Next.js + React: the dominant pairing in the JS/TS training corpus. Minor friction: Next.js 15 + React 19 introduced breaking changes (server actions, `use client` semantics, async components) that diverge from older training data. The project compensates with `src/frontend/AGENTS.md`, which directs agents to read `node_modules/next/dist/docs/` before writing code.
+Next.js + React: the dominant pairing in the JS/TS training corpus. Minor friction: Next.js 15 + React 19 introduced breaking changes (server actions, `use client` semantics, async components) that diverge from older training data. The project compensates with `src/frontend/AGENTS.md`, which directs agents to verify against the installed package under `node_modules/next/` or the official Next.js 15 docs before writing code.
 
 ASP.NET Core: mainstream within the C# ecosystem. Minimal API style (introduced in .NET 6, stabilized by .NET 8+) is well-represented in training data. xUnit is the de-facto .NET test framework.
 
@@ -89,7 +89,7 @@ Unit tests live alongside source files as `*.test.ts(x)`. E2E tests live in `tes
 
 **2. Next.js 15 / React 19 version freshness**
 
-Already compensated by `src/frontend/AGENTS.md`. No additional action required. Monitor as Next.js 15 docs mature and update the AGENTS.md pointer if the `node_modules/next/dist/docs/` pattern stops working after a Next.js upgrade.
+Already compensated by `src/frontend/AGENTS.md`. No additional action required. The pointer originally named `node_modules/next/dist/docs/`; that directory does not exist (verified 2026-09-09 — `next` ships no markdown there), so it now names the installed package's types/source and the official docs instead.
 
 **3. Minimal API convention gap**
 
