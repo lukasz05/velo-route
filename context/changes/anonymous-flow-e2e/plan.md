@@ -642,31 +642,31 @@ jobs before deploying.
 
 #### Automated
 
-- [x] 2.1 Browser installs: `npx playwright install --with-deps chromium`
-- [x] 2.2 Smoke spec passes: `npx playwright test`
-- [x] 2.3 Vitest green and does not collect the spec: `npm test` reports 47 cases
-- [x] 2.4 Lint passes: `npm run lint`
+- [x] 2.1 Browser installs: `npx playwright install --with-deps chromium` — 276c183
+- [x] 2.2 Smoke spec passes: `npx playwright test` — 276c183
+- [x] 2.3 Vitest green and does not collect the spec: `npm test` reports 47 cases — 276c183
+- [x] 2.4 Lint passes: `npm run lint` — 276c183
 
 #### Manual
 
-- [x] 2.5 With no backend running, Playwright starts one and the run passes
-- [x] 2.6 With a backend already running, `reuseExistingServer` avoids a port clash
-- [x] 2.7 `git status` shows no Playwright artifact noise
+- [x] 2.5 With no backend running, Playwright starts one and the run passes — 276c183
+- [x] 2.6 With a backend already running, `reuseExistingServer` avoids a port clash — 276c183
+- [x] 2.7 `git status` shows no Playwright artifact noise — 276c183
 
 ### Phase 3: The Anonymous e2e Spec
 
 #### Automated
 
-- [ ] 3.1 Spec passes: `npx playwright test`
-- [ ] 3.2 No flake: `npx playwright test --repeat-each=3`
-- [ ] 3.3 Vitest unaffected: `npm test`
-- [ ] 3.4 Lint passes: `npm run lint`
+- [x] 3.1 Spec passes: `npx playwright test`
+- [x] 3.2 No flake: `npx playwright test --repeat-each=3`
+- [x] 3.3 Vitest unaffected: `npm test`
+- [x] 3.4 Lint passes: `npm run lint`
 
 #### Manual
 
-- [ ] 3.5 Spec still passes with the clerk-js block removed, then block restored
-- [ ] 3.6 With the backend stopped, the spec fails at the download step
-- [ ] 3.7 `npx playwright show-report` renders a trace for a failed run
+- [x] 3.5 Spec still passes with the clerk-js block removed, then block restored
+- [x] 3.6 With the backend stopped, the spec fails at the download step
+- [x] 3.7 `npx playwright show-report` renders a trace for a failed run
 
 ### Phase 4: CI Gate + Documentation Sync
 
