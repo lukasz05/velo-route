@@ -24,6 +24,11 @@ jobs:
         with:
           dotnet-version: '10.x'
       - run: dotnet test src/backend/VeloRoute.Tests/VeloRoute.Tests.csproj --configuration Release --verbosity minimal
+      - name: Check for pending EF model changes
+        working-directory: src/backend
+        run: |
+          dotnet tool restore
+          dotnet ef migrations has-pending-model-changes --project VeloRoute/VeloRoute.csproj
 
   deploy:
     runs-on: ubuntu-latest
@@ -35,6 +40,32 @@ jobs:
         with:
           dotnet-version: '10.x'
       - run: dotnet publish src/backend/VeloRoute/VeloRoute.csproj -c Release -o ./publish
+      - name: Build EF migration bundle
+        working-directory: src/backend
+        run: |
+          dotnet tool restore
+          dotnet ef migrations bundle --configuration Release --self-contained -r linux-x64 \
+            --project VeloRoute/VeloRoute.csproj -o efbundle-output/efbundle
+      - name: Apply pending migrations via Kudu
+        run: |
+          set -euo pipefail
+          PROFILE='${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}'
+          USER=$(echo "$PROFILE" | grep -o 'userName="[^"]*"' | head -1 | cut -d'"' -f2)
+          PASS=$(echo "$PROFILE" | grep -o 'userPWD="[^"]*"' | head -1 | cut -d'"' -f2)
+
+          curl -sf -u "$USER:$PASS" \
+            -X PUT \
+            --data-binary @src/backend/efbundle-output/efbundle \
+            "https://velo-route-api.scm.azurewebsites.net/api/vfs/site/deployments/tools/efbundle"
+
+          RESPONSE=$(curl -sf -u "$USER:$PASS" \
+            -X POST \
+            -H "Content-Type: application/json" \
+            -d '{"command": "chmod +x efbundle && ./efbundle --connection \"$ConnectionStrings__Default\"", "dir": "site/deployments/tools"}' \
+            "https://velo-route-api.scm.azurewebsites.net/api/command")
+
+          echo "$RESPONSE"
+          echo "$RESPONSE" | grep -qi '"ExitCode":0' || { echo "Migration command failed"; exit 1; }
       - uses: azure/webapps-deploy@v3
         with:
           app-name: velo-route-api
