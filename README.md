@@ -9,6 +9,11 @@ Free road-cycling loop-route planner. Enter a start point and a distance range (
 | `src/frontend/` | Next.js 15 (React 19, TypeScript, Tailwind v4) — the web UI |
 | `src/backend/` | ASP.NET Core (.NET 10) Minimal API — routing (OpenRouteService), auth (Clerk), persistence (Postgres/EF Core) |
 
+## Live
+
+- App: <https://purple-sky-08f4fb710.7.azurestaticapps.net>
+- API: <https://velo-route-api.azurewebsites.net>
+
 ## Dev commands
 
 **Database** — Postgres via Docker, runs at `localhost:5432`

@@ -13,6 +13,8 @@ dotnet run
 - Swagger UI: `http://localhost:5098/swagger`
 - Health check: `GET http://localhost:5098/health`
 
+Live: <https://velo-route-api.azurewebsites.net> (health: <https://velo-route-api.azurewebsites.net/health>)
+
 HTTPS is also available in development:
 
 ```bash

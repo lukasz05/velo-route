@@ -12,6 +12,8 @@ npm run dev
 
 Opens at <http://localhost:3000>.
 
+Live: <https://purple-sky-08f4fb710.7.azurestaticapps.net>
+
 ## Environment variables
 
 Copy `.env.example` to `.env.local` and fill in the values:
