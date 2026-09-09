@@ -101,8 +101,25 @@ jobs:
         run: |
           set -euo pipefail
 
+          # curl -f fails silently with no body on a non-2xx response, which
+          # makes a real failure here undebuggable from the log alone. Print
+          # the status and body to stderr before exiting non-zero instead.
+          req() {
+            local method="$1" url="$2"; shift 2
+            local resp status body
+            resp=$(curl -s -w '\n%{http_code}' -X "$method" "$url" "$@")
+            status=$(echo "$resp" | tail -n1)
+            body=$(echo "$resp" | sed '$d')
+            if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "Request failed: $method $url -> HTTP $status" >&2
+              echo "$body" >&2
+              return 1
+            fi
+            echo "$body"
+          }
+
           echo "Checking /health..."
-          curl -sf https://velo-route-api.azurewebsites.net/health > /dev/null
+          req GET https://velo-route-api.azurewebsites.net/health > /dev/null
 
           # The Frontend API domain is base64-encoded inside the publishable
           # key: pk_test_<base64(domain + "$")> - Clerk emits it unpadded,
@@ -119,18 +136,23 @@ jobs:
           # A Testing Token bypasses Clerk's bot detection on scripted Frontend
           # API calls - the same mechanism @clerk/testing uses under the hood
           # for Playwright/Cypress.
-          TESTING_TOKEN=$(curl -sf -X POST "https://api.clerk.com/v1/testing_tokens" \
+          TESTING_TOKEN=$(req POST "https://api.clerk.com/v1/testing_tokens" \
             -H "Authorization: Bearer $CLERK_SECRET_KEY" | jq -r '.token // .response.token')
 
           # Ensure the dedicated smoke-test user exists (idempotent). The
           # "+clerk_test" local-part makes Clerk treat this identity as
           # test-mode regardless of instance type: no real email is sent and
           # the fixed code 424242 always verifies it.
-          EXISTING_COUNT=$(curl -sf "https://api.clerk.com/v1/users?email_address=$CLERK_SMOKE_TEST_EMAIL" \
+          # -G --data-urlencode percent-encodes the query param - the
+          # "+clerk_test" local-part's literal '+' would otherwise be sent as
+          # a space, making this check silently miss the existing user and
+          # then fail the create call below with a duplicate-email error.
+          EXISTING_COUNT=$(req GET "https://api.clerk.com/v1/users" \
+            -G --data-urlencode "email_address=$CLERK_SMOKE_TEST_EMAIL" \
             -H "Authorization: Bearer $CLERK_SECRET_KEY" | jq 'length')
           if [ "$EXISTING_COUNT" -eq 0 ]; then
             echo "Creating dedicated smoke-test Clerk user..."
-            curl -sf -X POST "https://api.clerk.com/v1/users" \
+            req POST "https://api.clerk.com/v1/users" \
               -H "Authorization: Bearer $CLERK_SECRET_KEY" \
               -H "Content-Type: application/json" \
               -d "$(jq -n --arg email "$CLERK_SMOKE_TEST_EMAIL" \
@@ -140,24 +162,24 @@ jobs:
           # Sign-in via the Frontend API: create the attempt, prepare + attempt
           # the email_code first factor with the fixed test code, then exchange
           # the resulting session for a JWT.
-          SIGN_IN=$(curl -sf -X POST "$FAPI/v1/client/sign_ins?__clerk_testing_token=$TESTING_TOKEN" \
+          SIGN_IN=$(req POST "$FAPI/v1/client/sign_ins?__clerk_testing_token=$TESTING_TOKEN" \
             --data-urlencode "identifier=$CLERK_SMOKE_TEST_EMAIL")
           SIGN_IN_ID=$(echo "$SIGN_IN" | jq -r '.response.id // .id')
           EMAIL_FACTOR_ID=$(echo "$SIGN_IN" | jq -r \
             '(.response.supported_first_factors // .supported_first_factors)[] | select(.strategy=="email_code") | .email_address_id')
 
-          curl -sf -X POST "$FAPI/v1/client/sign_ins/$SIGN_IN_ID/prepare_first_factor?__clerk_testing_token=$TESTING_TOKEN" \
+          req POST "$FAPI/v1/client/sign_ins/$SIGN_IN_ID/prepare_first_factor?__clerk_testing_token=$TESTING_TOKEN" \
             --data-urlencode "strategy=email_code" \
             --data-urlencode "email_address_id=$EMAIL_FACTOR_ID" > /dev/null
 
-          ATTEMPT=$(curl -sf -X POST "$FAPI/v1/client/sign_ins/$SIGN_IN_ID/attempt_first_factor?__clerk_testing_token=$TESTING_TOKEN" \
+          ATTEMPT=$(req POST "$FAPI/v1/client/sign_ins/$SIGN_IN_ID/attempt_first_factor?__clerk_testing_token=$TESTING_TOKEN" \
             --data-urlencode "strategy=email_code" \
             --data-urlencode "code=424242")
           SESSION_ID=$(echo "$ATTEMPT" | jq -r '.response.created_session_id // .created_session_id')
 
-          JWT=$(curl -sf -X POST "$FAPI/v1/client/sessions/$SESSION_ID/tokens?__clerk_testing_token=$TESTING_TOKEN" \
+          JWT=$(req POST "$FAPI/v1/client/sessions/$SESSION_ID/tokens?__clerk_testing_token=$TESTING_TOKEN" \
             | jq -r '.jwt // .response.jwt')
 
           echo "Verifying authenticated round-trip..."
-          curl -sf -H "Authorization: Bearer $JWT" https://velo-route-api.azurewebsites.net/routes > /dev/null
+          req GET https://velo-route-api.azurewebsites.net/routes -H "Authorization: Bearer $JWT" > /dev/null
           echo "Backend smoke test passed."
