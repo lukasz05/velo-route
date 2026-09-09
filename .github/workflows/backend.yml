@@ -53,10 +53,20 @@ jobs:
           USER=$(echo "$PROFILE" | grep -o 'userName="[^"]*"' | head -1 | cut -d'"' -f2)
           PASS=$(echo "$PROFILE" | grep -o 'userPWD="[^"]*"' | head -1 | cut -d'"' -f2)
 
-          curl -sf -u "$USER:$PASS" \
+          # If-Match: * is required by Kudu VFS to overwrite a file that
+          # already exists (e.g. left over from a prior, failed attempt) -
+          # without it, a re-upload gets rejected with 412.
+          PUT_STATUS=$(curl -s -o /tmp/kudu-put.txt -w '%{http_code}' -u "$USER:$PASS" \
             -X PUT \
+            -H "If-Match: *" \
             --data-binary @src/backend/efbundle-output/efbundle \
-            "https://velo-route-api.scm.azurewebsites.net/api/vfs/site/deployments/tools/efbundle"
+            "https://velo-route-api.scm.azurewebsites.net/api/vfs/site/deployments/tools/efbundle")
+          echo "VFS PUT status: $PUT_STATUS"
+          cat /tmp/kudu-put.txt
+          if [ "$PUT_STATUS" -lt 200 ] || [ "$PUT_STATUS" -ge 300 ]; then
+            echo "VFS upload failed"
+            exit 1
+          fi
 
           # Kudu's /api/command tokenizes "command" itself and does not
           # interpret shell operators or expand env vars - it must be told
@@ -66,14 +76,18 @@ jobs:
           PAYLOAD=$(jq -n --arg cmd "$RAW_COMMAND" --arg dir "site/deployments/tools" \
             '{command: $cmd, dir: $dir}')
 
-          RESPONSE=$(curl -sf -u "$USER:$PASS" \
+          CMD_STATUS=$(curl -s -o /tmp/kudu-cmd.json -w '%{http_code}' -u "$USER:$PASS" \
             -X POST \
             -H "Content-Type: application/json" \
             -d "$PAYLOAD" \
             "https://velo-route-api.scm.azurewebsites.net/api/command")
-
-          echo "$RESPONSE"
-          echo "$RESPONSE" | jq -e '.ExitCode == 0' >/dev/null || { echo "Migration command failed"; exit 1; }
+          echo "Command POST status: $CMD_STATUS"
+          cat /tmp/kudu-cmd.json
+          if [ "$CMD_STATUS" -lt 200 ] || [ "$CMD_STATUS" -ge 300 ]; then
+            echo "Kudu command request failed"
+            exit 1
+          fi
+          jq -e '.ExitCode == 0' /tmp/kudu-cmd.json >/dev/null || { echo "Migration command failed"; exit 1; }
       - uses: azure/webapps-deploy@v3
         with:
           app-name: velo-route-api
