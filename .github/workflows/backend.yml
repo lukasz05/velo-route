@@ -58,14 +58,22 @@ jobs:
             --data-binary @src/backend/efbundle-output/efbundle \
             "https://velo-route-api.scm.azurewebsites.net/api/vfs/site/deployments/tools/efbundle"
 
+          # Kudu's /api/command tokenizes "command" itself and does not
+          # interpret shell operators or expand env vars - it must be told
+          # to spawn a real shell for `&&` and `$ConnectionStrings__Default`
+          # to mean anything.
+          RAW_COMMAND='/bin/bash -c "chmod +x efbundle && ./efbundle --connection \"$ConnectionStrings__Default\""'
+          PAYLOAD=$(jq -n --arg cmd "$RAW_COMMAND" --arg dir "site/deployments/tools" \
+            '{command: $cmd, dir: $dir}')
+
           RESPONSE=$(curl -sf -u "$USER:$PASS" \
             -X POST \
             -H "Content-Type: application/json" \
-            -d '{"command": "chmod +x efbundle && ./efbundle --connection \"$ConnectionStrings__Default\"", "dir": "site/deployments/tools"}' \
+            -d "$PAYLOAD" \
             "https://velo-route-api.scm.azurewebsites.net/api/command")
 
           echo "$RESPONSE"
-          echo "$RESPONSE" | grep -qi '"ExitCode":0' || { echo "Migration command failed"; exit 1; }
+          echo "$RESPONSE" | jq -e '.ExitCode == 0' >/dev/null || { echo "Migration command failed"; exit 1; }
       - uses: azure/webapps-deploy@v3
         with:
           app-name: velo-route-api

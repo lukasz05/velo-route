@@ -286,9 +286,9 @@ This plan's own Phase 1 IS the migration-handling mechanism going forward — no
 
 #### Automated
 
-- [x] 1.1 Model-drift check passes on current main
-- [x] 1.2 Backend test suite still green
-- [x] 1.3 Migration bundle builds
+- [x] 1.1 Model-drift check passes on current main — d001b28
+- [x] 1.2 Backend test suite still green — d001b28
+- [x] 1.3 Migration bundle builds — d001b28
 
 #### Manual
 
