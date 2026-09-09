@@ -1,7 +1,7 @@
 ---
 change_id: ci-deploy-hardening
 title: Ci deploy hardening
-status: implemented
+status: impl_reviewed
 created: 2026-09-09
 updated: 2026-09-10
 archived_at: null

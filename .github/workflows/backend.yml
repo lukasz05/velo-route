@@ -47,11 +47,22 @@ jobs:
           dotnet ef migrations bundle --configuration Release --self-contained -r linux-x64 \
             --project VeloRoute/VeloRoute.csproj -o efbundle-output/efbundle
       - name: Apply pending migrations via Kudu
+        env:
+          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         run: |
           set -euo pipefail
-          PROFILE='${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}'
-          USER=$(echo "$PROFILE" | grep -o 'userName="[^"]*"' | head -1 | cut -d'"' -f2)
-          PASS=$(echo "$PROFILE" | grep -o 'userPWD="[^"]*"' | head -1 | cut -d'"' -f2)
+          # Kudu's /api/command response can embed the connection string
+          # inside efbundle's own error output on failure (e.g. an Npgsql
+          # auth exception) - that string never goes through secrets.*, so
+          # GitHub's log masking can't redact it. Scrub before printing.
+          scrub() {
+            sed -E \
+              -e 's/(Password|Pwd)=[^;]*/\1=***REDACTED***/gi' \
+              -e 's#(postgres(ql)?://)[^@[:space:]"]*@#\1***REDACTED***@#gi' \
+              "$1"
+          }
+          USER=$(echo "$AZURE_WEBAPP_PUBLISH_PROFILE" | grep -o 'userName="[^"]*"' | head -1 | cut -d'"' -f2)
+          PASS=$(echo "$AZURE_WEBAPP_PUBLISH_PROFILE" | grep -o 'userPWD="[^"]*"' | head -1 | cut -d'"' -f2)
 
           # If-Match: * is required by Kudu VFS to overwrite a file that
           # already exists (e.g. left over from a prior, failed attempt) -
@@ -82,12 +93,17 @@ jobs:
             -d "$PAYLOAD" \
             "https://velo-route-api.scm.azurewebsites.net/api/command")
           echo "Command POST status: $CMD_STATUS"
-          cat /tmp/kudu-cmd.json
           if [ "$CMD_STATUS" -lt 200 ] || [ "$CMD_STATUS" -ge 300 ]; then
             echo "Kudu command request failed"
+            scrub /tmp/kudu-cmd.json
             exit 1
           fi
-          jq -e '.ExitCode == 0' /tmp/kudu-cmd.json >/dev/null || { echo "Migration command failed"; exit 1; }
+          if ! jq -e '.ExitCode == 0' /tmp/kudu-cmd.json >/dev/null; then
+            echo "Migration command failed"
+            scrub /tmp/kudu-cmd.json
+            exit 1
+          fi
+          echo "Migration command succeeded (ExitCode 0)"
       - uses: azure/webapps-deploy@v3
         with:
           app-name: velo-route-api
