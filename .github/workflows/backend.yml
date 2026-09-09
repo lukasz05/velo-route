@@ -178,22 +178,34 @@ jobs:
           # Sign-in via the Frontend API: create the attempt, prepare + attempt
           # the email_code first factor with the fixed test code, then exchange
           # the resulting session for a JWT.
+          #
+          # Clerk stamps the session JWT's "azp" claim from the request's
+          # Origin header - it's not settable any other way. The backend
+          # rejects any JWT whose azp doesn't match Clerk:AllowedAzp
+          # (Program.cs's OnTokenValidated), so every call in this flow must
+          # claim to originate from that same configured frontend origin.
+          FRONTEND_ORIGIN="https://purple-sky-08f4fb710.7.azurestaticapps.net"
+
           SIGN_IN=$(req POST "$FAPI/v1/client/sign_ins?$FAPI_AUTH" \
+            -H "Origin: $FRONTEND_ORIGIN" \
             --data-urlencode "identifier=$CLERK_SMOKE_TEST_EMAIL")
           SIGN_IN_ID=$(echo "$SIGN_IN" | jq -r '.response.id // .id')
           EMAIL_FACTOR_ID=$(echo "$SIGN_IN" | jq -r \
             '(.response.supported_first_factors // .supported_first_factors)[] | select(.strategy=="email_code") | .email_address_id')
 
           req POST "$FAPI/v1/client/sign_ins/$SIGN_IN_ID/prepare_first_factor?$FAPI_AUTH" \
+            -H "Origin: $FRONTEND_ORIGIN" \
             --data-urlencode "strategy=email_code" \
             --data-urlencode "email_address_id=$EMAIL_FACTOR_ID" > /dev/null
 
           ATTEMPT=$(req POST "$FAPI/v1/client/sign_ins/$SIGN_IN_ID/attempt_first_factor?$FAPI_AUTH" \
+            -H "Origin: $FRONTEND_ORIGIN" \
             --data-urlencode "strategy=email_code" \
             --data-urlencode "code=424242")
           SESSION_ID=$(echo "$ATTEMPT" | jq -r '.response.created_session_id // .created_session_id')
 
           JWT=$(req POST "$FAPI/v1/client/sessions/$SESSION_ID/tokens?$FAPI_AUTH" \
+            -H "Origin: $FRONTEND_ORIGIN" \
             | jq -r '.jwt // .response.jwt')
 
           echo "Verifying authenticated round-trip..."
