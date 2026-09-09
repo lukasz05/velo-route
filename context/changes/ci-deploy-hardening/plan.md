@@ -316,8 +316,8 @@ This plan's own Phase 1 IS the migration-handling mechanism going forward — no
 
 #### Automated
 
-- [ ] 3.1 Backend smoke test passes against live deployment
-- [ ] 3.2 Frontend smoke test passes against live deployment
+- [x] 3.1 Backend smoke test passes against live deployment — 465b171
+- [x] 3.2 Frontend smoke test passes against live deployment — a7bdf0f
 - [x] 3.3 Existing Playwright e2e suite unaffected — 6888d96
 
 #### Manual
@@ -329,5 +329,5 @@ This plan's own Phase 1 IS the migration-handling mechanism going forward — no
 
 #### Manual
 
-- [x] 4.1 Backend README accurately describes new migration/config behavior
-- [x] 4.2 No root doc still claims migrations are manual-only
+- [x] 4.1 Backend README accurately describes new migration/config behavior — fb28904
+- [x] 4.2 No root doc still claims migrations are manual-only — fb28904
