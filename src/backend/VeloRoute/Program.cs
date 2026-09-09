@@ -102,6 +102,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 builder.Services.AddAuthorization();
 
+if (!builder.Environment.IsDevelopment() && !EF.IsDesignTime)
+{
+    var required = new[] { "Clerk:Authority", "Clerk:AllowedAzp", "Clerk:SecretKey" };
+    var missing = required.Where(k => string.IsNullOrEmpty(builder.Configuration[k])).ToList();
+    if (missing.Count > 0)
+        throw new InvalidOperationException(
+            $"Missing required configuration: {string.Join(", ", missing)}");
+}
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment() &&
