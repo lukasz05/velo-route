@@ -105,8 +105,14 @@ jobs:
           curl -sf https://velo-route-api.azurewebsites.net/health > /dev/null
 
           # The Frontend API domain is base64-encoded inside the publishable
-          # key: pk_test_<base64(domain)>$
+          # key: pk_test_<base64(domain + "$")> - Clerk emits it unpadded,
+          # but GNU base64 (this runner) refuses to decode without '='
+          # padding to a multiple of 4, unlike a tolerant decoder.
           B64=$(echo "$CLERK_PUBLISHABLE_KEY" | cut -d'_' -f3-)
+          case $(( ${#B64} % 4 )) in
+            2) B64="${B64}==" ;;
+            3) B64="${B64}=" ;;
+          esac
           FAPI_DOMAIN=$(echo "$B64" | base64 -d | tr -d '$')
           FAPI="https://$FAPI_DOMAIN"
 
