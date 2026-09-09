@@ -145,6 +145,16 @@ jobs:
           TESTING_TOKEN=$(req POST "https://api.clerk.com/v1/testing_tokens" \
             -H "Authorization: Bearer $CLERK_SECRET_KEY" | jq -r '.token // .response.token')
 
+          # Development instances (pk_test_ / *.accounts.dev) additionally
+          # require a "dev browser" JWT on every Frontend API call - a real
+          # browser gets this transparently from clerk-js, but a raw curl
+          # client has to fetch it itself via POST /v1/dev_browser (returns
+          # {"id": "<jwt>"}) and attach it as __clerk_db_jwt on every FAPI
+          # request from here on, or Frontend API calls 401 with
+          # dev_browser_unauthenticated.
+          DEV_BROWSER_JWT=$(req POST "$FAPI/v1/dev_browser?__clerk_testing_token=$TESTING_TOKEN" | jq -r '.id // .response.id')
+          FAPI_AUTH="__clerk_testing_token=$TESTING_TOKEN&__clerk_db_jwt=$DEV_BROWSER_JWT"
+
           # Ensure the dedicated smoke-test user exists (idempotent). The
           # "+clerk_test" local-part makes Clerk treat this identity as
           # test-mode regardless of instance type: no real email is sent and
@@ -168,22 +178,22 @@ jobs:
           # Sign-in via the Frontend API: create the attempt, prepare + attempt
           # the email_code first factor with the fixed test code, then exchange
           # the resulting session for a JWT.
-          SIGN_IN=$(req POST "$FAPI/v1/client/sign_ins?__clerk_testing_token=$TESTING_TOKEN" \
+          SIGN_IN=$(req POST "$FAPI/v1/client/sign_ins?$FAPI_AUTH" \
             --data-urlencode "identifier=$CLERK_SMOKE_TEST_EMAIL")
           SIGN_IN_ID=$(echo "$SIGN_IN" | jq -r '.response.id // .id')
           EMAIL_FACTOR_ID=$(echo "$SIGN_IN" | jq -r \
             '(.response.supported_first_factors // .supported_first_factors)[] | select(.strategy=="email_code") | .email_address_id')
 
-          req POST "$FAPI/v1/client/sign_ins/$SIGN_IN_ID/prepare_first_factor?__clerk_testing_token=$TESTING_TOKEN" \
+          req POST "$FAPI/v1/client/sign_ins/$SIGN_IN_ID/prepare_first_factor?$FAPI_AUTH" \
             --data-urlencode "strategy=email_code" \
             --data-urlencode "email_address_id=$EMAIL_FACTOR_ID" > /dev/null
 
-          ATTEMPT=$(req POST "$FAPI/v1/client/sign_ins/$SIGN_IN_ID/attempt_first_factor?__clerk_testing_token=$TESTING_TOKEN" \
+          ATTEMPT=$(req POST "$FAPI/v1/client/sign_ins/$SIGN_IN_ID/attempt_first_factor?$FAPI_AUTH" \
             --data-urlencode "strategy=email_code" \
             --data-urlencode "code=424242")
           SESSION_ID=$(echo "$ATTEMPT" | jq -r '.response.created_session_id // .created_session_id')
 
-          JWT=$(req POST "$FAPI/v1/client/sessions/$SESSION_ID/tokens?__clerk_testing_token=$TESTING_TOKEN" \
+          JWT=$(req POST "$FAPI/v1/client/sessions/$SESSION_ID/tokens?$FAPI_AUTH" \
             | jq -r '.jwt // .response.jwt')
 
           echo "Verifying authenticated round-trip..."
