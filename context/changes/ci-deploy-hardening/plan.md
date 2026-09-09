@@ -292,25 +292,25 @@ This plan's own Phase 1 IS the migration-handling mechanism going forward — no
 
 #### Manual
 
-- [x] 1.4 Deploy job's migration step completes successfully on a real push
-- [x] 1.5 Migrations confirmed applied against prod after that deploy
-- [x] 1.6 No-op re-run completes idempotently
+- [x] 1.4 Deploy job's migration step completes successfully on a real push — bb9cd5e
+- [x] 1.5 Migrations confirmed applied against prod after that deploy — bb9cd5e
+- [x] 1.6 No-op re-run completes idempotently — bb9cd5e
 - [x] 1.7 Stale firewall rule confirmed removed
 
 ### Phase 2: Fail-Fast Config Checks
 
 #### Automated
 
-- [ ] 2.1 Backend builds/tests pass with Clerk config present
-- [ ] 2.2 Backend fails fast without Clerk config outside Development
-- [ ] 2.3 Model-drift check still passes (EF.IsDesignTime guard works)
-- [ ] 2.4 Frontend build fails when env var unset
-- [ ] 2.5 Frontend build succeeds when env var set
-- [ ] 2.6 Frontend lint/tests unaffected
+- [x] 2.1 Backend builds/tests pass with Clerk config present
+- [x] 2.2 Backend fails fast without Clerk config outside Development
+- [x] 2.3 Model-drift check still passes (EF.IsDesignTime guard works)
+- [x] 2.4 Frontend build fails when env var unset
+- [x] 2.5 Frontend build succeeds when env var set
+- [x] 2.6 Frontend lint/tests unaffected
 
 #### Manual
 
-- [ ] 2.7 Local dev flow unaffected
+- [x] 2.7 Local dev flow unaffected
 
 ### Phase 3: Post-Deploy Smoke Tests
 
