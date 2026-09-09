@@ -92,6 +92,17 @@ jobs:
           api_location: "" # Api source code path - optional
           output_location: "" # Built app content directory - optional
           ###### End of Repository/Build Configurations ######
+      - name: Verify deployed publishable key
+        run: |
+          set -euo pipefail
+          BODY=$(curl -sf https://purple-sky-08f4fb710.7.azurestaticapps.net/)
+          # Same escaped-JSON pattern verified manually against the live bundle
+          # this session: a non-empty key renders as \"publishableKey\":\"pk_...
+          echo "$BODY" | grep -qF '\"publishableKey\":\"pk_' || {
+            echo "publishableKey missing or empty in deployed bundle"
+            exit 1
+          }
+          echo "Frontend smoke test passed."
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

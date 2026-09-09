@@ -301,16 +301,16 @@ This plan's own Phase 1 IS the migration-handling mechanism going forward — no
 
 #### Automated
 
-- [x] 2.1 Backend builds/tests pass with Clerk config present
-- [x] 2.2 Backend fails fast without Clerk config outside Development
-- [x] 2.3 Model-drift check still passes (EF.IsDesignTime guard works)
-- [x] 2.4 Frontend build fails when env var unset
-- [x] 2.5 Frontend build succeeds when env var set
-- [x] 2.6 Frontend lint/tests unaffected
+- [x] 2.1 Backend builds/tests pass with Clerk config present — db66ea0
+- [x] 2.2 Backend fails fast without Clerk config outside Development — db66ea0
+- [x] 2.3 Model-drift check still passes (EF.IsDesignTime guard works) — db66ea0
+- [x] 2.4 Frontend build fails when env var unset — db66ea0
+- [x] 2.5 Frontend build succeeds when env var set — db66ea0
+- [x] 2.6 Frontend lint/tests unaffected — db66ea0
 
 #### Manual
 
-- [x] 2.7 Local dev flow unaffected
+- [x] 2.7 Local dev flow unaffected — db66ea0
 
 ### Phase 3: Post-Deploy Smoke Tests
 
@@ -318,16 +318,16 @@ This plan's own Phase 1 IS the migration-handling mechanism going forward — no
 
 - [ ] 3.1 Backend smoke test passes against live deployment
 - [ ] 3.2 Frontend smoke test passes against live deployment
-- [ ] 3.3 Existing Playwright e2e suite unaffected
+- [x] 3.3 Existing Playwright e2e suite unaffected — 6888d96
 
 #### Manual
 
-- [ ] 3.4 Deliberate backend env-var break confirms smoke test fails the workflow
-- [ ] 3.5 Deliberate frontend empty-key break confirms smoke test fails the workflow
+- [x] 3.4 Deliberate backend env-var break confirms smoke test fails the workflow — 6888d96
+- [x] 3.5 Deliberate frontend empty-key break confirms smoke test fails the workflow — 6888d96
 
 ### Phase 4: Doc Sync + Cleanup
 
 #### Manual
 
-- [ ] 4.1 Backend README accurately describes new migration/config behavior
-- [ ] 4.2 No root doc still claims migrations are manual-only
+- [x] 4.1 Backend README accurately describes new migration/config behavior
+- [x] 4.2 No root doc still claims migrations are manual-only

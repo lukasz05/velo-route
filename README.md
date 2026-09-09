@@ -17,7 +17,7 @@ Free road-cycling loop-route planner. Enter a start point and a distance range (
 docker compose up -d
 ```
 
-`dotnet run` (below) applies EF Core migrations automatically on startup in Development.
+`dotnet run` (below) applies EF Core migrations automatically on startup in Development. In production, CI applies pending migrations via Kudu as part of the backend deploy job — see `src/backend/VeloRoute/README.md`.
 
 **Backend** — runs at <http://localhost:5098>
 
