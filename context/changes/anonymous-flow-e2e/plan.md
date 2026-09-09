@@ -630,28 +630,28 @@ jobs before deploying.
 
 #### Automated
 
-- [x] 1.1 Backend builds: `dotnet build` from `src/backend/`
-- [x] 1.2 New tests pass: `dotnet test --filter FullyQualifiedName~GpxEndpointTests`
-- [x] 1.3 Full backend suite green: `dotnet test` from `src/backend/`
+- [x] 1.1 Backend builds: `dotnet build` from `src/backend/` — efa9300
+- [x] 1.2 New tests pass: `dotnet test --filter FullyQualifiedName~GpxEndpointTests` — efa9300
+- [x] 1.3 Full backend suite green: `dotnet test` from `src/backend/` — efa9300
 
 #### Manual
 
-- [x] 1.4 Each `[InlineData]` row fails for the intended reason
+- [x] 1.4 Each `[InlineData]` row fails for the intended reason — efa9300
 
 ### Phase 2: Playwright Harness
 
 #### Automated
 
-- [ ] 2.1 Browser installs: `npx playwright install --with-deps chromium`
-- [ ] 2.2 Smoke spec passes: `npx playwright test`
-- [ ] 2.3 Vitest green and does not collect the spec: `npm test` reports 47 cases
-- [ ] 2.4 Lint passes: `npm run lint`
+- [x] 2.1 Browser installs: `npx playwright install --with-deps chromium`
+- [x] 2.2 Smoke spec passes: `npx playwright test`
+- [x] 2.3 Vitest green and does not collect the spec: `npm test` reports 47 cases
+- [x] 2.4 Lint passes: `npm run lint`
 
 #### Manual
 
-- [ ] 2.5 With no backend running, Playwright starts one and the run passes
-- [ ] 2.6 With a backend already running, `reuseExistingServer` avoids a port clash
-- [ ] 2.7 `git status` shows no Playwright artifact noise
+- [x] 2.5 With no backend running, Playwright starts one and the run passes
+- [x] 2.6 With a backend already running, `reuseExistingServer` avoids a port clash
+- [x] 2.7 `git status` shows no Playwright artifact noise
 
 ### Phase 3: The Anonymous e2e Spec
 

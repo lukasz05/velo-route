@@ -8,6 +8,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
+    // Vitest does not merge with its default exclude array, so the defaults are
+    // restated here. `e2e/` holds Playwright specs, which Vitest cannot run.
+    exclude: ['**/node_modules/**', '**/.git/**', '**/e2e/**'],
   },
   resolve: {
     alias: {
