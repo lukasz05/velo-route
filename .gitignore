@@ -36,6 +36,13 @@ src/frontend/next-env.d.ts
 src/frontend/*.tsbuildinfo
 
 # -----------------------------------------------------------------------------
+# Playwright (src/frontend/)
+# -----------------------------------------------------------------------------
+src/frontend/test-results/
+src/frontend/playwright-report/
+src/frontend/blob-report/
+
+# -----------------------------------------------------------------------------
 # .NET / ASP.NET Core (src/backend/)
 # Projects: src/backend/VeloRoute/ · src/backend/VeloRoute.Tests/
 # Solution:  src/backend/VeloRoute.slnx

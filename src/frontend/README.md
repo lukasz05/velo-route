@@ -41,3 +41,18 @@ If you're behind a corporate SSL proxy, export its CA certificate to `local-ca.p
 | `npm test` | Run Vitest test suite (single pass) |
 | `npm run test:watch` | Vitest in watch mode |
 | `npm run coverage` | Vitest with coverage report |
+| `npm run e2e` | Run the Playwright end-to-end suite (chromium) |
+| `npm run e2e:ui` | Playwright in UI mode |
+
+### End-to-end tests
+
+Specs live in `e2e/` and run against a production build. Install the browser once:
+
+```bash
+npx playwright install chromium
+```
+
+Playwright starts both servers itself — the .NET backend and `npm run build && npm start` —
+so `npm run e2e` needs nothing else running, and no Clerk or ORS credentials: the config
+supplies synthetic Clerk keys and the specs mock the ORS-dependent hops. See
+`context/foundation/test-plan.md` §6.5 before adding a spec.

@@ -110,7 +110,7 @@ orchestrator updates Status as artifacts appear on disk.
 | 2 | Route generation integration | Integration tests prove distance / overlap constraints hold and the deadline fires correctly under slow ORS conditions | #2, #5 | integration (ORS HTTP mock) | shipped | context/changes/route-generation-integration-tests |
 | 3 | Security + privacy guards | Integration tests assert that error responses contain no API key and that logs contain no input coordinates | #4, #6 | integration | shipped | context/changes/security-privacy-guards |
 | 4 | Quality-gates wiring (frontend half) | CI runs `npm test` before the Azure SWA deploy, so the 47 Vitest cases actually gate something | cross-cutting | CI gate (GitHub Actions) | shipped | context/changes/test-plan-refresh-2026-09-08 |
-| 5 | Core anonymous flow end-to-end | Prove generate → map → GPX download survives in a real browser with no session, and add the missing `POST /routes/gpx` endpoint test | #7 | e2e + integration | not started | — |
+| 5 | Core anonymous flow end-to-end | Prove generate → map → GPX download survives in a real browser with no session, and add the missing `POST /routes/gpx` endpoint test | #7 | e2e + integration | shipped | context/changes/anonymous-flow-e2e |
 | 6 | Config-failure loudness | An absent or misconfigured ORS/Clerk token produces a loud, diagnosable failure rather than a silent one | #8 | integration | not started | — |
 
 **Phase 4 scope note.** The backend half of this phase has been live since 2026-07-01:
@@ -122,12 +122,24 @@ remained; it landed 2026-09-08 as a `test` job in
 **not** take the dependency — closing a PR must not wait on a test run against a branch
 that may already be deleted.
 
+Phase 5 widened that gate: `build_and_deploy_job` now carries `needs: [test, e2e]`, and the
+SWA workflow's path filters include `src/backend/**`. `close_pull_request_job` still takes
+no dependency.
+
 **Phase 5 scope note.** `POST /routes/gpx` (`src/backend/VeloRoute/Program.cs:407`) has no
 test at all, yet the frontend calls it from three places (`RouteInfoPanel.tsx`,
 `my-routes/[id]/page.tsx`, `r/[token]/page.tsx`) — it is the last hop of the anonymous
-flow. The integration half of this phase covers its three untested validation branches
-(empty coordinates, non-finite values, out-of-range values) plus the success case's
-`application/gpx+xml` content type. The e2e half drives the browser flow with no session.
+flow. The integration half of this phase covers its **two** untested validation branches
+plus the success case's `application/gpx+xml` content type. The e2e half drives the browser
+flow with no session.
+
+An earlier revision of this note claimed three validation branches (empty, non-finite,
+out-of-range). The source folds non-finite and out-of-range into one predicate returning one
+message (`Program.cs:412-416`), so a response cannot distinguish them — only the input can.
+Per §1 principle #3, the source is ground truth: two branches, six input rows across the
+second. Two non-finite inputs are reachable — `1e400` (overflows to `Infinity`) and quoted
+`"NaN"`; a bare `NaN` literal fails at `System.Text.Json` model binding before the guard
+runs and returns a different response shape.
 
 **Order rationale.** Phase 4 locks the floor cheaply and is a prerequisite for trusting
 any later phase's result in CI. Phase 5 carries the highest-risk scenario (#7, High ×
@@ -159,7 +171,7 @@ The classic test base for this project. Both runners are installed and green.
 | HTTP mocking (.NET) | custom `FakeOpenRouteServiceClient` | — | A hand-written fake at the `IOpenRouteServiceClient` boundary. The WireMock.Net option floated by the original plan was **not** taken — the interface seam was cheaper and needs no HTTP listener |
 | frontend unit + component | Vitest | 4.1.9 | `npm test` from `src/frontend/`; jsdom 29.1.1; global setup at `src/frontend/src/test-setup.ts`; config `src/frontend/vitest.config.ts` |
 | frontend component | `@testing-library/react` | 16.3.2 | With `@testing-library/jest-dom` 6.9.1 and `@testing-library/user-event` 14.6.1 |
-| e2e | Playwright — **candidate, not installed** | — | Absent from `src/frontend/package.json`. §3 Phase 5 evaluates and pins the version; do not cite a version until it does |
+| e2e | Playwright | 1.63.0 | `npx playwright test` (or `npm run e2e`) from `src/frontend/`; config `src/frontend/playwright.config.ts`, specs in `src/frontend/e2e/`. `chromium` project only. The harness starts both servers itself (`dotnet run` + `npm run build && npm start`). **No CI secret**: both Clerk keys are synthetic and inline in the config — see §6.5 |
 
 Current frontend suite: 47 cases across 8 files — four route-handler tests under
 `src/frontend/src/app/api/` and four component tests under `src/frontend/src/components/`.
@@ -182,6 +194,7 @@ The full set of gates that must pass before a change reaches production.
 | unit + integration (.NET) | local + CI | required after §3 Phase 1 | logic regressions in route generation and GPX serialisation |
 | integration (security + privacy) | local + CI | required after §3 Phase 3 | key leakage, coordinate persistence in logs |
 | unit + component (Vitest) | local + CI | required after §3 Phase 4 | regressions in route-handler proxying and component rendering |
+| e2e anonymous flow (Playwright) | local + CI | required after §3 Phase 5 | auth-shaped regressions reaching the signed-out generate → map → GPX path |
 | pre-prod smoke | between merge + prod | optional | environment-specific failures (ORS key rotation, Azure config) |
 
 ---
@@ -426,11 +439,74 @@ reader) actually perceives.
 
 ### 6.5 Adding an e2e test
 
-TBD — see §3 Phase 5.
+Specs live in `src/frontend/e2e/` as `*.spec.ts`; fixtures in `e2e/fixtures/`. Run with
+`npm run e2e` (or `npx playwright test`) from `src/frontend/`. One-time prerequisite:
+`npx playwright install chromium`. Vitest excludes `**/e2e/**`, so a spec never lands in the
+wrong runner. The harness starts both servers itself — do not start them by hand;
+`reuseExistingServer` picks up ones already running locally.
+
+**Mock the ORS-dependent hops, keep the GPX hop real.** `/api/geocode` and `/api/routes/loop`
+both reach OpenRouteService, so mocking them at the browser boundary removes the only secret
+dependency. `/api/routes/gpx` has no external dependency, so let it reach the real backend —
+that is what catches fixture-vs-backend contract drift on the hop that matters. The MapLibre
+style is stubbed with `{ version: 8, sources: {}, layers: [] }` so the map genuinely loads
+(`onLoad` → `isMapLoaded` → `fitBounds`) while staying hermetic.
+
+**Block clerk-js — that is the load-bearing condition.** Risk #7 is an auth-shaped failure
+reaching a page with no account features on it. Aborting the Clerk host reproduces it:
+
+```ts
+await page.route('https://clerk.example.com/**', route => route.abort())
+```
+
+Block the **host**, not a script-name pattern — the synthetic publishable key decodes to
+`clerk.example.com`, which is exact and stable, whereas a `clerk.browser.js` glob silently
+stops matching if Clerk renames the bundle.
+
+Three consequences to respect:
+
+- **Never register a `pageerror`/`console` failure hook.** The block legitimately produces a
+  `console.error` from `ClerkProvider`'s catch and an unhandled rejection from
+  `loadClerkJSScript`. Such a hook would fail the spec on its own premise.
+- **Never wait for Clerk to settle.** `scriptLoadTimeout` is 15 s and the aborted path does
+  not short-circuit it. Assert against elements; a `waitForLoadState('networkidle')` pays the
+  full 15 s.
+- The config seeds a synthetic `__clerk_db_jwt` cookie so the development instance's 307
+  handshake to its (unreachable) frontend API does not kill the navigation.
+
+**Selector caveat**: the "Start location" label has no `htmlFor`, so `getByLabel` does not
+reach the input. Use `getByRole('combobox')`, then click `getByRole('option')` — Playwright's
+auto-waiting absorbs `SearchBar`'s 300 ms debounce.
+
+**Assert the download, not just that one happened:**
+
+```ts
+const downloadPromise = page.waitForEvent('download')
+await page.getByRole('button', { name: 'Download GPX' }).click()
+const download = await downloadPromise
+expect(download.suggestedFilename()).toMatch(/^veloroute-\d{8}T\d{6}\.gpx$/)
+// read via download.createReadStream() and assert the body contains '<trkpt'
+```
+
+Anti-pattern to avoid: asserting a download occurred without asserting the filename **or**
+that the Save block is absent (`getByLabel('Name')` → count 0). A signed-in session would
+pass such a test while proving nothing about the anonymous path — the session masks exactly
+the failure being hunted.
 
 ### 6.6 Per-rollout-phase notes
 
-(Filled in by `/10x-implement` as phases ship.)
+**Phase 5 (2026-09-09, `context/changes/anonymous-flow-e2e`).** Two halves shipped:
+`GpxEndpointTests` (HTTP contract for `POST /routes/gpx`, no Postgres needed) and one
+Playwright spec for the anonymous flow (§6.5). CI: the SWA workflow gained an `e2e` job,
+`build_and_deploy_job` now carries `needs: [test, e2e]`, and the workflow triggers on
+`src/backend/**` as well — the e2e drives the GPX hop against a real backend, so a
+backend-only change can break it. Accepted consequence: a backend-only PR now also runs
+`build_and_deploy_job`, redeploying identical frontend content. Narrowing that needs
+job-level changed-file detection, which costs more than the duplicate upload.
+
+Also fixed here: ESLint has its own ignore list and does not read `.gitignore`, so
+`playwright-report/` had to be added to `eslint.config.mjs` — otherwise `npm run lint` lints
+the report's bundled JS after any HTML-reporter run.
 
 ---
 
@@ -449,7 +525,7 @@ Exclusions agreed during the rollout (Phase 2 interview, Q5).
 ## 8. Freshness Ledger
 
 - Strategy (§1–§5) last reviewed: 2026-09-08
-- Stack versions last verified: 2026-09-08 (xUnit 2.9.3 / runner 3.1.4, Mvc.Testing 10.0.7, Testcontainers.PostgreSql 4.13.0, Vitest 4.1.9, jsdom 29.1.1, RTL 16.3.2)
+- Stack versions last verified: 2026-09-08 (xUnit 2.9.3 / runner 3.1.4, Mvc.Testing 10.0.7, Testcontainers.PostgreSql 4.13.0, Vitest 4.1.9, jsdom 29.1.1, RTL 16.3.2); Playwright 1.63.0 verified 2026-09-09
 - AI-native tool references last verified: 2026-09-08 (no AI-native layer included; no MCP servers exposed in session)
 
 Refresh (`/10x-test-plan --refresh`) when:

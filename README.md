@@ -36,6 +36,16 @@ npm run dev
 
 Swagger UI (development): <http://localhost:5098/swagger>
 
+## Tests
+
+```bash
+cd src/backend && dotnet test    # xUnit; needs Docker (Testcontainers)
+cd src/frontend && npm test      # Vitest
+cd src/frontend && npm run e2e   # Playwright; starts both servers itself
+```
+
+The e2e suite needs a one-time `npx playwright install chromium` and no credentials.
+
 ## Required environment variables
 
 | Variable | Where | Description |
