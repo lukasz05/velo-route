@@ -104,10 +104,16 @@ jobs:
           # curl -f fails silently with no body on a non-2xx response, which
           # makes a real failure here undebuggable from the log alone. Print
           # the status and body to stderr before exiting non-zero instead.
+          #
+          # Also persist cookies across every call: Clerk's Frontend API ties
+          # a sign-in attempt to an anonymous "client" via a Set-Cookie on the
+          # first request. Without a shared jar, each curl invocation looks
+          # like a brand new client and later steps 401 with "signed_out".
+          COOKIE_JAR=$(mktemp)
           req() {
             local method="$1" url="$2"; shift 2
             local resp status body
-            resp=$(curl -s -w '\n%{http_code}' -X "$method" "$url" "$@")
+            resp=$(curl -s -c "$COOKIE_JAR" -b "$COOKIE_JAR" -w '\n%{http_code}' -X "$method" "$url" "$@")
             status=$(echo "$resp" | tail -n1)
             body=$(echo "$resp" | sed '$d')
             if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
