@@ -292,9 +292,9 @@ This plan's own Phase 1 IS the migration-handling mechanism going forward — no
 
 #### Manual
 
-- [ ] 1.4 Deploy job's migration step completes successfully on a real push
-- [ ] 1.5 Migrations confirmed applied against prod after that deploy
-- [ ] 1.6 No-op re-run completes idempotently
+- [x] 1.4 Deploy job's migration step completes successfully on a real push
+- [x] 1.5 Migrations confirmed applied against prod after that deploy
+- [x] 1.6 No-op re-run completes idempotently
 - [x] 1.7 Stale firewall rule confirmed removed
 
 ### Phase 2: Fail-Fast Config Checks
