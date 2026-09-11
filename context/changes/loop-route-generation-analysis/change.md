@@ -9,4 +9,4 @@ archived_at: null
 
 ## Notes
 
-Analiza przepływu generowania pętli tras (POST /routes/loop) — Deep Focus na Routing/LoopRouteGenerator.
+Analysis of the loop-route generation flow (POST /routes/loop) — Deep Focus on Routing/LoopRouteGenerator.

@@ -9,17 +9,17 @@ archived_at: null
 
 ## Notes
 
-Intencja: mamy analizę tego repozytorium, która dokumentuje dług techniczny
-i ryzyka strukturalne: context/changes/{change-id}/research.md.
-Ta zmiana odpowiada na pytanie, które tamta analiza celowo zostawiła otwarte:
-KTÓRE z tych problemów warto naprawić, w jakim docelowym kształcie
-i w jakiej kolejności.
-Eksplorujemy każdy zapisany problem w kodzie i historii,
-a potem porządkujemy je jako refactor opportunities.
-Zmiana przebiega etapami: eksploracja → decyzja i plan → implementacja.
-Na etapie eksploracji nie dzieje się żaden refaktor
-i nie zapada żadna decyzja.
-Wynik eksploracji: research.md tej zmiany,
-zakończony rankingiem opcji z trade-offami.
-Najpierw przeczytam raport; decyzja, co realizujemy, zapada
-na etapie planowania, a refaktor rusza dopiero według przyjętego planu.
+Intent: we have an analysis of this repository that documents technical debt
+and structural risks: context/changes/loop-route-generation-analysis/research.md.
+This change answers the question that analysis deliberately left open:
+WHICH of these problems are worth fixing, in what target shape,
+and in what order.
+We explore every recorded problem in the code and history,
+then organize them as refactor opportunities.
+The change proceeds in stages: exploration → decision and plan → implementation.
+No refactoring happens during exploration,
+and no decision is made.
+Exploration output: this change's research.md,
+ending with a ranking of options with trade-offs.
+I read the report first; the decision on what to implement is made
+at the planning stage, and refactoring starts only from the accepted plan.
