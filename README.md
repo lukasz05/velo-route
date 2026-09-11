@@ -44,9 +44,10 @@ Swagger UI (development): <http://localhost:5098/swagger>
 ## Tests
 
 ```bash
-cd src/backend && dotnet test    # xUnit; needs Docker (Testcontainers)
+cd src/backend && dotnet test    # xUnit + ArchUnitNET rules; needs Docker (Testcontainers)
 cd src/frontend && npm test      # Vitest
 cd src/frontend && npm run e2e   # Playwright; starts both servers itself
+cd src/frontend && npm run depcruise  # dependency-cruiser layer and cycle rules
 ```
 
 The e2e suite needs a one-time `npx playwright install chromium` and no credentials.
@@ -67,3 +68,4 @@ See `src/frontend/.env.example` for frontend env setup.
 
 - Product requirements (v2, current): [`context/foundation/prd-v2.md`](context/foundation/prd-v2.md)
 - Roadmap: [`context/foundation/roadmap.md`](context/foundation/roadmap.md)
+- Architecture report (module 4): [`context/architect-report.md`](context/architect-report.md) — repo map, feature research, refactor plan, DDD notes

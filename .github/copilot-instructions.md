@@ -35,7 +35,13 @@ context/
     prd.md       # v1, frozen
     prd-v2.md    # current
     roadmap.md
+    test-plan.md
   changes/    per-change work logs
+  archive/    completed change logs
+  map/        repo map (git history, dependency graph, contributors)
+  domain/     DDD notes (ubiquitous language, invariants, ACL)
+  deployment/ deploy plan
+  architect-report.md   module 4 architectural report
 .gitignore    monorepo-wide (root only)
 docker-compose.yml   local Postgres (`docker compose up -d`)
 ```
@@ -49,6 +55,7 @@ npm run build
 npm run lint       # eslint
 npm test           # vitest
 npm run e2e        # playwright (starts the backend + a production build itself)
+npm run depcruise  # dependency-cruiser layer and cycle rules
 ```
 
 **Backend** (`src/backend/`)
@@ -57,11 +64,12 @@ dotnet run                         # http://localhost:5098
 dotnet run --launch-profile https  # https://localhost:7125
 dotnet build
 dotnet test
+pwsh scripts/backend-dep-graph.ps1 # fan-in/fan-out metrics + namespace dependency graph
 ```
 
 Swagger UI (development only): `http://localhost:5098/swagger`
 
-Backend test runner: xUnit 2.9.3, bootstrapped in `src/backend/VeloRoute.Tests/`. Run with `dotnet test` from `src/backend/` (needs Postgres — Testcontainers-backed; `docker compose up -d` or a running Docker daemon). Frontend test runners: Vitest 4 + React Testing Library for unit/component tests, co-located `*.test.ts(x)`, run with `npm test`; Playwright 1.63.0 (chromium) for end-to-end, specs in `src/frontend/e2e/` as `*.spec.ts`, run with `npm run e2e` after a one-time `npx playwright install chromium`. Both run from `src/frontend/`; Vitest excludes `e2e/`.
+Backend test runner: xUnit 2.9.3, bootstrapped in `src/backend/VeloRoute.Tests/`; ArchUnitNET 0.13.4 layer and cycle rules live in `VeloRoute.Tests/Architecture/` and run as part of `dotnet test`. Run with `dotnet test` from `src/backend/` (needs Postgres — Testcontainers-backed; `docker compose up -d` or a running Docker daemon). Frontend test runners: Vitest 4 + React Testing Library for unit/component tests, co-located `*.test.ts(x)`, run with `npm test`; Playwright 1.63.0 (chromium) for end-to-end, specs in `src/frontend/e2e/` as `*.spec.ts`, run with `npm run e2e` after a one-time `npx playwright install chromium`. Both run from `src/frontend/`; Vitest excludes `e2e/`.
 
 ## Architecture
 

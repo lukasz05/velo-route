@@ -81,4 +81,6 @@ src/backend/
   appsettings.json    # Default config (ORS base URL, log levels)
   VeloRoute.csproj    # Project file
 VeloRoute.Tests/       # xUnit suite; Testcontainers-backed Postgres fixture
+  Architecture/        # ArchUnitNET layer and cycle rules
+scripts/               # backend-dep-graph.ps1 — fan-in/fan-out metrics + dependency graph
 ```
