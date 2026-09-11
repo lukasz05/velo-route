@@ -33,6 +33,7 @@ The frontend `RouteResult` type is generated from the backend's own OpenAPI spec
 - Add a characterization test pinning the current `RouteResult` JSON shape
 - Un-gate `/openapi/v1.json` outside Development (Swagger UI/`/auth/probe` stay dev-only)
 - Add `openapi-typescript` codegen, generate and commit the types file
+- CI job that fails when the committed generated types no longer match the backend's spec
 - Replace the hand-written `RouteResult` interface with a re-export of the generated type
 
 **Out of scope:**
@@ -42,7 +43,7 @@ The frontend `RouteResult` type is generated from the backend's own OpenAPI spec
 
 ## Architecture / Approach
 
-Backend already exposes an OpenAPI document; the fix is exposure (un-gate one line) plus a one-time codegen step whose output is committed like a lockfile — not regenerated on every build. Frontend's `route.ts` re-exports the generated `RouteResult` type so no import path across the codebase changes. A backend characterization test brackets the change: written before touching anything, verified unmodified afterward.
+Backend already exposes an OpenAPI document; the fix is exposure (un-gate one line) plus a one-time codegen step whose output is committed like a lockfile — not regenerated on every build, but checked for staleness by a CI job. Frontend's `route.ts` re-exports the generated `RouteResult` type so no import path across the codebase changes. A backend characterization test brackets the change: written before touching anything, verified unmodified afterward.
 
 ## Phases at a Glance
 
@@ -50,7 +51,7 @@ Backend already exposes an OpenAPI document; the fix is exposure (un-gate one li
 | --- | --- | --- |
 | 1. Delete dead overload (C7) | Interface + implementations shrink by one confirmed-zero-caller method | None — zero risk, confirmed by research |
 | 2. Characterization test | Backend test pinning all 8 `RouteResult` JSON fields | Test itself could be too loose to catch real drift — mitigated by asserting every field's `ValueKind`, not just presence |
-| 3. Expose spec + generate types | `/openapi/v1.json` reachable outside dev; `route-api.ts` generated | Naming-policy mismatch between generated schema and hand-written interface (expected none — both default to camelCase) |
+| 3. Expose spec + generate types | `/openapi/v1.json` reachable outside dev; `route-api.ts` generated; CI fails on stale types | Naming-policy mismatch between generated schema and hand-written interface (expected none — both default to camelCase) |
 | 4. Cut over | `route.ts` re-exports generated type; 3 call sites need no edits | Generated type's optionality could differ subtly from what call sites assume — caught by `tsc --noEmit` + manual eye-diff |
 
 **Prerequisites:** Local backend (`dotnet run`) reachable to generate types against; no other change in flight touching `Program.cs`'s Development gate or `route.ts`.
@@ -59,7 +60,7 @@ Backend already exposes an OpenAPI document; the fix is exposure (un-gate one li
 ## Open Risks & Assumptions
 
 - Assumes ASP.NET Core's default camelCase JSON policy applies to `/openapi/v1.json`'s schema output the same way it applies to actual responses — not independently verified before this plan, confirmed at Phase 3 review.
-- Generated types are committed, not regenerated in CI — a future backend field change requires a manual `npm run gen:route-types` + commit, or the frontend type silently goes stale again (narrower version of the original problem, now at least visible via a diff instead of silent).
+- Generated types are committed, not regenerated on every build — a future backend field change still requires a manual `npm run gen:route-types` + commit, but the `API Contract Freshness` CI job regenerates against the running backend and fails on any diff, so a forgotten regeneration blocks the deploy instead of letting the type go stale silently.
 
 ## Success Criteria (Summary)
 

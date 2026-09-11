@@ -17,6 +17,7 @@ Close the `RouteResult` / `route.ts` contract drift (C1) — the one candidate `
 
 - `/openapi/v1.json` is reachable in every environment (Swagger UI and `/auth/probe` remain dev-only).
 - The frontend `RouteResult` type is generated from that spec, not hand-typed — `types/route.ts` re-exports the generated type so no other import site changes.
+- CI fails when the committed generated types no longer match the backend's spec, so the compile-time check cannot silently go stale.
 - A new backend integration test pins the full 8-field JSON shape of a `/routes/loop` response, added *before* the codegen cutover, and still green *after* it (regression guard).
 - The 2-coordinate `GetDirectionsAsync` overload no longer exists in the interface, the real client, or the test fake.
 
@@ -47,7 +48,7 @@ Guard-first, cheapest-and-most-independent-first ordering:
 
 1. Delete the dead overload (C7) — zero dependencies, zero risk, lands as its own reversible commit.
 2. Add a characterization test that pins the *current* `/routes/loop` JSON response shape — before anything about the contract changes, per the "guard, not rebuild until you've guarded" principle. This test must still pass unchanged after the codegen cutover.
-3. Expose the OpenAPI spec outside Development and introduce codegen tooling.
+3. Expose the OpenAPI spec outside Development and introduce codegen tooling, with a CI job that fails on stale generated types.
 4. Cut over the frontend to the generated type at the 3 call sites; re-run the characterization test as the regression check.
 
 Each phase is an independently committable, reversible step.
@@ -143,7 +144,7 @@ Un-gates `/openapi/v1.json` outside Development and introduces `openapi-typescri
 
 **Intent**: Add `openapi-typescript` as a devDependency and a new script to (re)generate types from the running backend's spec.
 
-**Contract**: New script `"gen:route-types": "openapi-typescript http://localhost:5098/openapi/v1.json -o src/types/generated/route-api.ts"`. Generated output is committed to the repo (like `package-lock.json`) and regenerated on demand when the backend contract changes — it is not part of `npm run build` or CI, keeping this phase's blast radius to exactly the frontend + `Program.cs`'s OpenAPI registration, as research's blast-radius analysis specified.
+**Contract**: New script `"gen:route-types": "openapi-typescript http://localhost:5098/openapi/v1.json -o src/types/generated/route-api.ts"`. Generated output is committed to the repo (like `package-lock.json`) and regenerated on demand when the backend contract changes — it is not part of `npm run build`. CI instead verifies the committed file is current (item 5 below), so a forgotten regeneration fails the pipeline rather than letting drift through silently. Blast radius: the frontend, `Program.cs`'s OpenAPI registration, and one new CI job.
 
 #### 3. Automated regression guard for non-Development reachability
 
@@ -177,6 +178,14 @@ Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
 **Contract**: Exports an OpenAPI `components` type map; `RouteResult` is accessed as `components['schemas']['RouteResult']`.
 
+#### 5. CI freshness gate for the generated types
+
+**File**: `.github/workflows/azure-static-web-apps-purple-sky-08f4fb710.yml`
+
+**Intent**: Make the compile-time guarantee hold between regenerations. Without it, a backend change to `RouteResult` that nobody follows with `npm run gen:route-types` leaves the committed file stale: it still compiles, and the three `as RouteResult` casts accept whatever the backend now returns — the original drift, moved from a hand-written interface to a hand-triggered command.
+
+**Contract**: New job `contract` (display name `API Contract Freshness`), added to `build_and_deploy_job`'s `needs` alongside `test` and `e2e`. Steps: checkout, `setup-node`, `setup-dotnet` (`10.x`), `npm ci`; start the backend in the background with the same command Playwright's `webServer` already runs in CI (`dotnet run --project VeloRoute` from `src/backend/`, per `playwright.config.ts`); poll `http://localhost:5098/health` until it answers; then `npm run gen:route-types` and `git diff --exit-code -- src/types/generated/`. The workflow already triggers on `src/backend/**`, so a backend-only contract change runs this job too.
+
 ### Success Criteria
 
 #### Automated Verification
@@ -186,11 +195,13 @@ Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 - Generated file compiles: `npx tsc --noEmit` (from `src/frontend/`)
 - Full frontend suite still passes: `npm test` (from `src/frontend/`)
 - Lint passes: `npm run lint` (from `src/frontend/`)
+- Generated types are current: with `dotnet run` running, `npm run gen:route-types && git diff --exit-code -- src/types/generated/` exits 0 (from `src/frontend/`); in CI, the `API Contract Freshness` job passes
 
 #### Manual Verification
 
 - `curl http://localhost:5098/openapi/v1.json` against a `dotnet run` instance with `ASPNETCORE_ENVIRONMENT=Production` confirms the spec is reachable outside Development (the actual bug this phase fixes)
 - Swagger UI at `/swagger` and `GET /auth/probe` both still 404/return-nothing-useful outside Development (unchanged dev-only gating)
+- Negative check: on a scratch branch, rename a `RouteResult` property in the backend without regenerating; confirm the `API Contract Freshness` job fails
 
 ---
 
@@ -309,11 +320,13 @@ Not applicable — no data migration. The generated types file is a new, committ
 - [ ] 3.3 Generated file compiles: `npx tsc --noEmit`
 - [ ] 3.4 Full frontend suite still passes: `npm test`
 - [ ] 3.5 Lint passes: `npm run lint`
+- [ ] 3.8 Generated types are current: `API Contract Freshness` CI job passes
 
 #### Manual
 
 - [ ] 3.6 `/openapi/v1.json` reachable outside Development
 - [ ] 3.7 Swagger UI and `/auth/probe` remain dev-only
+- [ ] 3.9 Negative check: an unregenerated backend contract change fails `API Contract Freshness`
 
 ### Phase 4: Cut over to the generated `RouteResult` type
 
