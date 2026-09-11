@@ -44,11 +44,10 @@ Investigated `POST /routes/loop` — the product's core flow — because L2 flag
 **Explicitly NOT doing:** the other 7 ranked candidates — each rejected for a stated reason (already deliberate, no proven incident, ops-script rather than app code) — keeping this plan's blast radius to two items.
 
 **Phases (one line each):**
-1. Move `app.MapOpenApi()` outside the dev-only gate so `/openapi/v1.json` is reachable everywhere — manual, no test needed beyond a smoke check.
-2. Add a characterization test pinning the full 8-field JSON shape of a `/routes/loop` response, before touching anything else — automated (`dotnet test`).
-3. Introduce codegen tooling (openapi-typescript/orval) and re-point `route.ts` to re-export the generated type — verified by `npm run build` (type-check) + the characterization test staying green.
-4. Delete the dead 2-coordinate overload from the interface, real client, and test fake (C7) — verified by `dotnet build`/`dotnet test`.
-5. Full regression: `dotnet test`, `npm test`, `npm run build`, `npm run lint`, `npm run e2e`.
+1. Delete the dead 2-coordinate `GetDirectionsAsync` overload from the interface, real client, and test fake (C7) — automated: `dotnet build`, `dotnet test`, grep finds no remaining references.
+2. Add a characterization test (`RouteResultContractTests`) pinning all 8 fields of the `/routes/loop` JSON response before the contract is touched — automated: `dotnet test`.
+3. Un-gate `/openapi/v1.json` outside Development, add `openapi-typescript`, and commit the generated types — automated: `OpenApiExposureTests`, `tsc --noEmit`, `npm test`, `npm run lint`, and a CI job that fails on stale generated types; manual: spec reachable under `ASPNETCORE_ENVIRONMENT=Production`, Swagger UI still dev-only.
+4. Re-point `route.ts`'s `RouteResult` to the generated type — automated: `tsc --noEmit`, `npm test`, `npm run build`, `npm run lint`, `npm run e2e`, and the Phase 2 test passing unmodified; manual: generate a route in the running app, diff the generated type against the deleted interface by eye.
 
 ## 5. Domain according to DDD (from L5)
 
@@ -62,8 +61,4 @@ Investigated `POST /routes/loop` — the product's core flow — because L2 flag
 
 ## 6. Decisions that belong to me
 
-The L2 structure artifact initially covered only the frontend, via the JS/TS-only dependency-cruiser (the course template assumes a single-JS-workspace repo like mattermost). I disagreed with excluding the .NET backend and guided the process toward covering it with different tooling. I picked ArchUnitNET specifically because it's free, it provides evidence for the lack of unwanted dependencies and cycles, and its model facilitates easy creation of a script that calculates metrics unavailable in ArchUnitNET itself — analogous to those dependency-cruiser gives for free on the frontend.
-
-For the L4 contract-drift fix (C1), I suggested going with OpenAPI codegen straight away instead of the agent-recommended temporary runtime type-checking (zod): codegen is a widely-used, well-supported solution that enforces DRY in this area and makes backend/frontend model consistency checked at compile time.
-
-On sequencing the L5 findings, I think the contract-drift issue should be resolved before the Clerk ACL leak: the contract is likely to change sooner and more often than the auth provider, so drift can appear on the very next implemented change, while — as long as we stay on Clerk — the leak imposes no significant risk.
+The agent proposed three defaults I overrode. The L2 structure prompt assumed a single JS workspace, so the agent mapped only the frontend with dependency-cruiser; I rejected that because every top risk zone on the map — `Routing/`, `LoopRouteGenerator`, `Program.cs` — lives in the .NET backend, and chose ArchUnitNET over NDepend because it is free, runs as xUnit tests, and exposes a type model I could script fan-in/fan-out metrics from. For the `RouteResult` drift, L4 research recommended piloting a zod runtime schema; I chose OpenAPI codegen instead, because zod would add a third hand-maintained copy of a contract already proven to drift (`3985e83`), whereas codegen makes the backend the single source and moves the check to compile time, with a CI step that fails on a stale generated file. Publishing `/openapi/v1.json` outside Development I treat as no cost: it reveals nothing the browser's own requests to the backend don't already expose. L5 flags the Clerk leak as the worst ACL gap, yet I sequence the contract fix first: the overlap-invariant refactor already plans to remove `QualityWarning` from `RouteResult`, so the contract changes again soon, while the Clerk leak costs nothing until a provider swap that no roadmap item plans.
