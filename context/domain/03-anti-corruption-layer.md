@@ -167,6 +167,8 @@ No open question here is contingent on Clerk's own contract (unlike, say, a wire
 
 ## Step 6 — Plan
 
+**Sequencing.** Schedule this after `refactor-opportunities` (C1, the `RouteResult` codegen fix), not before. The wire contract is about to change again — `02-invariant-aggregate-refactor.md` Step 5 removes `RouteResult.QualityWarning` — so contract drift can bite on the very next change, while this leak costs nothing until a provider swap, and no `roadmap.md` item plans one (the only past swap, Entra → Clerk, was forced when Entra tenant creation was blocked, `roadmap.md:77`).
+
 1. **Add the port + adapter.** Create `lib/auth/session.ts` (types), `lib/auth/port.ts` (interface), `lib/auth/clerkAdapter.ts` (Clerk-backed implementation: `useClerkSession`, `authorizedFetch`). No existing file changes yet — additive only.
 2. **Migrate the 5 call sites one at a time**, in order of duplication count (highest first, so the biggest win lands early and each migration is independently reviewable):
    - `my-routes/[id]/page.tsx` (5 duplicated blocks)
