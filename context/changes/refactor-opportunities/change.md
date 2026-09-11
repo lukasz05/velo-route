@@ -1,7 +1,7 @@
 ---
 change_id: refactor-opportunities
 title: Rank and plan fixes for debt found in loop-route-generation-analysis
-status: preparing
+status: plan_reviewed
 created: 2026-09-11
 updated: 2026-09-11
 archived_at: null
