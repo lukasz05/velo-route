@@ -14,7 +14,7 @@ VeloRoute is a free road-cycling loop-route planner: Next.js 15 / React 19 / Typ
 
 `src/frontend/` — Next.js 15, React 19, TypeScript, Tailwind v4, App Router  
 `src/backend/` — ASP.NET Core .NET 10, minimal API (`Program.cs`, no controllers folder), root namespace `VeloRoute`; `Data/` (EF Core entities + `AppDbContext`), `Migrations/`, `Auth/` (shared auth helpers), `Routing/` (ORS client + loop-route generator + route metadata validation), `Json/` (shared JSON converters)  
-`context/` — knowledge base (PRD, tech-stack docs, per-change logs); never auto-modified  
+`context/` — knowledge base: `foundation/` (PRD, roadmap, test plan, tech-stack docs), `changes/` + `archive/` (per-change logs), `map/` (repo map), `domain/` (DDD notes), `architect-report.md`; never auto-modified  
 
 Each project manages its own dependencies independently. See `@.github/copilot-instructions.md` for full conventions.
 
@@ -26,11 +26,13 @@ Each project manages its own dependencies independently. See `@.github/copilot-i
 - `npm run lint` — ESLint via `eslint.config.mjs` (`next/core-web-vitals` + `next/typescript`)
 - `npm test` — Vitest single-run; **must pass before deploy runs in CI**; `npm run coverage` for coverage report
 - `npm run e2e` — Playwright (chromium); **must pass before deploy runs in CI**; starts the .NET backend and a production build itself. One-time: `npx playwright install chromium`
+- `npm run depcruise` — dependency-cruiser layer and cycle rules (`.dependency-cruiser.cjs`)
 
 **Backend** (run from `src/backend/`):
 
 - `dotnet run` — API at http://localhost:5098; Swagger UI at `/swagger`
 - `dotnet test` — xUnit suite; **must pass before deploy runs in CI**
+- `pwsh scripts/backend-dep-graph.ps1` — fan-in/fan-out metrics and a namespace dependency graph (see `context/map/artifact-2-structure.md`)
 
 ## Coding Conventions
 
@@ -44,7 +46,7 @@ Each project manages its own dependencies independently. See `@.github/copilot-i
 
 - **Frontend**: Vitest 4 + React Testing Library; tests co-located as `*.test.tsx`; global setup in `src/frontend/src/test-setup.ts`.
 - **Frontend e2e**: Playwright 1.63.0; specs in `src/frontend/e2e/` as `*.spec.ts` (excluded from Vitest); conventions in `context/foundation/test-plan.md` §6.5.
-- **Backend**: xUnit 2.9.3; test files named `*Tests.cs` under `src/backend/VeloRoute.Tests/Routing/`.
+- **Backend**: xUnit 2.9.3; test files named `*Tests.cs` under `src/backend/VeloRoute.Tests/Routing/`; ArchUnitNET layer and cycle rules in `VeloRoute.Tests/Architecture/ArchitectureTests.cs`.
 - Run focused test: `npm test -- <pattern>` (frontend) or `dotnet test --filter <name>` (backend).
 
 ## Commits & CI

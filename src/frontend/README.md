@@ -12,6 +12,8 @@ npm run dev
 
 Opens at <http://localhost:3000>.
 
+Live: <https://purple-sky-08f4fb710.7.azurestaticapps.net>
+
 ## Environment variables
 
 Copy `.env.example` to `.env.local` and fill in the values:
@@ -43,6 +45,7 @@ If you're behind a corporate SSL proxy, export its CA certificate to `local-ca.p
 | `npm test` | Run Vitest test suite (single pass) |
 | `npm run test:watch` | Vitest in watch mode |
 | `npm run coverage` | Vitest with coverage report |
+| `npm run depcruise` | Check dependency-cruiser layer and cycle rules (`.dependency-cruiser.cjs`) |
 | `npm run e2e` | Run the Playwright end-to-end suite (chromium) |
 | `npm run e2e:ui` | Playwright in UI mode |
 

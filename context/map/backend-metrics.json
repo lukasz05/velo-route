@@ -1,0 +1,274 @@
+[
+  {
+    "Type": "VeloRoute.Routing.RouteCoordinate",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 9,
+    "FanOut": 0,
+    "Members": 18,
+    "ReferencedByCompositionRoot": true
+  },
+  {
+    "Type": "VeloRoute.Routing.RouteResult",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 7,
+    "FanOut": 6,
+    "Members": 31,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.SmoothnessCalculator",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 3,
+    "FanOut": 3,
+    "Members": 5,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.RoutingResult`1",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 3,
+    "FanOut": 2,
+    "Members": 9,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.RouteWaySegment",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 3,
+    "FanOut": 2,
+    "Members": 24,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.RouteGeometry",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 3,
+    "FanOut": 1,
+    "Members": 15,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.SurfaceType",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 3,
+    "FanOut": 0,
+    "Members": 20,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.OrsDirectionOptions",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 3,
+    "FanOut": 0,
+    "Members": 18,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.OrsRoundTripOptions",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 3,
+    "FanOut": 0,
+    "Members": 21,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.IOpenRouteServiceClient",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 2,
+    "FanOut": 5,
+    "Members": 3,
+    "ReferencedByCompositionRoot": true
+  },
+  {
+    "Type": "VeloRoute.Routing.SpikeDetector",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 2,
+    "FanOut": 2,
+    "Members": 2,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Json.Optional`1",
+    "Namespace": "VeloRoute.Json",
+    "FanIn": 2,
+    "FanOut": 1,
+    "Members": 5,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Data.GeoJsonLineString",
+    "Namespace": "VeloRoute.Data",
+    "FanIn": 2,
+    "FanOut": 0,
+    "Members": 18,
+    "ReferencedByCompositionRoot": true
+  },
+  {
+    "Type": "VeloRoute.Routing.RoadClass",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 2,
+    "FanOut": 0,
+    "Members": 12,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.RoutingError",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 2,
+    "FanOut": 0,
+    "Members": 18,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.PavedRatioCalculator",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 1,
+    "FanOut": 5,
+    "Members": 3,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Json.OptionalJsonConverterFactory+OptionalJsonConverter`1",
+    "Namespace": "VeloRoute.Json",
+    "FanIn": 1,
+    "FanOut": 2,
+    "Members": 5,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.OverlapDetector",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 1,
+    "FanOut": 1,
+    "Members": 3,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.WaypointCalculator",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 1,
+    "FanOut": 1,
+    "Members": 2,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.LoopRouteGenerator+CandidateMetrics",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 1,
+    "FanOut": 1,
+    "Members": 27,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Data.Route",
+    "Namespace": "VeloRoute.Data",
+    "FanIn": 1,
+    "FanOut": 1,
+    "Members": 33,
+    "ReferencedByCompositionRoot": true
+  },
+  {
+    "Type": "VeloRoute.Auth.IClerkClient",
+    "Namespace": "VeloRoute.Auth",
+    "FanIn": 1,
+    "FanOut": 0,
+    "Members": 1,
+    "ReferencedByCompositionRoot": true
+  },
+  {
+    "Type": "VeloRoute.Data.Share",
+    "Namespace": "VeloRoute.Data",
+    "FanIn": 1,
+    "FanOut": 0,
+    "Members": 24,
+    "ReferencedByCompositionRoot": true
+  },
+  {
+    "Type": "VeloRoute.Data.User",
+    "Namespace": "VeloRoute.Data",
+    "FanIn": 1,
+    "FanOut": 0,
+    "Members": 18,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.LoopRouteGenerator",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 0,
+    "FanOut": 11,
+    "Members": 14,
+    "ReferencedByCompositionRoot": true
+  },
+  {
+    "Type": "VeloRoute.Routing.OpenRouteServiceClient",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 0,
+    "FanOut": 6,
+    "Members": 6,
+    "ReferencedByCompositionRoot": true
+  },
+  {
+    "Type": "VeloRoute.Data.AppDbContext",
+    "Namespace": "VeloRoute.Data",
+    "FanIn": 0,
+    "FanOut": 4,
+    "Members": 8,
+    "ReferencedByCompositionRoot": true
+  },
+  {
+    "Type": "VeloRoute.Routing.OrsMapper",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 0,
+    "FanOut": 3,
+    "Members": 3,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Json.OptionalJsonConverterFactory",
+    "Namespace": "VeloRoute.Json",
+    "FanIn": 0,
+    "FanOut": 2,
+    "Members": 3,
+    "ReferencedByCompositionRoot": true
+  },
+  {
+    "Type": "VeloRoute.Auth.ClerkClient",
+    "Namespace": "VeloRoute.Auth",
+    "FanIn": 0,
+    "FanOut": 1,
+    "Members": 2,
+    "ReferencedByCompositionRoot": true
+  },
+  {
+    "Type": "VeloRoute.Routing.GpxSerializer",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 0,
+    "FanOut": 1,
+    "Members": 1,
+    "ReferencedByCompositionRoot": true
+  },
+  {
+    "Type": "VeloRoute.Routing.OpenRouteServiceOptions",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 0,
+    "FanOut": 0,
+    "Members": 10,
+    "ReferencedByCompositionRoot": true
+  },
+  {
+    "Type": "VeloRoute.Auth.ClaimsPrincipalExtensions",
+    "Namespace": "VeloRoute.Auth",
+    "FanIn": 0,
+    "FanOut": 0,
+    "Members": 1,
+    "ReferencedByCompositionRoot": false
+  },
+  {
+    "Type": "VeloRoute.Routing.RouteMetadataValidation",
+    "Namespace": "VeloRoute.Routing",
+    "FanIn": 0,
+    "FanOut": 0,
+    "Members": 4,
+    "ReferencedByCompositionRoot": true
+  }
+]
