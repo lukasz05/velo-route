@@ -41,6 +41,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.3",
+    "dependency-cruiser": "^18.2.0",
     "eslint": "^9",
     "eslint-config-next": "^15.5.18",
     "jsdom": "^29.1.1",
